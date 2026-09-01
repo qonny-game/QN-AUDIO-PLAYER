@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QN AUDIO PLAYER 1.1.7</title>
+<title>QN AUDIO PLAYER 1.2.0</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="blue">
@@ -24,7 +24,7 @@
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.1.7</span></h1>
+    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.2.0</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
   </div>
   <button id="headerMenuBtn" title="Menu">
@@ -67,77 +67,85 @@
       <span>Analyzer</span>
     </button>
     <div class="header-btn-wrapper">
-      <button id="eqToggleBtn" title="Equalizer">
-        <svg viewBox="0 0 24 24"><path d="M3 17h4v4H3v-4zm7-8h4v12h-4V9zm7-6h4v18h-4V3z"/></svg>
-        <span>EQ</span>
+      <button id="shortcutsToggleBtn" title="Keyboard Shortcuts">
+        <svg viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+        <span>Shortcuts</span>
       </button>
-      <div class="eq-popup" id="eqPopup">
-        <div class="eq-popup-header">
-          <span>Equalizer</span>
-          <button id="eqResetBtn" title="Reset all bands to 0dB">Reset</button>
-        </div>
-        <div class="eq-preset-row">
-          <select id="eqPresetSelect" title="EQ Preset">
-            <option value="custom">Custom</option>
-            <option value="flat">Flat</option>
-            <option value="bass">Bass Boost</option>
-            <option value="vocal">Vocal</option>
-            <option value="treble">Treble Boost</option>
-            <option value="vshape">V-Shape</option>
-          </select>
-        </div>
-        <p class="eq-hint">Drag across the bands to draw a curve</p>
-        <div class="eq-bands" id="eqBands">
-          <div class="eq-band" data-freq="31">
-            <span class="eq-band-gain" id="eqGain0">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand0" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">31</span>
-          </div>
-          <div class="eq-band" data-freq="62">
-            <span class="eq-band-gain" id="eqGain1">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand1" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">62</span>
-          </div>
-          <div class="eq-band" data-freq="125">
-            <span class="eq-band-gain" id="eqGain2">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand2" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">125</span>
-          </div>
-          <div class="eq-band" data-freq="250">
-            <span class="eq-band-gain" id="eqGain3">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand3" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">250</span>
-          </div>
-          <div class="eq-band" data-freq="500">
-            <span class="eq-band-gain" id="eqGain4">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand4" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">500</span>
-          </div>
-          <div class="eq-band" data-freq="1000">
-            <span class="eq-band-gain" id="eqGain5">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand5" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">1k</span>
-          </div>
-          <div class="eq-band" data-freq="2000">
-            <span class="eq-band-gain" id="eqGain6">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand6" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">2k</span>
-          </div>
-          <div class="eq-band" data-freq="4000">
-            <span class="eq-band-gain" id="eqGain7">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand7" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">4k</span>
-          </div>
-          <div class="eq-band" data-freq="8000">
-            <span class="eq-band-gain" id="eqGain8">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand8" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">8k</span>
-          </div>
-          <div class="eq-band" data-freq="16000">
-            <span class="eq-band-gain" id="eqGain9">0</span>
-            <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand9" min="-15" max="15" step="1" value="0" orient="vertical"></div>
-            <span class="eq-band-freq">16k</span>
-          </div>
+      <div class="shortcuts-popup" id="shortcutsPopup">
+        <div class="shortcut-grid">
+          <table class="shortcut-table">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><kbd>Space</kbd></td>
+                <td>Play / Pause</td>
+              </tr>
+              <tr>
+                <td><kbd>P</kbd> / <kbd>M</kbd></td>
+                <td>Add Marker</td>
+              </tr>
+              <tr>
+                <td><kbd>L</kbd></td>
+                <td>Toggle Loop</td>
+              </tr>
+              <tr>
+                <td><kbd>R</kbd></td>
+                <td>Toggle All Repeat</td>
+              </tr>
+              <tr>
+                <td><kbd>1</kbd> - <kbd>9</kbd></td>
+                <td>Jump to Marker</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl</kbd> + <kbd>1</kbd> - <kbd>9</kbd></td>
+                <td>Toggle Marker ON/OFF</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table class="shortcut-table">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><kbd>→</kbd></td>
+                <td>Next Marker</td>
+              </tr>
+              <tr>
+                <td><kbd>←</kbd></td>
+                <td>Prev Marker (0.5s rule)</td>
+              </tr>
+              <tr>
+                <td><kbd>↑</kbd></td>
+                <td>First Marker</td>
+              </tr>
+              <tr>
+                <td><kbd>↓</kbd></td>
+                <td>Last Marker</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl</kbd> + <kbd>→</kbd> / <kbd>←</kbd></td>
+                <td>Speed +1% / -1%</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd></td>
+                <td>Key +1 / -1 semitone</td>
+              </tr>
+              <tr>
+                <td><kbd>Ctrl</kbd> + <kbd>R</kbd></td>
+                <td>Reset Speed &amp; Key</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -156,9 +164,11 @@
     </div>
     
     <div class="top-controls" id="topControls">
-      <button id="playToggle" class="bigbtn" title="Play / Pause">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        <span class="top-controls-btn-label">Play</span>
+      <!-- SP幅ではJSでこの位置(Loopの左)にPlay/Repeatが移動してくる -->
+      <div id="playbackButtonsSlot"></div>
+      <button id="loopToggleBtn" class="loopbtn" title="Toggle Loop">
+        <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        <span class="top-controls-btn-label">Loop</span>
       </button>
       <div class="markernav-btn" id="markerNavBtn" title="Prev / Next Marker">
         <button id="prevMarkerBtn" class="markernav-half markernav-left" title="Prev Marker">
@@ -171,21 +181,13 @@
           <span class="top-controls-btn-label">Marker</span>
         </button>
       </div>
-      <button id="addPinBtn" class="loopbtn" title="Add Marker">
+      <button id="addPinBtn" class="loopbtn bigbtn-accent" title="Add Marker">
         <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         <span class="top-controls-btn-label">Marker</span>
       </button>
-      <button id="loopToggleBtn" class="loopbtn" title="Toggle Loop">
-        <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-        <span class="top-controls-btn-label">Loop</span>
-      </button>
-      <button id="allRepeatToggleBtn" class="loopbtn" title="Toggle All Repeat">
-        <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-        <span class="top-controls-btn-label">Repeat</span>
-      </button>
     </div>
 
-    <!-- TIME表示（常時）＋ VOL / SPEED / KEY のポップアップボタン群 -->
+    <!-- TIME表示 ＋ Play/Pause ＋ Repeat（再生に直結する操作をまとめる。PC幅ではここに表示） -->
     <div class="time-controls-row">
       <div id="timeDisplay">
         <span id="currentTimeVal" class="time-val">00:00.00</span>
@@ -193,6 +195,20 @@
         <span id="durationVal" class="time-dur">00:00.00</span>
       </div>
 
+      <div class="time-controls-buttons" id="playbackButtonsGroup">
+        <button id="playToggle" class="bigbtn playback-inline-btn" title="Play / Pause">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span class="top-controls-btn-label">Play</span>
+        </button>
+        <button id="allRepeatToggleBtn" class="loopbtn playback-inline-btn" title="Toggle All Repeat">
+          <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+          <span class="top-controls-btn-label">Repeat</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vol / Speed / Key / EQ / Export（全体の調整をまとめる） -->
+    <div class="time-controls-row adjust-controls-row">
       <div class="time-controls-buttons">
         <div class="header-btn-wrapper">
           <button id="volToggleBtn" class="av-toggle-btn" title="Volume">
@@ -254,7 +270,93 @@
             </div>
           </div>
         </div>
+
+        <div class="header-btn-wrapper">
+          <button id="eqToggleBtn" class="av-toggle-btn" title="Equalizer">
+            <svg viewBox="0 0 24 24"><path d="M3 17h4v4H3v-4zm7-8h4v12h-4V9zm7-6h4v18h-4V3z"/></svg>
+            <span class="av-toggle-btn-text">
+              <span class="av-toggle-btn-label">EQ</span>
+            </span>
+          </button>
+          <div class="av-popup eq-popup" id="eqPopup">
+            <div class="eq-popup-header">
+              <span>Equalizer</span>
+              <button id="eqResetBtn" title="Reset all bands to 0dB">Reset</button>
+            </div>
+            <div class="eq-preset-row">
+              <select id="eqPresetSelect" title="EQ Preset">
+                <option value="custom">Custom</option>
+                <option value="flat">Flat</option>
+                <option value="bass">Bass Boost</option>
+                <option value="vocal">Vocal</option>
+                <option value="treble">Treble Boost</option>
+                <option value="vshape">V-Shape</option>
+              </select>
+            </div>
+            <p class="eq-hint">Drag across the bands to draw a curve</p>
+            <div class="eq-bands" id="eqBands">
+              <div class="eq-band" data-freq="31">
+                <span class="eq-band-gain" id="eqGain0">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand0" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">31</span>
+              </div>
+              <div class="eq-band" data-freq="62">
+                <span class="eq-band-gain" id="eqGain1">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand1" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">62</span>
+              </div>
+              <div class="eq-band" data-freq="125">
+                <span class="eq-band-gain" id="eqGain2">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand2" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">125</span>
+              </div>
+              <div class="eq-band" data-freq="250">
+                <span class="eq-band-gain" id="eqGain3">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand3" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">250</span>
+              </div>
+              <div class="eq-band" data-freq="500">
+                <span class="eq-band-gain" id="eqGain4">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand4" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">500</span>
+              </div>
+              <div class="eq-band" data-freq="1000">
+                <span class="eq-band-gain" id="eqGain5">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand5" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">1k</span>
+              </div>
+              <div class="eq-band" data-freq="2000">
+                <span class="eq-band-gain" id="eqGain6">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand6" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">2k</span>
+              </div>
+              <div class="eq-band" data-freq="4000">
+                <span class="eq-band-gain" id="eqGain7">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand7" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">4k</span>
+              </div>
+              <div class="eq-band" data-freq="8000">
+                <span class="eq-band-gain" id="eqGain8">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand8" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">8k</span>
+              </div>
+              <div class="eq-band" data-freq="16000">
+                <span class="eq-band-gain" id="eqGain9">0</span>
+                <div class="eq-slider-track"><input type="range" class="eq-vslider" id="eqBand9" min="-15" max="15" step="1" value="0" orient="vertical"></div>
+                <span class="eq-band-freq">16k</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="exportToggleBtn" class="av-toggle-btn" title="Export Audio">
+          <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zM13 12.67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+          <span class="av-toggle-btn-text">
+            <span class="av-toggle-btn-label">Export</span>
+          </span>
+        </button>
       </div>
+
     </div>
 
     <!-- スマホ幅専用のタブ切替UI（PC幅では非表示） -->
@@ -265,91 +367,6 @@
 
     <!-- スマホ幅ではここに選択中タブの中身がJSで移動してくる（PC幅では使われない） -->
     <div id="mobileTabSlot"></div>
-
-    <!-- Collapsible keyboard shortcuts (collapsed by default, hidden entirely on mobile) -->
-    <div class="collapsible-section shortcuts-collapse" id="shortcutsSection">
-      <div class="collapse-header shortcuts-collapse-header" id="shortcutsHeader">
-        <span>Keyboard Shortcuts</span>
-        <span id="shortcutsIcon">▼</span>
-      </div>
-      <div class="collapse-body shortcuts-collapse-body">
-        <div class="shortcut-grid">
-        <table class="shortcut-table">
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><kbd>Space</kbd></td>
-              <td>Play / Pause</td>
-            </tr>
-            <tr>
-              <td><kbd>P</kbd> / <kbd>M</kbd></td>
-              <td>Add Marker</td>
-            </tr>
-            <tr>
-              <td><kbd>L</kbd></td>
-              <td>Toggle Loop</td>
-            </tr>
-            <tr>
-              <td><kbd>R</kbd></td>
-              <td>Toggle All Repeat</td>
-            </tr>
-            <tr>
-              <td><kbd>1</kbd> - <kbd>9</kbd></td>
-              <td>Jump to Marker</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl</kbd> + <kbd>1</kbd> - <kbd>9</kbd></td>
-              <td>Toggle Marker ON/OFF</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <table class="shortcut-table">
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><kbd>→</kbd></td>
-              <td>Next Marker</td>
-            </tr>
-            <tr>
-              <td><kbd>←</kbd></td>
-              <td>Prev Marker (0.5s rule)</td>
-            </tr>
-            <tr>
-              <td><kbd>↑</kbd></td>
-              <td>First Marker</td>
-            </tr>
-            <tr>
-              <td><kbd>↓</kbd></td>
-              <td>Last Marker</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl</kbd> + <kbd>→</kbd> / <kbd>←</kbd></td>
-              <td>Speed +1% / -1%</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd></td>
-              <td>Key +1 / -1 semitone</td>
-            </tr>
-            <tr>
-              <td><kbd>Ctrl</kbd> + <kbd>R</kbd></td>
-              <td>Reset Speed &amp; Key</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
   </div>
 
   <div class="sidebar-section">
@@ -360,7 +377,7 @@
       </span>
       <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.webm,.opus" multiple>
     </div>
-    <p class="dnd-hint">You can also drag &amp; drop MP3 files anywhere on this page</p>
+    <p class="dnd-hint">You can also drag &amp; drop audio files anywhere on this page</p>
 
     <div class="mobile-tab-panel" data-tab-panel="markers">
       <div class="markers-heading-row">
@@ -380,10 +397,77 @@
   </div>
 </div>
 
+<!-- エクスポート設定モーダル -->
+<div id="exportModalOverlay" class="export-modal-overlay">
+  <div class="export-modal">
+    <div class="export-modal-header">
+      <span>Export Audio</span>
+      <button id="exportModalCloseBtn" class="export-modal-close" title="Close">✕</button>
+    </div>
+
+    <div class="export-modal-body">
+      <div class="export-section">
+        <label class="export-section-label">Range</label>
+        <div class="export-range-options">
+          <label class="export-radio-row">
+            <input type="radio" name="exportRange" id="exportRangeAll" value="all" checked>
+            <span>All (Full Track)</span>
+          </label>
+          <label class="export-radio-row">
+            <input type="radio" name="exportRange" id="exportRangeMarker" value="marker">
+            <span>Marker Range</span>
+          </label>
+        </div>
+        <select id="exportMarkerSelect" class="export-marker-select" disabled>
+          <option value="">No marker pairs available</option>
+        </select>
+      </div>
+
+      <div class="export-section">
+        <label class="export-section-label">Apply Effects</label>
+        <div class="export-effect-options">
+          <label class="export-checkbox-row">
+            <input type="checkbox" id="exportApplySpeed" checked>
+            <span>Speed</span>
+          </label>
+          <label class="export-checkbox-row">
+            <input type="checkbox" id="exportApplyKey" checked>
+            <span>Key</span>
+          </label>
+          <label class="export-checkbox-row">
+            <input type="checkbox" id="exportApplyEq" checked>
+            <span>EQ</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="export-section">
+        <label class="export-section-label">File Name</label>
+        <input type="text" id="exportFileName" class="export-filename-input" placeholder="output">
+      </div>
+
+      <div class="export-section">
+        <label class="export-section-label">Format</label>
+        <div class="export-format-options">
+          <label class="export-radio-row">
+            <input type="radio" name="exportFormat" id="exportFormatWav" value="wav" checked>
+            <span>WAV</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="export-modal-footer">
+      <div id="exportStatus" class="export-status"></div>
+      <button id="exportRunBtn" class="export-run-btn">Export</button>
+    </div>
+  </div>
+</div>
+
 <!-- スマホ幅でtop-controlsを画面下部に固定した際、ページ最下部（フッター前）に高さ分の余白を確保する -->
 <div class="top-controls-spacer" id="topControlsSpacer"></div>
 
-<footer id="appFooter">QNAUDIO Ver1.1.7 by QONNY</footer>
+<footer id="appFooter">QNAUDIO Ver1.2.0 by QONNY</footer>
 
 <script src="player.js"></script>
 </body>

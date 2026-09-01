@@ -8,6 +8,25 @@
   --accent-hover-2: #1e40af;
   --font-display: 'Outfit';
   --font-body: 'Plus Jakarta Sans';
+
+  /* ============================================================
+     モーション設計トークン（docs/ui-motion-haptics-design.md 参照）
+     4種のイージングを動作の意味ごとに使い分ける。
+     ============================================================ */
+  /* Snap: 即応。ボタンpress/hover、トグルON-OFF、ドラッグ追従 */
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+  /* Glide: 滑走。値の変化、タブ切替、パネル開閉、テーマ切替 */
+  --ease-glide: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Pop: 弾む。ポップアップ/モーダルの出現、選択の確定 */
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Dismiss: 退出。ポップアップ/モーダルを閉じる、消失系 */
+  --ease-dismiss: cubic-bezier(0.4, 0, 1, 1);
+
+  --dur-hover: 130ms;
+  --dur-press: 100ms;
+  --dur-open: 240ms;
+  --dur-modal: 300ms;
+  --dur-dismiss: 200ms;
 }
 
 [data-theme="blue"] {
@@ -220,7 +239,7 @@ body {
 
 #colorToggleBtn,
 #analyzerToggleBtn,
-#eqToggleBtn {
+#shortcutsToggleBtn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -236,12 +255,18 @@ body {
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+
+#colorToggleBtn:active,
+#analyzerToggleBtn:active,
+#shortcutsToggleBtn:active {
+  transform: scale(0.96);
 }
 
 #colorToggleBtn:hover,
 #analyzerToggleBtn:hover,
-#eqToggleBtn:hover {
+#shortcutsToggleBtn:hover {
   background: #1c1c24;
   border-color: var(--accent-primary);
   color: var(--accent-primary);
@@ -249,15 +274,15 @@ body {
 
 #colorToggleBtn svg,
 #analyzerToggleBtn svg,
-#eqToggleBtn svg {
+#shortcutsToggleBtn svg {
   width: 16px;
   height: 16px;
   fill: currentColor;
   flex-shrink: 0;
 }
 
-#eqToggleBtn.active,
-#colorToggleBtn.active {
+#colorToggleBtn.active,
+#shortcutsToggleBtn.active {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
   background: var(--accent-glow);
@@ -285,10 +310,52 @@ body {
   padding: 16px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   width: 260px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+  transition: opacity var(--dur-open) var(--ease-dismiss), transform var(--dur-open) var(--ease-dismiss);
 }
 
 .color-popup.open {
   display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity var(--dur-open) var(--ease-pop), transform var(--dur-open) var(--ease-pop);
+}
+
+.shortcuts-popup {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 100;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  width: 480px;
+  max-width: 90vw;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+  transition: opacity var(--dur-open) var(--ease-dismiss), transform var(--dur-open) var(--ease-dismiss);
+}
+
+.shortcuts-popup.open {
+  display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity var(--dur-open) var(--ease-pop), transform var(--dur-open) var(--ease-pop);
+}
+
+.shortcuts-popup .shortcut-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.shortcuts-popup .shortcut-table {
+  flex: 1;
+  min-width: 200px;
 }
 
 .color-popup .theme-swatches {
@@ -580,8 +647,13 @@ body {
   display: none;
 }
 
-.top-controls .bigbtn, 
-.top-controls .loopbtn {
+/* PC幅ではPlay/RepeatはTIME行側に表示されるため、topControls側のスロットは空のまま非表示 */
+#playbackButtonsSlot {
+  display: none;
+}
+
+.bigbtn, 
+.loopbtn {
   flex: 1;
   padding: 12px 0 10px;
   font-size: 20px;
@@ -592,7 +664,7 @@ body {
   cursor: pointer;
   color: #fff;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap), box-shadow var(--dur-press) var(--ease-snap);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -600,8 +672,8 @@ body {
   gap: 4px;
 }
 
-.top-controls .bigbtn svg,
-.top-controls .loopbtn svg {
+.bigbtn svg,
+.loopbtn svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
@@ -618,16 +690,16 @@ body {
   line-height: 1;
 }
 
-.top-controls .bigbtn:hover, 
-.top-controls .loopbtn:hover {
+.bigbtn:hover, 
+.loopbtn:hover {
   background: #252530;
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
-.top-controls .bigbtn:active, 
-.top-controls .loopbtn:active {
+.bigbtn:active, 
+.loopbtn:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
@@ -645,6 +717,45 @@ body {
 
 .loopbtn { 
   background: #16161b;
+}
+
+/* Bグループ内でAdd Markerだけ少し強調し、押しやすさと視認性を上げる */
+.bigbtn-accent {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.bigbtn-accent:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+}
+
+/* Aグループ（Time行）内のPlay/Repeatは横幅いっぱいに広げず、コンパクトな正方形に近い形にする。
+   Playはよく押す最重要ボタンなので、Repeatより一回り大きくする。 */
+.playback-inline-btn {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  padding: 8px 0;
+}
+
+#playToggle.playback-inline-btn {
+  width: 104px;
+  height: 72px;
+}
+
+#playToggle.playback-inline-btn svg {
+  width: 30px;
+  height: 30px;
+}
+
+.playback-inline-btn .top-controls-btn-label {
+  font-size: 8px;
+}
+
+#playToggle.playback-inline-btn .top-controls-btn-label {
+  font-size: 9px;
 }
 
 #allRepeatToggleBtn {
@@ -694,7 +805,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+
+.markernav-half:active {
+  transform: scale(0.94);
 }
 
 .markernav-half svg {
@@ -811,7 +926,11 @@ body {
   cursor: pointer;
   color: #f0f0f3;
   font-family: var(--font-display, 'Outfit'), sans-serif;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+
+.av-toggle-btn:active {
+  transform: scale(0.97);
 }
 
 .av-toggle-btn:hover {
@@ -884,15 +1003,35 @@ body {
   padding: 18px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   width: 260px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+  transition: opacity var(--dur-open) var(--ease-dismiss), transform var(--dur-open) var(--ease-dismiss);
 }
 
 .av-popup.open {
   display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity var(--dur-open) var(--ease-pop), transform var(--dur-open) var(--ease-pop);
+}
+
+/* ボタンが画面下部にあり、下に開くと画面外へはみ出す場合はJS側で判定してこのクラスを付け、
+   ポップアップをボタンの上に開き直す（画面内に必ず収める） */
+.av-popup.open-upward,
+.color-popup.open-upward,
+.shortcuts-popup.open-upward {
+  top: auto;
+  bottom: calc(100% + 10px);
 }
 
 .av-popup .control-card {
   min-width: 0;
   width: 100%;
+}
+
+.av-popup.eq-popup {
+  width: 420px;
+  max-width: 90vw;
 }
 
 #loopInfo,
@@ -1236,6 +1375,22 @@ body {
   background: #3a3a48;
 }
 
+.del-btn {
+  transition: background var(--dur-press) var(--ease-snap), color var(--dur-press) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+
+.del-btn.confirm {
+  background: #ef4444 !important;
+  color: #fff !important;
+  border-color: #ef4444 !important;
+  animation: delConfirmPulse 0.9s var(--ease-snap) infinite;
+}
+
+@keyframes delConfirmPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
 #playlistBox {
   display: flex;
   flex-direction: column;
@@ -1335,7 +1490,7 @@ body {
   text-transform: uppercase;
   box-sizing: border-box;
   box-shadow: 0 6px 20px var(--accent-glow);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background var(--dur-hover) var(--ease-snap), box-shadow var(--dur-press) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
 }
 
 .file-upload-btn svg {
@@ -1359,47 +1514,6 @@ body {
   color: #6b6b7b;
   text-align: center;
   letter-spacing: 0.2px;
-}
-
-.shortcuts-collapse {
-  background: #16161b;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  overflow: hidden;
-  margin-top: -12px;
-}
-
-.shortcuts-collapse-header {
-  display: flex !important;
-  padding: 14px 20px;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  color: #8b8b9e;
-  text-transform: uppercase;
-  cursor: pointer;
-  background: #1c1c24;
-  justify-content: space-between;
-  align-items: center;
-  user-select: none;
-}
-
-.shortcuts-collapse-header:hover {
-  background: #252530;
-  color: #f0f0f3;
-}
-
-.shortcuts-collapse-body {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-  padding: 0 20px;
-}
-
-.shortcuts-collapse.open .shortcuts-collapse-body {
-  max-height: 600px;
-  padding: 20px;
 }
 
 .shortcut-grid {
@@ -1540,13 +1654,17 @@ body.dragover #dropOverlay {
   text-transform: uppercase;
   cursor: pointer;
   box-shadow: 0 8px 28px var(--accent-glow);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background var(--dur-hover) var(--ease-snap), box-shadow var(--dur-press) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
 }
 
 #welcomeSelectBtn:hover {
   background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
   box-shadow: 0 10px 32px var(--accent-glow);
   transform: translateY(-2px);
+}
+
+#welcomeSelectBtn:active {
+  transform: translateY(0) scale(0.97);
 }
 
 #welcomeSelectBtn svg {
@@ -1575,7 +1693,7 @@ body.dragover #dropOverlay {
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.15);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-open) var(--ease-pop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1590,6 +1708,7 @@ body.dragover #dropOverlay {
   border-color: #fff;
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
   transform: scale(1.05);
+  transition: transform var(--dur-open) var(--ease-pop), border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-open) var(--ease-pop);
 }
 
 .swatch-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
@@ -1662,6 +1781,37 @@ body.dragover #dropOverlay {
     width: 100%;
   }
 
+  /* SP幅ではPlay/RepeatがLoopの左（#playbackButtonsSlot）にJSで移動してくる。
+     Playが横長(104px)になった分、他のボタン(Loop/Marker追加/前後移動)を少し狭めてバランスを取る。 */
+  #playbackButtonsSlot:not(:empty) {
+    display: flex;
+    gap: 10px;
+    flex: 0 0 auto;
+  }
+
+  #playbackButtonsSlot .playback-inline-btn {
+    width: 48px;
+    height: 56px;
+  }
+
+  #playbackButtonsSlot #playToggle.playback-inline-btn {
+    width: 72px;
+    height: 56px;
+  }
+
+  #playbackButtonsSlot .top-controls-btn-label {
+    display: none;
+  }
+
+  /* Play/Repeatがtop-controlsに加わる分、前後マーカー移動の比率を少し狭める */
+  #topControls .markernav-btn {
+    flex: 1.4;
+  }
+
+  #topControls .loopbtn {
+    flex: 0.8;
+  }
+
   /* 再生ボタン行がfixedで浮いて場所を取らないため、
      シークバー・TIME間の見た目の間隔はgapのみで決まる。詰める。 */
   .player-section {
@@ -1680,6 +1830,24 @@ body.dragover #dropOverlay {
     left: 0;
     right: 0;
     width: auto;
+  }
+
+  /* Cグループ(VOL/SPEED/KEY/EQ/EXPORT)は5ボタンあり画面幅からはみ出しやすいため、
+     折り返し可能にしてSP幅でも確実に収まるようにする */
+  .adjust-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .adjust-controls-row .time-controls-buttons {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .adjust-controls-row .header-btn-wrapper,
+  .adjust-controls-row .av-toggle-btn {
+    flex: 1 1 calc(33.333% - 8px);
+    min-width: 90px;
   }
 
   /* ヘッダー：ロゴ＋バージョンとファイル名で2行に収め、Color/Analyzer/EQはハンバーガーメニューに格納 */
@@ -1827,11 +1995,6 @@ body.dragover #dropOverlay {
     width: 100%;
   }
 
-  /* キーボードショートカットはスマホでは完全非表示 */
-  #shortcutsSection {
-    display: none;
-  }
-
   /* スマホ専用タブ切り替えUI（下のパネルと隙間なく繋げるため角丸は上側だけ） */
   .mobile-tabs {
     display: flex;
@@ -1924,5 +2087,275 @@ body.dragover #dropOverlay {
      ページ全体の下側にtopControlsの高さ分の余白を確保する（JSで実測値をセット） */
   body {
     padding-bottom: 90px;
+  }
+}
+
+/* ============================================================
+   エクスポートモーダル
+   イージング設計：
+   - 開く時は「軽く弾んで収まる」オーバーシュート系カーブ (cubic-bezier(0.34, 1.56, 0.64, 1))
+     を使い、単なるフェードインより手応えのある開き方にする。
+   - 閉じる時は逆に「素早く消える」滑らかな減速カーブ (cubic-bezier(0.4, 0, 1, 1)) にし、
+     開閉で非対称の動きにすることで「閉じる」操作がもたつかないようにする。
+   ============================================================ */
+.export-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(5, 5, 7, 0);
+  backdrop-filter: blur(0px);
+  pointer-events: none;
+  transition: background 0.25s cubic-bezier(0.4, 0, 1, 1), backdrop-filter 0.25s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.export-modal-overlay.open {
+  background: rgba(5, 5, 7, 0.72);
+  backdrop-filter: blur(4px);
+  pointer-events: auto;
+  transition: background 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), backdrop-filter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.export-modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  transform: translateY(24px) scale(0.94);
+  opacity: 0;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.export-modal-overlay.open .export-modal {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.export-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #f0f0f3;
+}
+
+.export-modal-close {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #1c1c24;
+  color: #8b8b9e;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+
+.export-modal-close:hover {
+  background: #252530;
+  color: #f0f0f3;
+  border-color: var(--accent-primary);
+}
+
+.export-modal-close:active {
+  transform: scale(0.9);
+}
+
+.export-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 22px;
+}
+
+.export-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.export-section-label {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #6b6b7b;
+}
+
+.export-range-options,
+.export-format-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.export-effect-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.export-radio-row,
+.export-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #c8c8d0;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.export-radio-row:hover,
+.export-checkbox-row:hover {
+  background: #22222c;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.export-radio-row:has(input:checked),
+.export-checkbox-row:has(input:checked) {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+  color: #fff;
+}
+
+.export-radio-row input,
+.export-checkbox-row input {
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.export-marker-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #f0f0f3;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.export-marker-select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.export-marker-select:not(:disabled):hover {
+  border-color: var(--accent-primary);
+}
+
+.export-filename-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #f0f0f3;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.export-filename-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  background: #22222c;
+}
+
+.export-filename-input::placeholder {
+  color: #5a5a68;
+}
+
+.export-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.export-status {
+  flex: 1;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 12px;
+  color: #8b8b9e;
+  min-height: 16px;
+  transition: color 0.2s ease;
+}
+
+.export-status.error {
+  color: #ef4444;
+}
+
+.export-status.success {
+  color: #10b981;
+}
+
+.export-run-btn {
+  flex-shrink: 0;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 20px var(--accent-glow);
+  transition: background var(--dur-hover) var(--ease-snap), box-shadow var(--dur-press) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+
+.export-run-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
+  box-shadow: 0 8px 24px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.export-run-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+.export-run-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media screen and (max-width: 768px) {
+  .export-modal {
+    max-width: none;
   }
 }

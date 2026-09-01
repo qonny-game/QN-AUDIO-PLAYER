@@ -773,6 +773,7 @@ const headerControlsEl = document.getElementById("headerControls");
 if (headerMenuBtn && headerControlsEl) {
   headerMenuBtn.onclick = (e) => {
     e.stopPropagation();
+    hapticTap();
     headerControlsEl.classList.toggle("open");
     headerMenuBtn.classList.toggle("active", headerControlsEl.classList.contains("open"));
   };
@@ -791,8 +792,11 @@ const colorPopup = document.getElementById("colorPopup");
 if (colorToggleBtn && colorPopup) {
   colorToggleBtn.onclick = (e) => {
     e.stopPropagation();
-    colorPopup.classList.toggle("open");
-    colorToggleBtn.classList.toggle("active", colorPopup.classList.contains("open"));
+    hapticTap();
+    const willOpen = !colorPopup.classList.contains("open");
+    colorPopup.classList.toggle("open", willOpen);
+    colorToggleBtn.classList.toggle("active", willOpen);
+    if (willOpen) keepPopupInViewport(colorToggleBtn, colorPopup);
   };
 
   colorPopup.onclick = (e) => {
@@ -812,6 +816,29 @@ if (colorToggleBtn && colorPopup) {
       if (headerControlsEl) headerControlsEl.classList.remove("open");
       if (headerMenuBtn) headerMenuBtn.classList.remove("active");
     });
+  });
+}
+
+// Keyboard Shortcutsポップアップの開閉（ヘッダーDグループ）
+const shortcutsToggleBtn = document.getElementById("shortcutsToggleBtn");
+const shortcutsPopup = document.getElementById("shortcutsPopup");
+if (shortcutsToggleBtn && shortcutsPopup) {
+  shortcutsToggleBtn.onclick = (e) => {
+    e.stopPropagation();
+    hapticTap();
+    const willOpen = !shortcutsPopup.classList.contains("open");
+    shortcutsPopup.classList.toggle("open", willOpen);
+    shortcutsToggleBtn.classList.toggle("active", willOpen);
+    if (willOpen) keepPopupInViewport(shortcutsToggleBtn, shortcutsPopup);
+  };
+
+  shortcutsPopup.onclick = (e) => {
+    e.stopPropagation();
+  };
+
+  document.addEventListener("click", () => {
+    shortcutsPopup.classList.remove("open");
+    shortcutsToggleBtn.classList.remove("active");
   });
 }
 
@@ -872,9 +899,22 @@ function renderPlaylist() {
 
     const delBtn = document.createElement("button");
     delBtn.textContent = "✕";
+    delBtn.className = "del-btn";
     delBtn.onclick = (e) => {
       e.stopPropagation();
-      removeTrackAt(i);
+      if (delBtn.classList.contains("confirm")) {
+        hapticWarning();
+        removeTrackAt(i);
+      } else {
+        hapticTap();
+        delBtn.classList.add("confirm");
+        delBtn.textContent = "✓";
+        clearTimeout(delBtn._confirmTimer);
+        delBtn._confirmTimer = setTimeout(() => {
+          delBtn.classList.remove("confirm");
+          delBtn.textContent = "✕";
+        }, 3000);
+      }
     };
     item.appendChild(delBtn);
 
@@ -989,6 +1029,7 @@ function updatePlayButtonState() {
 }
 
 function togglePlay() {
+  hapticTap();
   // ユーザー操作の直接のトリガーであるこの箇所で、AudioContextの一時停止を確実に解除する
   // （resumeはユーザー操作をきっかけに呼ぶ必要があるため、ここが最も確実なタイミング）。
   if (window.__qnAudioCtx && window.__qnAudioCtx.state === "suspended") {
@@ -1035,6 +1076,7 @@ document.getElementById("playToggle").onclick = togglePlay;
 
 function addCurrentPin() {
   if (!audio.duration) return;
+  hapticSuccess();
   pins.push({ t: audio.currentTime, enabled: true });
   pins.sort((a, b) => a.t - b.t);
   renderPins();
@@ -1046,6 +1088,7 @@ function addCurrentPin() {
 function jumpToNextMarker() {
   const activePins = pins.filter(p => p.enabled);
   if (activePins.length === 0) return;
+  hapticTap();
 
   const ct = audio.currentTime;
   let nextPin = activePins.find(p => p.t > ct + 0.05);
@@ -1063,6 +1106,7 @@ function jumpToNextMarker() {
 function jumpToPrevMarker() {
   const activePins = pins.filter(p => p.enabled);
   if (activePins.length === 0) return;
+  hapticTap();
 
   const ct = audio.currentTime;
 
@@ -1271,8 +1315,13 @@ function setSpeed(value) {
   updatePlaybackRate();
 }
 
+let lastSpeedTickValue = currentSpeed;
 speedRange.oninput = e => {
   currentSpeed = parseFloat(e.target.value);
+  if (currentSpeed !== lastSpeedTickValue) {
+    hapticTick();
+    lastSpeedTickValue = currentSpeed;
+  }
   speedDisplay.textContent = currentSpeed.toFixed(2);
   updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
   updatePlaybackRate();
@@ -1308,7 +1357,14 @@ function renderKeyDisplay() {
 }
 
 function setKeySemitones(value) {
-  currentKeySemitones = Math.max(KEY_MIN, Math.min(KEY_MAX, value));
+  const clamped = Math.max(KEY_MIN, Math.min(KEY_MAX, value));
+  if (clamped !== currentKeySemitones) {
+    hapticTick();
+  } else if (value !== clamped) {
+    // 上限/下限に達していて、それ以上動かせない
+    hapticWarning();
+  }
+  currentKeySemitones = clamped;
   renderKeyDisplay();
   updatePlaybackRate();
 }
@@ -1361,10 +1417,18 @@ function setEqBandValue(bandIndex, gain) {
 }
 
 // 各バンドのrangeスライダー：通常のクリック/キーボード操作にも対応
+const eqLastTickValues = new Array(EQ_FREQS.length).fill(0);
 for (let i = 0; i < EQ_FREQS.length; i++) {
   const slider = document.getElementById("eqBand" + i);
   if (slider) {
-    slider.oninput = e => setEqBandValue(i, parseFloat(e.target.value));
+    slider.oninput = e => {
+      const gain = parseFloat(e.target.value);
+      if (gain !== eqLastTickValues[i]) {
+        hapticTick();
+        eqLastTickValues[i] = gain;
+      }
+      setEqBandValue(i, gain);
+    };
   }
 }
 
@@ -1477,8 +1541,11 @@ const eqPopup = document.getElementById("eqPopup");
 if (eqToggleBtn && eqPopup) {
   eqToggleBtn.onclick = (e) => {
     e.stopPropagation();
-    eqPopup.classList.toggle("open");
-    eqToggleBtn.classList.toggle("active", eqPopup.classList.contains("open"));
+    hapticTap();
+    const willOpen = !eqPopup.classList.contains("open");
+    eqPopup.classList.toggle("open", willOpen);
+    eqToggleBtn.classList.toggle("active", willOpen);
+    if (willOpen) keepPopupInViewport(eqToggleBtn, eqPopup);
   };
   eqPopup.onclick = (e) => {
     e.stopPropagation();
@@ -1491,6 +1558,40 @@ if (eqToggleBtn && eqPopup) {
 
 // VOL / SPEED / KEY ポップアップの開閉（同じ開閉パターンを共通化）
 const avPopupInstances = [];
+
+// ポップアップがボタンの下に開くと画面外（下方向）にはみ出す場合、
+// 上に開き直す（画面内に必ず収まるようにする）。
+// popup要素は position: absolute で toggleBtn の直近の position:relative 祖先を基準に配置されるため、
+// 実際の画面内での収まり具合は getBoundingClientRect() で毎回判定し直す必要がある。
+function keepPopupInViewport(toggleBtn, popup) {
+  // 一旦「下に開く」基準の状態に戻してから採寸する（前回「上開き」のままだと採寸がずれるため）
+  popup.classList.remove("open-upward");
+
+  // 表示状態でないと正確な高さが取れないため、次のフレームで採寸する
+  requestAnimationFrame(() => {
+    const btnRect = toggleBtn.getBoundingClientRect();
+    const popupRect = popup.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+
+    const spaceBelow = viewportHeight - btnRect.bottom;
+    const spaceAbove = btnRect.top;
+
+    // 下方向に十分な余白がなく、上方向の方が広ければ上に開く
+    if (spaceBelow < popupRect.height + 16 && spaceAbove > spaceBelow) {
+      popup.classList.add("open-upward");
+    }
+
+    // 横方向も画面外にはみ出していたら、右端に揃えず画面内に収める
+    const popupRectAfter = popup.getBoundingClientRect();
+    if (popupRectAfter.left < 8) {
+      popup.style.left = "8px";
+      popup.style.right = "auto";
+    } else {
+      popup.style.left = "";
+      popup.style.right = "";
+    }
+  });
+}
 
 function setupAvPopup(toggleBtnId, popupId) {
   const toggleBtn = document.getElementById(toggleBtnId);
@@ -1508,6 +1609,7 @@ function setupAvPopup(toggleBtnId, popupId) {
   toggleBtn.onclick = (e) => {
     e.stopPropagation();
     if (toggleBtn.disabled) return;
+    hapticTap();
 
     const willOpen = !popup.classList.contains("open");
     // VOL/SPEED/KEYは排他：開く前に他の全ポップアップを閉じる
@@ -1520,6 +1622,7 @@ function setupAvPopup(toggleBtnId, popupId) {
 
     popup.classList.toggle("open", willOpen);
     toggleBtn.classList.toggle("active", willOpen);
+    if (willOpen) keepPopupInViewport(toggleBtn, popup);
   };
   popup.onclick = (e) => {
     e.stopPropagation();
@@ -1719,6 +1822,7 @@ document.querySelectorAll(".vbar").forEach((bar, index) => {
 const loopToggleBtn = document.getElementById("loopToggleBtn");
 if (loopToggleBtn) {
   loopToggleBtn.onclick = () => {
+    hapticTap();
     loopEnabled = !loopEnabled;
     loopToggleBtn.style.opacity = loopEnabled ? "1" : "0.4";
     loopToggleBtn.style.borderColor = loopEnabled ? "var(--accent-primary)" : "rgba(255, 255, 255, 0.08)";
@@ -1753,6 +1857,7 @@ function applyRepeatModeUI() {
 
 if (allRepeatToggleBtn) {
   allRepeatToggleBtn.onclick = () => {
+    hapticTap();
     repeatMode = repeatMode === "off" ? "one" : repeatMode === "one" ? "all" : "off";
     applyRepeatModeUI();
   };
@@ -2061,14 +2166,27 @@ function renderPinList() {
 
     const delBtn = document.createElement("button");
     delBtn.textContent = "✕";
+    delBtn.className = "del-btn";
     delBtn.style.color = "#ef4444";
     delBtn.onclick = (e) => {
       e.stopPropagation();
-      pins.splice(i, 1);
-      renderPins();
-      renderSegments();
-      renderPinList();
-      savePins();
+      if (delBtn.classList.contains("confirm")) {
+        hapticWarning();
+        pins.splice(i, 1);
+        renderPins();
+        renderSegments();
+        renderPinList();
+        savePins();
+      } else {
+        hapticTap();
+        delBtn.classList.add("confirm");
+        delBtn.textContent = "✓";
+        clearTimeout(delBtn._confirmTimer);
+        delBtn._confirmTimer = setTimeout(() => {
+          delBtn.classList.remove("confirm");
+          delBtn.textContent = "✕";
+        }, 3000);
+      }
     };
     div.appendChild(delBtn);
 
@@ -2078,20 +2196,7 @@ function renderPinList() {
   });
 }
 
-// Keyboard Shortcuts の折りたたみトグル処理（デフォルトは閉じた状態）
-const shortcutsHeader = document.getElementById("shortcutsHeader");
-if (shortcutsHeader) {
-  shortcutsHeader.onclick = () => {
-    const section = document.getElementById("shortcutsSection");
-    const icon = document.getElementById("shortcutsIcon");
-    section.classList.toggle("open");
-    if (section.classList.contains("open")) {
-      icon.textContent = "▲";
-    } else {
-      icon.textContent = "▼";
-    }
-  };
-}
+// Keyboard Shortcuts はヘッダーのポップアップ(shortcutsToggleBtn/shortcutsPopup)に統合済み
 
 // スマホ専用タブ切り替え（Time&Vol / Speed&Key / Markers / Playlist）
 // デフォルトは "time"。
@@ -2153,7 +2258,10 @@ function setMobileTab(tabName) {
 }
 
 mobileTabBtns.forEach(btn => {
-  btn.onclick = () => setMobileTab(btn.getAttribute("data-tab"));
+  btn.onclick = () => {
+    hapticTap();
+    setMobileTab(btn.getAttribute("data-tab"));
+  };
 });
 
 // 画面幅がPC⇔スマホの境界を跨いだ時にも再配置する
@@ -2166,6 +2274,34 @@ if (mobileTabMedia.addEventListener) {
 setMobileTab("markers");
 
 // スマホ幅でtop-controlsを画面下部固定にした際、元の位置の高さ分をスペーサーで確保する
+// SP幅ではPlay/Repeatボタン(#playbackButtonsGroup)を#topControls内のLoopの左（#playbackButtonsSlot）に移動する。
+// PC幅では元の位置（TIME行の右側）に戻す。
+const playbackButtonsGroup = document.getElementById("playbackButtonsGroup");
+const playbackButtonsSlot = document.getElementById("playbackButtonsSlot");
+let playbackButtonsOrigin = null;
+if (playbackButtonsGroup) {
+  playbackButtonsOrigin = {
+    parent: playbackButtonsGroup.parentNode,
+    nextSibling: playbackButtonsGroup.nextSibling
+  };
+}
+
+function applyPlaybackButtonsLayout() {
+  if (!playbackButtonsGroup || !playbackButtonsSlot || !playbackButtonsOrigin) return;
+
+  if (isMobileLayout()) {
+    if (playbackButtonsGroup.parentNode !== playbackButtonsSlot) {
+      playbackButtonsSlot.appendChild(playbackButtonsGroup);
+    }
+  } else {
+    if (playbackButtonsGroup.parentNode === playbackButtonsSlot) {
+      playbackButtonsOrigin.parent.insertBefore(playbackButtonsGroup, playbackButtonsOrigin.nextSibling);
+    }
+  }
+}
+applyPlaybackButtonsLayout();
+window.addEventListener("resize", applyPlaybackButtonsLayout);
+
 function syncTopControlsSpacerHeight() {
   const topControls = document.getElementById("topControls");
   const spacer = document.getElementById("topControlsSpacer");
@@ -2186,8 +2322,132 @@ window.addEventListener("resize", syncTopControlsSpacerHeight);
 
 window.onload = () => {
   updatePlayButtonState();
+  applyPlaybackButtonsLayout();
   syncTopControlsSpacerHeight();
 };
+
+// ============================================================
+// ハプティクス（対応デバイスのみ、非対応環境では何も起きず安全に無視される）
+// docs/ui-motion-haptics-design.md の4パターンに対応：
+//   tap     : ボタン全般の押下、タブ切替、ポップアップ開閉、スウォッチ選択
+//   tick    : スライダーが目盛りの区切りを跨いだ瞬間（呼び出し側で間引くこと）
+//   success : マーカー追加、Export完了など「達成」の区切り
+//   warning : 削除確認、エラー、範囲の上限/下限到達など注意を引きたい場面
+// ============================================================
+function hapticTap() {
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+function hapticTick() {
+  if (navigator.vibrate) navigator.vibrate(6);
+}
+function hapticSuccess() {
+  if (navigator.vibrate) navigator.vibrate([15, 40, 15]);
+}
+function hapticWarning() {
+  if (navigator.vibrate) navigator.vibrate([20, 60, 20, 60, 20]);
+}
+
+// ============================================================
+// エクスポートモーダル：開閉と、Range/Effects/FileName等の状態管理
+// ============================================================
+const exportToggleBtn = document.getElementById("exportToggleBtn");
+const exportModalOverlay = document.getElementById("exportModalOverlay");
+const exportModalCloseBtn = document.getElementById("exportModalCloseBtn");
+const exportRangeAll = document.getElementById("exportRangeAll");
+const exportRangeMarker = document.getElementById("exportRangeMarker");
+const exportMarkerSelect = document.getElementById("exportMarkerSelect");
+const exportFileNameInput = document.getElementById("exportFileName");
+const exportRunBtn = document.getElementById("exportRunBtn");
+const exportStatusEl = document.getElementById("exportStatus");
+
+// currentFileNameの拡張子を除いた部分を、エクスポートファイル名の初期値として使う
+function suggestExportFileName() {
+  if (!currentFileName || currentFileName === "No file loaded") return "output";
+  const dot = currentFileName.lastIndexOf(".");
+  return dot > 0 ? currentFileName.slice(0, dot) : currentFileName;
+}
+
+// 有効なマーカー（ON状態）のペア一覧をプルダウンに反映する
+function populateExportMarkerSelect() {
+  const activePins = pins.filter(p => p.enabled).sort((a, b) => a.t - b.t);
+  exportMarkerSelect.innerHTML = "";
+
+  if (activePins.length < 2) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No marker pairs available";
+    exportMarkerSelect.appendChild(opt);
+    exportMarkerSelect.disabled = true;
+    if (exportRangeMarker) exportRangeMarker.disabled = true;
+    return;
+  }
+
+  if (exportRangeMarker) exportRangeMarker.disabled = false;
+  for (let i = 0; i < activePins.length - 1; i++) {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = `#${i + 1} (${activePins[i].t.toFixed(2)}s) → #${i + 2} (${activePins[i + 1].t.toFixed(2)}s)`;
+    exportMarkerSelect.appendChild(opt);
+  }
+  exportMarkerSelect.disabled = !exportRangeMarker.checked;
+}
+
+function setExportStatus(text, kind) {
+  exportStatusEl.textContent = text || "";
+  exportStatusEl.classList.remove("error", "success");
+  if (kind) exportStatusEl.classList.add(kind);
+}
+
+function openExportModal() {
+  hapticTap();
+  exportFileNameInput.value = suggestExportFileName();
+  populateExportMarkerSelect();
+  setExportStatus("");
+  exportModalOverlay.classList.add("open");
+}
+
+function closeExportModal() {
+  hapticTap();
+  exportModalOverlay.classList.remove("open");
+}
+
+if (exportToggleBtn) {
+  exportToggleBtn.onclick = () => openExportModal();
+}
+if (exportModalCloseBtn) {
+  exportModalCloseBtn.onclick = () => closeExportModal();
+}
+if (exportModalOverlay) {
+  // オーバーレイの背景部分（モーダル本体の外側）をクリックしたら閉じる
+  exportModalOverlay.onclick = (e) => {
+    if (e.target === exportModalOverlay) closeExportModal();
+  };
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && exportModalOverlay && exportModalOverlay.classList.contains("open")) {
+    closeExportModal();
+  }
+});
+
+if (exportRangeAll) {
+  exportRangeAll.onchange = () => {
+    exportMarkerSelect.disabled = true;
+  };
+}
+if (exportRangeMarker) {
+  exportRangeMarker.onchange = () => {
+    exportMarkerSelect.disabled = !exportRangeMarker.checked || exportMarkerSelect.options.length === 0 || exportMarkerSelect.options[0].value === "";
+  };
+}
+
+if (exportRunBtn) {
+  exportRunBtn.onclick = () => {
+    // 実際のレンダリング・書き出し処理は次のステップで実装する。
+    // ここではUIの状態確認のみ行う。
+    hapticTap();
+    setExportStatus("Export processing is not implemented yet.", "error");
+  };
+}
 
 // 背景の周波数アナライザー描画
 const bgCanvas = document.getElementById("bgAnalyzer");
