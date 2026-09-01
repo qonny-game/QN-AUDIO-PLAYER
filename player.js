@@ -81,193 +81,319 @@ function getAudioCtx() {
 }
 
 // ============================================================
-// 本格ピッチシフト（テンポ固定・音程のみ変更）
-// soundbank-pitch-shift (mmckegg, MIT) を元にインライン実装。
-// 標準のWeb Audioノード（DelayNode/GainNode/BufferSourceNode）のみで
-// 構成されており、AudioWorkletや外部CDNへの依存がない。
-// <audio>要素からの MediaElementAudioSourceNode にそのまま接続できるため、
-// 既存の再生・シーク・マーカー・プレイリスト機構を一切変更せずに導入できる。
+// 本格ピッチシフト（テンポ固定・音程のみ変更、音質重視）
+// 位相ボコーダー（Phase Vocoder）をAudioWorkletProcessorとして自前実装。
+// 外部CDN・外部ライブラリへの依存は一切なく、このファイル内のソースコードを
+// Blob URL化してAudioContext.audioWorklet.addModule()に渡すことで、
+// ネットワーク環境に左右されず確実に動作する。
+//
+// アルゴリズム概要：
+//  1. 入力音声をオーバーラップさせた窓(Hann窓)付きフレームに分割（STFT分析）
+//  2. FFTで周波数領域に変換し、各ビンの位相の増分から真の瞬時周波数を推定
+//  3. ピッチ比に応じて振幅スペクトルをビン単位でシフト（周波数領域ピッチシフト）
+//  4. シフト後のビンに対し、目標ホップサイズに合わせて位相を蓄積し直す
+//  5. IFFTで時間領域に戻し、Hann窓を掛けてオーバーラップ加算（OLA）で合成
+// この方式（周波数領域ビンシフト、時間伸縮なし）は、テンポを一切変えずに
+// 音程だけを動かせるため、SPEEDとKEYが完全に独立するという要件に合致する。
 // ============================================================
-function createJungleNode(context) {
-  var delayTime = 0.100;
-  var fadeTime = 0.050;
-  var bufferTime = 0.100;
 
-  function createFadeBuffer(ctx, activeTime, fade) {
-    var length1 = activeTime * ctx.sampleRate;
-    var length2 = (activeTime - 2 * fade) * ctx.sampleRate;
-    var length = length1 + length2;
-    var buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-    var p = buffer.getChannelData(0);
-    var fadeLength = fade * ctx.sampleRate;
-    var fadeIndex1 = fadeLength;
-    var fadeIndex2 = length1 - fadeLength;
-    for (var i = 0; i < length1; ++i) {
-      var value;
-      if (i < fadeIndex1) value = Math.sqrt(i / fadeLength);
-      else if (i >= fadeIndex2) value = Math.sqrt(1 - (i - fadeIndex2) / fadeLength);
-      else value = 1;
-      p[i] = value;
+const PHASE_VOCODER_WORKLET_SOURCE = `
+// in-place Radix-2 FFT。re/imは同じ長さ(2のべき乗)のFloat32Array。
+// inverse=trueでIFFT（結果はNで正規化済み）。
+function fft(re, im, inverse) {
+  const n = re.length;
+  if (n <= 1) return;
+
+  // ビット反転並び替え
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let tRe = re[i]; re[i] = re[j]; re[j] = tRe;
+      let tIm = im[i]; im[i] = im[j]; im[j] = tIm;
     }
-    for (var j = length1; j < length; ++j) p[j] = 0;
-    return buffer;
   }
 
-  function createDelayTimeBuffer(ctx, activeTime, fade, shiftUp) {
-    var length1 = activeTime * ctx.sampleRate;
-    var length2 = (activeTime - 2 * fade) * ctx.sampleRate;
-    var length = length1 + length2;
-    var buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-    var p = buffer.getChannelData(0);
-    for (var i = 0; i < length1; ++i) {
-      p[i] = shiftUp ? (length1 - i) / length : i / length1;
+  const sign = inverse ? 1 : -1;
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = (sign * 2 * Math.PI) / len;
+    const wRe = Math.cos(ang);
+    const wIm = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let j = 0; j < len / 2; j++) {
+        const uRe = re[i + j];
+        const uIm = im[i + j];
+        const vRe = re[i + j + len / 2] * curRe - im[i + j + len / 2] * curIm;
+        const vIm = re[i + j + len / 2] * curIm + im[i + j + len / 2] * curRe;
+        re[i + j] = uRe + vRe;
+        im[i + j] = uIm + vIm;
+        re[i + j + len / 2] = uRe - vRe;
+        im[i + j + len / 2] = uIm - vIm;
+        const nextRe = curRe * wRe - curIm * wIm;
+        const nextIm = curRe * wIm + curIm * wRe;
+        curRe = nextRe;
+        curIm = nextIm;
+      }
     }
-    for (var j = length1; j < length; ++j) p[j] = 0;
-    return buffer;
   }
 
-  var input = context.createGain();
-  var output = context.createGain();
-
-  var mod1 = context.createBufferSource();
-  var mod2 = context.createBufferSource();
-  var mod3 = context.createBufferSource();
-  var mod4 = context.createBufferSource();
-
-  var shiftDownBuffer = createDelayTimeBuffer(context, bufferTime, fadeTime, false);
-  var shiftUpBuffer = createDelayTimeBuffer(context, bufferTime, fadeTime, true);
-  mod1.buffer = shiftDownBuffer;
-  mod2.buffer = shiftDownBuffer;
-  mod3.buffer = shiftUpBuffer;
-  mod4.buffer = shiftUpBuffer;
-  mod1.loop = true;
-  mod2.loop = true;
-  mod3.loop = true;
-  mod4.loop = true;
-
-  var mod1Gain = context.createGain();
-  var mod2Gain = context.createGain();
-  var mod3Gain = context.createGain();
-  mod3Gain.gain.value = 0;
-  var mod4Gain = context.createGain();
-  mod4Gain.gain.value = 0;
-
-  mod1.connect(mod1Gain);
-  mod2.connect(mod2Gain);
-  mod3.connect(mod3Gain);
-  mod4.connect(mod4Gain);
-
-  var modGain1 = context.createGain();
-  var modGain2 = context.createGain();
-  var delay1 = context.createDelay();
-  var delay2 = context.createDelay();
-
-  mod1Gain.connect(modGain1);
-  mod2Gain.connect(modGain2);
-  mod3Gain.connect(modGain1);
-  mod4Gain.connect(modGain2);
-  modGain1.connect(delay1.delayTime);
-  modGain2.connect(delay2.delayTime);
-
-  var fade1 = context.createBufferSource();
-  var fade2 = context.createBufferSource();
-  var fadeBuffer = createFadeBuffer(context, bufferTime, fadeTime);
-  fade1.buffer = fadeBuffer;
-  fade2.buffer = fadeBuffer;
-  fade1.loop = true;
-  fade2.loop = true;
-
-  var mix1 = context.createGain();
-  var mix2 = context.createGain();
-  mix1.gain.value = 0;
-  mix2.gain.value = 0;
-  fade1.connect(mix1.gain);
-  fade2.connect(mix2.gain);
-
-  input.connect(delay1);
-  input.connect(delay2);
-  delay1.connect(mix1);
-  delay2.connect(mix2);
-  mix1.connect(output);
-  mix2.connect(output);
-
-  var t = context.currentTime + 0.050;
-  var t2 = t + bufferTime - fadeTime;
-  mod1.start(t);
-  mod2.start(t2);
-  mod3.start(t);
-  mod4.start(t2);
-  fade1.start(t);
-  fade2.start(t2);
-
-  function setDelay(dt) {
-    modGain1.gain.setTargetAtTime(0.5 * dt, 0, 0.010);
-    modGain2.gain.setTargetAtTime(0.5 * dt, 0, 0.010);
-  }
-
-  function setPitchOffset(mult) {
-    if (mult > 0) {
-      mod1Gain.gain.value = 0;
-      mod2Gain.gain.value = 0;
-      mod3Gain.gain.value = 1;
-      mod4Gain.gain.value = 1;
-    } else {
-      mod1Gain.gain.value = 1;
-      mod2Gain.gain.value = 1;
-      mod3Gain.gain.value = 0;
-      mod4Gain.gain.value = 0;
+  if (inverse) {
+    for (let i = 0; i < n; i++) {
+      re[i] /= n;
+      im[i] /= n;
     }
-    setDelay(delayTime * Math.abs(mult));
   }
-
-  setDelay(delayTime);
-
-  return { input: input, output: output, setPitchOffset: setPitchOffset };
 }
 
-function semitonesToMultiplier(x) {
-  // soundbank-pitch-shift の多項式近似をそのまま踏襲（正の値は5次多項式、負の値は線形）
-  if (x < 0) {
-    return x / 12;
+// 入力用の累積バッファ：追記のみ・読み取りは非破壊（consumeで明示的に先頭を捨てる）。
+// STFTはオーバーラップして同じ区間を繰り返し読む必要があるため、
+// 「読んだら消える」FIFOではなく、この形の方が正しく実装できる。
+class AccumBuffer {
+  constructor() {
+    this.data = new Float32Array(0);
+    this.length = 0;
   }
-  var a5 = 1.8149080040913423e-7;
-  var a4 = -0.000019413043101157434;
-  var a3 = 0.0009795096626987743;
-  var a2 = -0.014147877819596033;
-  var a1 = 0.23005591195033048;
-  var a0 = 0.02278153473118749;
-  var x1 = x, x2 = x * x, x3 = x * x * x, x4 = x * x * x * x, x5 = x * x * x * x * x;
-  return a0 + x1 * a1 + x2 * a2 + x3 * a3 + x4 * a4 + x5 * a5;
+  push(chunk) {
+    const merged = new Float32Array(this.length + chunk.length);
+    merged.set(this.data.subarray(0, this.length), 0);
+    merged.set(chunk, this.length);
+    this.data = merged;
+    this.length = merged.length;
+  }
+  // 先頭からframeSize分をコピーして返す（データは消費しない）
+  peek(frameSize) {
+    const out = new Float32Array(frameSize);
+    out.set(this.data.subarray(0, Math.min(frameSize, this.length)));
+    return out;
+  }
+  // 先頭からn分を破棄する
+  consume(n) {
+    if (n >= this.length) {
+      this.data = new Float32Array(0);
+      this.length = 0;
+      return;
+    }
+    this.data = this.data.slice(n);
+    this.length = this.data.length;
+  }
 }
 
-// PitchShiftノード（GainNodeベースのラッパー: input/outputはAudioNodeそのもの）
+// 出力用のオーバーラップ加算(OLA)バッファ：各フレームの合成結果を「加算」で書き込み、
+// 先頭から確定した分だけ順次取り出す。
+class OlaBuffer {
+  constructor(size) {
+    this.data = new Float32Array(size);
+    this.readPos = 0; // このインデックスより前は既に出力済み・未使用
+    this.writeBase = 0; // 次にaddするフレームの書き込み開始オフセット（readPos基準の相対値ではなく絶対値）
+    this.size = size;
+  }
+  // offsetは「現在のreadPosからの相対位置」ではなく、これまでの書き込み進行に対する絶対オフセットで管理する。
+  addAt(absOffset, samples) {
+    for (let i = 0; i < samples.length; i++) {
+      const idx = (absOffset + i) % this.size;
+      this.data[idx] += samples[i];
+    }
+  }
+  // absPosから n サンプル分を取り出し、取り出した領域はゼロクリアする（加算バッファの再利用のため）
+  drain(absPos, n, out) {
+    for (let i = 0; i < n; i++) {
+      const idx = (absPos + i) % this.size;
+      out[i] = this.data[idx];
+      this.data[idx] = 0;
+    }
+  }
+}
+
+class PhaseVocoderProcessor extends AudioWorkletProcessor {
+  static get parameterDescriptors() {
+    return [{ name: "pitchSemitones", defaultValue: 0, minValue: -24, maxValue: 24 }];
+  }
+
+  constructor() {
+    super();
+    this.frameSize = 2048;
+    this.hopSize = this.frameSize / 4; // 75%オーバーラップ
+    this.channels = 2;
+
+    this.inputBuf = [new AccumBuffer(), new AccumBuffer()];
+    // OLAリングは十分な余裕を持たせる（frameSizeの数倍）
+    this.olaSize = this.frameSize * 8;
+    this.outputOla = [new OlaBuffer(this.olaSize), new OlaBuffer(this.olaSize)];
+    this.olaWritePos = [0, 0]; // 次にOLA書き込みする絶対位置（フレームごとにhopSizeずつ進む）
+    this.olaReadPos = [0, 0];  // 次に出力として取り出す絶対位置
+    this.availableOut = [0, 0]; // olaWritePos - olaReadPos に相当する、出力可能なサンプル数の目安
+
+    this.window = new Float32Array(this.frameSize);
+    for (let i = 0; i < this.frameSize; i++) {
+      // Hann窓
+      this.window[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (this.frameSize - 1));
+    }
+
+    this.lastPhase = [new Float32Array(this.frameSize / 2 + 1), new Float32Array(this.frameSize / 2 + 1)];
+    this.sumPhase = [new Float32Array(this.frameSize / 2 + 1), new Float32Array(this.frameSize / 2 + 1)];
+
+    this.omega = new Float32Array(this.frameSize / 2 + 1);
+    for (let k = 0; k <= this.frameSize / 2; k++) {
+      this.omega[k] = (2 * Math.PI * this.hopSize * k) / this.frameSize;
+    }
+
+    // Hann窓・75%オーバーラップ(hop = frameSize/4)でのOLA正規化ゲイン。
+    // 窓を2回(分析・合成)掛けるため、理論上の合計ゲインの逆数を掛けて振幅を正しく戻す。
+    this.olaGain = 1 / 1.5;
+  }
+
+  processChannel(ch, pitchRatio) {
+    const frameSize = this.frameSize;
+    const hopSize = this.hopSize;
+    const half = frameSize / 2;
+
+    const frame = this.inputBuf[ch].peek(frameSize);
+    this.inputBuf[ch].consume(hopSize);
+
+    const re = new Float32Array(frameSize);
+    const im = new Float32Array(frameSize);
+    for (let i = 0; i < frameSize; i++) {
+      re[i] = frame[i] * this.window[i];
+      im[i] = 0;
+    }
+
+    fft(re, im, false);
+
+    const magnitude = new Float32Array(half + 1);
+    const phase = new Float32Array(half + 1);
+    for (let k = 0; k <= half; k++) {
+      magnitude[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
+      phase[k] = Math.atan2(im[k], re[k]);
+    }
+
+    // 真の瞬時周波数を求め、位相を蓄積し直す（位相ボコーダーの核心部）
+    const trueFreq = new Float32Array(half + 1);
+    for (let k = 0; k <= half; k++) {
+      let deltaPhase = phase[k] - this.lastPhase[ch][k];
+      this.lastPhase[ch][k] = phase[k];
+      deltaPhase -= this.omega[k];
+      let deltaPhaseWrapped = ((deltaPhase + Math.PI) % (2 * Math.PI)) - Math.PI;
+      if (deltaPhaseWrapped < -Math.PI) deltaPhaseWrapped += 2 * Math.PI;
+      trueFreq[k] = this.omega[k] + deltaPhaseWrapped;
+    }
+
+    // ピッチシフト：振幅スペクトルをビン単位でシフト（テンポは変えず音程だけ動かす）
+    const shiftedMag = new Float32Array(half + 1);
+    const shiftedFreq = new Float32Array(half + 1);
+    for (let k = 0; k <= half; k++) {
+      const dst = Math.round(k * pitchRatio);
+      if (dst >= 0 && dst <= half) {
+        shiftedMag[dst] += magnitude[k];
+        shiftedFreq[dst] = trueFreq[k] * pitchRatio;
+      }
+    }
+
+    for (let k = 0; k <= half; k++) {
+      this.sumPhase[ch][k] += shiftedFreq[k];
+      const outPhase = this.sumPhase[ch][k];
+      re[k] = shiftedMag[k] * Math.cos(outPhase);
+      im[k] = shiftedMag[k] * Math.sin(outPhase);
+      if (k > 0 && k < half) {
+        re[frameSize - k] = re[k];
+        im[frameSize - k] = -im[k];
+      }
+    }
+
+    fft(re, im, true);
+
+    // 合成窓を掛けてからOLAバッファに加算する（開始位置はこれまでの書き込み進行分＝olaWritePos）
+    const synthesized = new Float32Array(frameSize);
+    for (let i = 0; i < frameSize; i++) {
+      synthesized[i] = re[i] * this.window[i] * this.olaGain;
+    }
+    this.outputOla[ch].addAt(this.olaWritePos[ch], synthesized);
+    this.olaWritePos[ch] += hopSize;
+    this.availableOut[ch] += hopSize;
+  }
+
+  process(inputs, outputs, parameters) {
+    const input = inputs[0];
+    const output = outputs[0];
+    if (!output || output.length === 0) return true;
+
+    const pitchSemitones = parameters.pitchSemitones[0];
+    const pitchRatio = Math.pow(2, pitchSemitones / 12);
+
+    const numChannels = Math.min((input && input.length) || 0, this.channels) || 1;
+
+    for (let ch = 0; ch < numChannels; ch++) {
+      if (input && input[ch] && input[ch].length > 0) {
+        this.inputBuf[ch].push(input[ch]);
+      }
+      while (this.inputBuf[ch].length >= this.frameSize) {
+        this.processChannel(ch, pitchRatio);
+      }
+
+      if (output[ch]) {
+        const need = output[ch].length;
+        if (this.availableOut[ch] >= need) {
+          this.outputOla[ch].drain(this.olaReadPos[ch], need, output[ch]);
+          this.olaReadPos[ch] += need;
+          this.availableOut[ch] -= need;
+        } else {
+          output[ch].fill(0);
+        }
+      }
+    }
+    // モノラル入力をステレオ出力にも複製する
+    if (numChannels === 1 && output.length > 1) {
+      output[1].set(output[0]);
+    }
+
+    return true;
+  }
+}
+
+registerProcessor("phase-vocoder-processor", PhaseVocoderProcessor);
+`;
+
+
+// AudioWorkletProcessorのソースをBlob化してモジュールとして登録するためのURL。
+// 1つのAudioContextにつき一度だけ登録すればよい。
+let phaseVocoderWorkletModuleAdded = null;
+
+async function ensurePhaseVocoderWorklet(audioContext) {
+  if (phaseVocoderWorkletModuleAdded === audioContext) return;
+  const blob = new Blob([PHASE_VOCODER_WORKLET_SOURCE], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  try {
+    await audioContext.audioWorklet.addModule(url);
+    phaseVocoderWorkletModuleAdded = audioContext;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+// PitchShiftノード（AudioWorkletNodeベース）。
+// setupAudioGraphからは非同期で初期化されるため、生成直後は無音扱いにしておき、
+// 準備が整い次第、音声グラフに接続し直す。
 function createPitchShiftNode(audioContext) {
-  var jungle = createJungleNode(audioContext);
-  var input = audioContext.createGain();
-  var wet = audioContext.createGain();
-  var dry = audioContext.createGain();
-  var output = audioContext.createGain();
-  dry.gain.value = 0;
-
-  input.connect(wet);
-  input.connect(dry);
-  wet.connect(jungle.input);
-  jungle.output.connect(output);
-  dry.connect(output);
-
-  jungle.setPitchOffset(semitonesToMultiplier(0));
+  const node = new AudioWorkletNode(audioContext, "phase-vocoder-processor", {
+    numberOfInputs: 1,
+    numberOfOutputs: 1,
+    outputChannelCount: [2]
+  });
 
   return {
-    input: input,
-    output: output,
-    // connect/disconnectをinput/outputに委譲し、通常のAudioNodeのように扱えるようにする
-    connect: function(dest) { return output.connect(dest); },
-    disconnect: function() { return output.disconnect.apply(output, arguments); },
+    node: node,
+    input: node,
+    output: node,
+    connect: function(dest) { return node.connect(dest); },
+    disconnect: function() { return node.disconnect.apply(node, arguments); },
     setTransposeSemitones: function(semitones) {
-      jungle.setPitchOffset(semitonesToMultiplier(semitones));
+      const param = node.parameters.get("pitchSemitones");
+      if (param) param.setTargetAtTime(semitones, audioContext.currentTime, 0.01);
     }
   };
 }
+
 
 // リアルタイム周波数アナライザー（背景ビジュアライザー用）
 let analyserNode = null;
@@ -278,11 +404,11 @@ const EQ_FREQS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 let eqFilters = []; // BiquadFilterNode[10]
 
 // 本格ピッチシフト（テンポ固定で音程のみ変更）。
-// createPitchShiftNode() が例外を投げた場合のみ、速度連動フォールバックに切り替える。
+// AudioWorkletの初期化に失敗した場合のみ、速度連動フォールバックに切り替える。
 let pitchShiftNode = null;
 let pitchShiftAvailable = false;
 
-function setupAudioGraph() {
+async function setupAudioGraph() {
   if (analyserSetupDone) return;
   analyserSetupDone = true;
 
@@ -308,10 +434,12 @@ function setupAudioGraph() {
   analyserNode.fftSize = 256;
   analyserNode.smoothingTimeConstant = 0.8;
 
-  // 本格ピッチシフトの初期化を試みる。
+  // 本格ピッチシフト（位相ボコーダー、AudioWorklet）の初期化を試みる。
   // 成功すれば source -> pitchShiftNode -> EQ -> analyser -> destination
   // 失敗すれば     source ->                EQ -> analyser -> destination （playbackRateで速度連動キー変更にフォールバック）
   try {
+    if (!ctx.audioWorklet) throw new Error("AudioWorklet is not supported in this browser");
+    await ensurePhaseVocoderWorklet(ctx);
     pitchShiftNode = createPitchShiftNode(ctx);
     pitchShiftAvailable = true;
   } catch (err) {
@@ -334,6 +462,7 @@ function setupAudioGraph() {
 
   // 音声グラフが確定してからKey/Speedの現在値を反映する
   updatePlaybackRate();
+  updateKeyControlAvailability();
 }
 
 async function decodeWaveform(file, token) {
@@ -451,6 +580,14 @@ const volumeDisplay = document.getElementById("volumeDisplay");
 if (volumeDisplay) {
   volumeDisplay.textContent = audio.volume.toFixed(2);
 }
+
+// VOL/SPEED/KEYボタン内に現在値を表示する共通ヘルパー
+function updateAvToggleValue(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+updateAvToggleValue("volToggleValue", Math.round(audio.volume * 100) + "%");
 
 // レインボー／同系色フェードテーマ：常時色を変化させてアクセントカラーを更新する
 let rainbowAnimId = null;
@@ -790,7 +927,7 @@ function loadFile(file) {
   audio.load();
   updatePlaybackRate();
 
-  setupAudioGraph();
+  setupAudioGraph().catch(err => console.warn("setupAudioGraph failed:", err));
 
   // 波形解析（非同期・別トークンで前回分を無効化）
   waveformPeaks = null;
@@ -919,7 +1056,7 @@ function jumpToNextMarker() {
   prevTime = nextPin.t;
   audio.play();
   updatePlayButtonState();
-  renderSegments();
+  renderSegments(getActiveSegment(nextPin.t));
   setTimeout(() => { isSeeking = false; }, 150);
 }
 
@@ -952,7 +1089,7 @@ function jumpToPrevMarker() {
   prevTime = targetPin.t;
   audio.play();
   updatePlayButtonState();
-  renderSegments();
+  renderSegments(getActiveSegment(targetPin.t));
   setTimeout(() => { isSeeking = false; }, 150);
 }
 
@@ -976,6 +1113,13 @@ document.addEventListener("keydown", e => {
     const loopBtn = document.getElementById("loopToggleBtn");
     if (loopBtn) loopBtn.click();
   }
+  else if (e.ctrlKey && (e.key === "r" || e.key === "R")) {
+    e.preventDefault();
+    const speedResetBtnEl = document.getElementById("speedResetBtn");
+    if (speedResetBtnEl) speedResetBtnEl.click();
+    const keyResetBtnEl = document.getElementById("keyResetBtn");
+    if (keyResetBtnEl && !keyResetBtnEl.disabled) keyResetBtnEl.click();
+  }
   else if (e.key === "r" || e.key === "R") {
     e.preventDefault();
     const allRepeatBtn = document.getElementById("allRepeatToggleBtn");
@@ -984,6 +1128,24 @@ document.addEventListener("keydown", e => {
   else if (e.key === "p" || e.key === "P" || e.key === "m" || e.key === "M") {
     e.preventDefault();
     addCurrentPin();
+  }
+  else if (e.ctrlKey && e.key === "ArrowRight") {
+    e.preventDefault();
+    setSpeed(currentSpeed + 0.01);
+  }
+  else if (e.ctrlKey && e.key === "ArrowLeft") {
+    e.preventDefault();
+    setSpeed(currentSpeed - 0.01);
+  }
+  else if (e.ctrlKey && e.key === "ArrowUp") {
+    e.preventDefault();
+    const keyUpBtnEl = document.getElementById("keyUpBtn");
+    if (!keyUpBtnEl || !keyUpBtnEl.disabled) setKeySemitones(currentKeySemitones + 1);
+  }
+  else if (e.ctrlKey && e.key === "ArrowDown") {
+    e.preventDefault();
+    const keyDownBtnEl = document.getElementById("keyDownBtn");
+    if (!keyDownBtnEl || !keyDownBtnEl.disabled) setKeySemitones(currentKeySemitones - 1);
   }
   else if (e.key === "ArrowRight") {
     e.preventDefault();
@@ -1001,7 +1163,7 @@ document.addEventListener("keydown", e => {
       prevTime = activePins[0].t;
       audio.play();
       updatePlayButtonState();
-      renderSegments();
+      renderSegments(getActiveSegment(activePins[0].t));
       setTimeout(() => { isSeeking = false; }, 150);
     }
   }
@@ -1013,7 +1175,7 @@ document.addEventListener("keydown", e => {
       prevTime = activePins[activePins.length - 1].t;
       audio.play();
       updatePlayButtonState();
-      renderSegments();
+      renderSegments(getActiveSegment(activePins[activePins.length - 1].t));
       setTimeout(() => { isSeeking = false; }, 150);
     }
   }
@@ -1037,7 +1199,7 @@ document.addEventListener("keydown", e => {
       prevTime = activePins[index].t;
       audio.play();
       updatePlayButtonState();
-      renderSegments();
+      renderSegments(getActiveSegment(activePins[index].t));
       setTimeout(() => { isSeeking = false; }, 150);
     }
   }
@@ -1050,37 +1212,46 @@ if (volumeInput) {
     const val = parseFloat(e.target.value);
     audio.volume = val;
     if (volumeDisplay) volumeDisplay.textContent = val.toFixed(2);
+    updateAvToggleValue("volToggleValue", Math.round(val * 100) + "%");
     localStorage.setItem("mp3player_volume", val);
   };
 }
 
 // 再生速度と音程（Key）の制御。
-// pitchShiftAvailable が true の場合（ピッチシフトノード初期化成功時）:
-//   Speedはテンポのみ変更(audio.playbackRate)、Keyは音程のみ変更(pitchShiftNode)し、完全に独立して動く。
-// false の場合（フォールバック）:
-//   2^(semitones/12) をSpeedに掛け合わせて playbackRate に反映し、疑似的にKeyを表現する。
+// pitchShiftAvailable が true の場合（位相ボコーダー初期化成功時、高音質）:
+//   audio.preservesPitch = true にし、ブラウザネイティブの高品質な実装でSpeed変更時の音程を自動維持する。
+//   Keyは自前の位相ボコーダー(pitchShiftNode)で音程のみ変更する。
+//   結果、SpeedとKeyは完全に独立して動く（どちらを動かしても他方に影響しない）。
+// false の場合（AudioWorklet非対応ブラウザ等でのフォールバック）:
+//   audio.preservesPitch = false にし、2^(semitones/12) をSpeedに掛け合わせて
+//   playbackRateに反映することで、疑似的にKey変更を表現する（この場合のみSpeedとKeyが連動する）。
 let currentSpeed = 1.0;
 let currentKeySemitones = 0;
-
-// 音程維持をオフにし、フォールバック時にplaybackRateの変化がそのまま音程にも反映されるようにする
-audio.preservesPitch = false;
-audio.mozPreservesPitch = false;
-audio.webkitPreservesPitch = false;
 
 function updatePlaybackRate() {
   if (pitchShiftAvailable && pitchShiftNode) {
     // 本格版：テンポと音程を完全に分離
+    audio.preservesPitch = true;
+    audio.mozPreservesPitch = true;
+    audio.webkitPreservesPitch = true;
     audio.playbackRate = currentSpeed;
     try {
       pitchShiftNode.setTransposeSemitones(currentKeySemitones);
     } catch (e) {
       // 何らかの理由でノードが壊れていたら以降はフォールバックに切り替える
       pitchShiftAvailable = false;
+      updateKeyControlAvailability();
+      audio.preservesPitch = false;
+      audio.mozPreservesPitch = false;
+      audio.webkitPreservesPitch = false;
       const rate = currentSpeed * Math.pow(2, currentKeySemitones / 12);
       audio.playbackRate = rate;
     }
   } else {
-    // 簡易版：SpeedとKeyを合成
+    // 簡易版：SpeedとKeyを合成（音程維持はオフにし、playbackRateの変化がそのまま音程にも反映されるようにする）
+    audio.preservesPitch = false;
+    audio.mozPreservesPitch = false;
+    audio.webkitPreservesPitch = false;
     const rate = currentSpeed * Math.pow(2, currentKeySemitones / 12);
     audio.playbackRate = rate;
   }
@@ -1088,9 +1259,22 @@ function updatePlaybackRate() {
 
 const speedRange = document.getElementById("speedRange");
 const speedDisplay = document.getElementById("speedDisplay");
+const SPEED_MIN = 0.5;
+const SPEED_MAX = 1.5;
+updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
+
+function setSpeed(value) {
+  currentSpeed = Math.round(Math.max(SPEED_MIN, Math.min(SPEED_MAX, value)) * 100) / 100;
+  speedRange.value = currentSpeed;
+  speedDisplay.textContent = currentSpeed.toFixed(2);
+  updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
+  updatePlaybackRate();
+}
+
 speedRange.oninput = e => {
   currentSpeed = parseFloat(e.target.value);
   speedDisplay.textContent = currentSpeed.toFixed(2);
+  updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
   updatePlaybackRate();
 };
 
@@ -1100,6 +1284,7 @@ if (speedResetBtn) {
     currentSpeed = 1.0;
     speedRange.value = "1.0";
     speedDisplay.textContent = "1.00";
+    updateAvToggleValue("speedToggleValue", "1.00x");
     updatePlaybackRate();
   };
 }
@@ -1119,6 +1304,7 @@ function renderKeyDisplay() {
     keyStepperFill.style.width = pct + "%";
     keyStepperFill.style.left = currentKeySemitones >= 0 ? "50%" : (50 - pct) + "%";
   }
+  updateAvToggleValue("keyToggleValue", (currentKeySemitones > 0 ? "+" : "") + currentKeySemitones);
 }
 
 function setKeySemitones(value) {
@@ -1136,6 +1322,32 @@ const keyResetBtn = document.getElementById("keyResetBtn");
 if (keyResetBtn) keyResetBtn.onclick = () => setKeySemitones(0);
 
 renderKeyDisplay();
+
+// ピッチシフト(位相ボコーダー)の準備が整ったらKEY操作を有効化し、
+// グレーアウトと「SOON」バッジを解除する。失敗時は無効のまま維持する。
+function updateKeyControlAvailability() {
+  const keyToggleBtn = document.getElementById("keyToggleBtn");
+  const badge = keyToggleBtn ? keyToggleBtn.querySelector(".key-disabled-badge") : null;
+
+  if (pitchShiftAvailable) {
+    [keyToggleBtn, keyResetBtn, keyUpBtn, keyDownBtn].forEach(el => {
+      if (el) el.disabled = false;
+    });
+    if (keyToggleBtn) {
+      keyToggleBtn.classList.remove("key-disabled");
+      keyToggleBtn.title = "Key";
+    }
+    if (badge) badge.remove();
+  } else {
+    [keyToggleBtn, keyResetBtn, keyUpBtn, keyDownBtn].forEach(el => {
+      if (el) el.disabled = true;
+    });
+    if (keyToggleBtn) {
+      keyToggleBtn.classList.add("key-disabled");
+      keyToggleBtn.title = "Key change is unavailable in this browser (AudioWorklet not supported)";
+    }
+  }
+}
 
 // 10バンド・グラフィックイコライザーのUI制御
 function setEqBandValue(bandIndex, gain) {
@@ -1319,12 +1531,12 @@ setupAvPopup("volToggleBtn", "volPopup");
 setupAvPopup("speedToggleBtn", "speedPopup");
 setupAvPopup("keyToggleBtn", "keyPopup");
 
-function getActiveSegment() {
+function getActiveSegment(atTime) {
   const dur = audio.duration;
   const activePins = pins.filter(p => p.enabled).map(p => p.t);
   if (!dur || activePins.length < 2) return null;
 
-  const ct = audio.currentTime;
+  const ct = atTime !== undefined ? atTime : audio.currentTime;
 
   for (let i = 0; i < activePins.length - 1; i++) {
     const start = activePins[i];
@@ -1406,6 +1618,7 @@ function updateBars() {
       if (prevTime < end && ct >= end) {
         audio.currentTime = start;
         isJumping = true;
+        renderSegments({ start, end });
         setTimeout(() => {
           isJumping = false;
         }, 200);
@@ -1453,7 +1666,7 @@ document.querySelectorAll(".vbar").forEach((bar, index) => {
     audio.currentTime = clickedTime;
     prevTime = clickedTime;
 
-    renderSegments();
+    renderSegments(getActiveSegment(clickedTime));
     audio.play();
     updatePlayButtonState();
 
@@ -1623,6 +1836,7 @@ function renderPins() {
           prevTime = pinObj.t;
           audio.play();
           updatePlayButtonState();
+          renderSegments(getActiveSegment(pinObj.t));
           setTimeout(() => { isSeeking = false; }, 150);
           enterMoveMode(i);
         }
@@ -1633,7 +1847,7 @@ function renderPins() {
         prevTime = pinObj.t;
         audio.play();
         updatePlayButtonState();
-        renderSegments();
+        renderSegments(getActiveSegment(pinObj.t));
         setTimeout(() => { isSeeking = false; }, 150);
       }
     }
@@ -1662,7 +1876,7 @@ function renderPins() {
   }
 }
 
-function renderSegments() {
+function renderSegments(overrideSegment) {
   const dur = audio.duration;
   if (!dur) return;
 
@@ -1672,7 +1886,9 @@ function renderSegments() {
 
   if (!loopEnabled) return;
 
-  const active = getActiveSegment();
+  // ループジャンプ直後など、audio.currentTimeの読み取りタイミングに左右されず
+  // 確実に正しい区間を描画したい場合は、呼び出し側から区間を明示的に渡す。
+  const active = overrideSegment || getActiveSegment();
   if (!active) return;
 
   const { s1, s2, s3, s4, s5 } = getSegments(dur);
@@ -1705,6 +1921,7 @@ function renderSegments() {
         prevTime = active.start;
         audio.play();
         updatePlayButtonState();
+        renderSegments(active);
         setTimeout(() => { isSeeking = false; }, 150);
       };
 
@@ -1823,7 +2040,7 @@ function renderPinList() {
       prevTime = pinObj.t;
       audio.play(); 
       updatePlayButtonState();
-      renderSegments();
+      renderSegments(getActiveSegment(pinObj.t));
       setTimeout(() => { isSeeking = false; }, 150);
     };
     div.appendChild(infoSpan);
