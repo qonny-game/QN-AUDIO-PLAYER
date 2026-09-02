@@ -1432,15 +1432,6 @@ for (let i = 0; i < EQ_FREQS.length; i++) {
   }
 }
 
-const eqResetBtn = document.getElementById("eqResetBtn");
-if (eqResetBtn) {
-  eqResetBtn.onclick = () => {
-    for (let i = 0; i < EQ_FREQS.length; i++) setEqBandValue(i, 0);
-    const presetSelect = document.getElementById("eqPresetSelect");
-    if (presetSelect) presetSelect.value = "flat";
-  };
-}
-
 // EQプリセット。各配列はEQ_FREQS([31,62,125,250,500,1000,2000,4000,8000,16000])の順に対応する10個のdB値。
 const EQ_PRESETS = {
   flat:   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -1456,21 +1447,28 @@ function applyEqPreset(presetName) {
   values.forEach((gain, i) => setEqBandValue(i, gain));
 }
 
-const eqPresetSelect = document.getElementById("eqPresetSelect");
-if (eqPresetSelect) {
-  eqPresetSelect.onchange = (e) => {
-    const preset = e.target.value;
-    if (preset === "custom") return; // ユーザーが手動で調整した状態はそのまま維持
-    applyEqPreset(preset);
-  };
+// プリセットボタンの選択状態(active)を更新する。nameがnullなら「どれも選ばれていない(Custom相当)」状態にする。
+function setActiveEqPresetButton(name) {
+  document.querySelectorAll(".eq-preset-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-preset") === name);
+  });
 }
 
-// バンドを手動で操作したらプリセット選択を「Custom」表示に戻す
+document.querySelectorAll(".eq-preset-btn").forEach(btn => {
+  btn.onclick = () => {
+    hapticTap();
+    const preset = btn.getAttribute("data-preset");
+    applyEqPreset(preset);
+    setActiveEqPresetButton(preset);
+  };
+});
+
+// バンドを手動で操作したら、どのプリセットボタンも選択されていない状態に戻す
 for (let i = 0; i < EQ_FREQS.length; i++) {
   const slider = document.getElementById("eqBand" + i);
   if (slider) {
     slider.addEventListener("input", () => {
-      if (eqPresetSelect) eqPresetSelect.value = "custom";
+      setActiveEqPresetButton(null);
     });
   }
 }
@@ -1496,8 +1494,7 @@ if (eqBandsEl) {
       }
     });
     if (changed) {
-      const presetSelect = document.getElementById("eqPresetSelect");
-      if (presetSelect) presetSelect.value = "custom";
+      setActiveEqPresetButton(null);
     }
   }
 
@@ -1535,26 +1532,41 @@ if (eqBandsEl) {
   });
 }
 
-// EQポップアップの開閉
+// EQモーダルの開閉（Exportモーダルと同じパターン）
 const eqToggleBtn = document.getElementById("eqToggleBtn");
-const eqPopup = document.getElementById("eqPopup");
-if (eqToggleBtn && eqPopup) {
+const eqModalOverlay = document.getElementById("eqModalOverlay");
+const eqModalCloseBtn = document.getElementById("eqModalCloseBtn");
+
+function openEqModal() {
+  hapticTap();
+  if (eqModalOverlay) eqModalOverlay.classList.add("open");
+}
+
+function closeEqModal() {
+  hapticTap();
+  if (eqModalOverlay) eqModalOverlay.classList.remove("open");
+}
+
+if (eqToggleBtn) {
   eqToggleBtn.onclick = (e) => {
     e.stopPropagation();
-    hapticTap();
-    const willOpen = !eqPopup.classList.contains("open");
-    eqPopup.classList.toggle("open", willOpen);
-    eqToggleBtn.classList.toggle("active", willOpen);
-    if (willOpen) keepPopupInViewport(eqToggleBtn, eqPopup);
+    openEqModal();
   };
-  eqPopup.onclick = (e) => {
-    e.stopPropagation();
-  };
-  document.addEventListener("click", () => {
-    eqPopup.classList.remove("open");
-    eqToggleBtn.classList.remove("active");
-  });
 }
+if (eqModalCloseBtn) {
+  eqModalCloseBtn.onclick = () => closeEqModal();
+}
+if (eqModalOverlay) {
+  // オーバーレイの背景部分（モーダル本体の外側）をクリックしたら閉じる
+  eqModalOverlay.onclick = (e) => {
+    if (e.target === eqModalOverlay) closeEqModal();
+  };
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && eqModalOverlay && eqModalOverlay.classList.contains("open")) {
+    closeEqModal();
+  }
+});
 
 // VOL / SPEED / KEY ポップアップの開閉（同じ開閉パターンを共通化）
 const avPopupInstances = [];
@@ -2216,7 +2228,7 @@ document.querySelectorAll(".mobile-tab-panel").forEach(panel => {
   });
 });
 
-let currentMobileTab = "markers";
+let currentMobileTab = "basic";
 
 function applyMobileTabLayout() {
   const isMobile = mobileTabMedia.matches;
@@ -2257,25 +2269,9 @@ function setMobileTab(tabName) {
   applyMobileTabLayout();
 }
 
-mobileTabBtns.forEach(btn => {
-  btn.onclick = () => {
-    hapticTap();
-    setMobileTab(btn.getAttribute("data-tab"));
-  };
-});
-
-// 画面幅がPC⇔スマホの境界を跨いだ時にも再配置する
-if (mobileTabMedia.addEventListener) {
-  mobileTabMedia.addEventListener("change", applyMobileTabLayout);
-} else if (mobileTabMedia.addListener) {
-  mobileTabMedia.addListener(applyMobileTabLayout);
-}
-
-setMobileTab("markers");
-
-// スマホ幅でtop-controlsを画面下部固定にした際、元の位置の高さ分をスペーサーで確保する
-// SP幅ではPlay/Repeatボタン(#playbackButtonsGroup)を#topControls内のLoopの左（#playbackButtonsSlot）に移動する。
-// PC幅では元の位置（TIME行の右側）に戻す。
+// playbackButtonsGroup(Play/Repeat)の元の位置を、タブ移動処理が走る前に必ず記録しておく。
+// これを後回しにすると、Basicタブパネルの移動でplaybackButtonsGroupも巻き込まれて位置がずれた後に
+// 記録することになり、元の位置に正しく復元できなくなる。
 const playbackButtonsGroup = document.getElementById("playbackButtonsGroup");
 const playbackButtonsSlot = document.getElementById("playbackButtonsSlot");
 let playbackButtonsOrigin = null;
@@ -2299,22 +2295,187 @@ function applyPlaybackButtonsLayout() {
     }
   }
 }
+
+// ============================================================
+// SELECT FILE・EXPORTは画面幅を問わず、常に
+//   PC幅: TIME行のPlay/Repeatの右（#pcSelectFileSlot）
+//   SP幅: Basicタブの一番下、EQ本体の直後（#mobileSelectFileSlot）
+// のどちらかに存在する（元のサイドバー内・adjust-controls-row内には戻さない）。
+// EQ本体(#eqInlineSection)は従来通りSP幅限定でBasicタブ内に移動、PC幅ではEQモーダル内に戻す。
+// ============================================================
+function createDualSlotMoveController(elementId, mobileSlotId, pcSlotId, insertBeforePcSlot) {
+  const element = document.getElementById(elementId);
+  const mobileSlot = document.getElementById(mobileSlotId);
+  const pcSlot = document.getElementById(pcSlotId);
+  if (!element || !mobileSlot || !pcSlot) return null;
+
+  return function apply() {
+    if (isMobileLayout()) {
+      if (element.parentNode !== mobileSlot) {
+        mobileSlot.appendChild(element);
+      }
+    } else {
+      if (insertBeforePcSlot) {
+        if (element.nextSibling !== pcSlot || element.parentNode !== pcSlot.parentNode) {
+          pcSlot.parentNode.insertBefore(element, pcSlot);
+        }
+      } else {
+        if (element.parentNode !== pcSlot) {
+          pcSlot.appendChild(element);
+        }
+      }
+    }
+  };
+}
+
+// EQセクションはSP幅限定でBasicタブ内（mobileSelectFileSlotの直前）に移動し、
+// PC幅では常にEQモーダル内（元の位置）に戻す（EQはTIME行には移動しない）。
+const eqInlineSection = document.getElementById("eqInlineSection");
+const mobileSelectFileSlotEl = document.getElementById("mobileSelectFileSlot");
+let eqInlineOrigin = null;
+if (eqInlineSection) {
+  eqInlineOrigin = {
+    parent: eqInlineSection.parentNode,
+    nextSibling: eqInlineSection.nextSibling
+  };
+}
+
+function applyEqInlineLayout() {
+  if (!eqInlineSection || !mobileSelectFileSlotEl || !eqInlineOrigin) return;
+  if (isMobileLayout()) {
+    if (eqInlineSection.parentNode !== mobileSelectFileSlotEl.parentNode || eqInlineSection.nextSibling !== mobileSelectFileSlotEl) {
+      mobileSelectFileSlotEl.parentNode.insertBefore(eqInlineSection, mobileSelectFileSlotEl);
+    }
+  } else {
+    if (eqInlineSection.parentNode !== eqInlineOrigin.parent) {
+      eqInlineOrigin.parent.insertBefore(eqInlineSection, eqInlineOrigin.nextSibling);
+    }
+  }
+}
+
+// EXPORTボタン：SP幅ではEQ本体の直後・SELECT FILEの直前、PC幅ではpcSelectFileSlotの直前（Repeatの右、SelectFileより先）
+const applyExportBtnLayout = createDualSlotMoveController("exportToggleBtn", "mobileSelectFileSlot", "pcSelectFileSlot", true);
+
+// SELECT FILE：SP幅ではExportの直後（Basicタブ最後）、PC幅ではpcSelectFileSlotの中（Exportの後）
+const applySelectFileLayout = createDualSlotMoveController("fileUploadWrapper", "mobileSelectFileSlot", "pcSelectFileSlot", false);
+
+function applyMobileBasicExtras() {
+  applyEqInlineLayout();
+  if (applyExportBtnLayout) applyExportBtnLayout();
+  if (applySelectFileLayout) applySelectFileLayout();
+}
+
+mobileTabBtns.forEach(btn => {
+  btn.onclick = () => {
+    hapticTap();
+    setMobileTab(btn.getAttribute("data-tab"));
+    applyPlaybackButtonsLayout();
+    applyMobileBasicExtras();
+  };
+});
+
+// ============================================================
+// 横スワイプでのタブ切替（Basic ⇄ Markers ⇄ Playlist）
+// #mobileTabSlotは縦スクロール領域でもあるため、
+// 「横方向の移動量が縦方向より明確に大きい」場合のみスワイプとして扱い、
+// 縦スクロール操作とは干渉しないようにする。
+// ============================================================
+const MOBILE_TAB_ORDER = ["basic", "markers", "playlist"];
+
+function swipeToAdjacentTab(direction) {
+  // direction: 1で次のタブへ、-1で前のタブへ
+  const idx = MOBILE_TAB_ORDER.indexOf(currentMobileTab);
+  if (idx === -1) return;
+  const nextIdx = idx + direction;
+  if (nextIdx < 0 || nextIdx >= MOBILE_TAB_ORDER.length) return; // 端では何もしない
+  hapticTap();
+  setMobileTab(MOBILE_TAB_ORDER[nextIdx]);
+  applyPlaybackButtonsLayout();
+  applyMobileBasicExtras();
+}
+
+if (mobileTabSlot) {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let swipeDecided = false; // このタッチが横スワイプかどうか一度決まったら以降固定する
+  let isHorizontalSwipe = false;
+
+  mobileTabSlot.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    swipeDecided = false;
+    isHorizontalSwipe = false;
+  }, { passive: true });
+
+  mobileTabSlot.addEventListener("touchmove", e => {
+    if (e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+
+    if (!swipeDecided) {
+      // 一定量動いた時点で、横方向操作か縦スクロール操作かを一度だけ判定する
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+        isHorizontalSwipe = Math.abs(dx) > Math.abs(dy) * 1.5;
+        swipeDecided = true;
+      }
+    }
+  }, { passive: true });
+
+  mobileTabSlot.addEventListener("touchend", e => {
+    if (!swipeDecided || !isHorizontalSwipe) return;
+    const dx = (e.changedTouches[0] ? e.changedTouches[0].clientX : touchStartX) - touchStartX;
+    const SWIPE_THRESHOLD = 50;
+    if (dx <= -SWIPE_THRESHOLD) {
+      swipeToAdjacentTab(1); // 左スワイプ→次のタブ
+    } else if (dx >= SWIPE_THRESHOLD) {
+      swipeToAdjacentTab(-1); // 右スワイプ→前のタブ
+    }
+  }, { passive: true });
+}
+
+// 画面幅がPC⇔スマホの境界を跨いだ時にも再配置する
+if (mobileTabMedia.addEventListener) {
+  mobileTabMedia.addEventListener("change", () => {
+    applyMobileTabLayout();
+    applyPlaybackButtonsLayout();
+    applyMobileBasicExtras();
+  });
+} else if (mobileTabMedia.addListener) {
+  mobileTabMedia.addListener(() => {
+    applyMobileTabLayout();
+    applyPlaybackButtonsLayout();
+    applyMobileBasicExtras();
+  });
+}
+
+setMobileTab("basic");
 applyPlaybackButtonsLayout();
-window.addEventListener("resize", applyPlaybackButtonsLayout);
+applyMobileBasicExtras();
+
+function syncAllMobileLayout() {
+  applyPlaybackButtonsLayout();
+  applyMobileBasicExtras();
+}
+window.addEventListener("resize", syncAllMobileLayout);
 
 function syncTopControlsSpacerHeight() {
   const topControls = document.getElementById("topControls");
   const spacer = document.getElementById("topControlsSpacer");
+  const tabSlot = document.getElementById("mobileTabSlot");
   if (!topControls || !spacer) return;
   if (isMobileLayout()) {
     const h = topControls.getBoundingClientRect().height;
     spacer.style.height = h + "px";
-    // フッターがtopControls(画面下部固定)の裏に隠れないよう、
-    // ページ全体の下側にも同じ高さ分の余白を確保する
-    document.body.style.paddingBottom = h + "px";
+    // SP幅ではbody自体はスクロールしない(overflow: hidden)ため、bodyへのpadding-bottomは意味を持たない。
+    // 実際にスクロールするのは#mobileTabSlotなので、そちらにtopControlsの高さ分の余白を確保し、
+    // スクロール最下部のコンテンツがtopControls(画面下部固定)の裏に隠れないようにする。
+    if (tabSlot) tabSlot.style.paddingBottom = (h + 8) + "px";
+    document.body.style.paddingBottom = "";
   } else {
     spacer.style.height = "0px";
     document.body.style.paddingBottom = "";
+    if (tabSlot) tabSlot.style.paddingBottom = "";
   }
 }
 syncTopControlsSpacerHeight();
@@ -2323,6 +2484,7 @@ window.addEventListener("resize", syncTopControlsSpacerHeight);
 window.onload = () => {
   updatePlayButtonState();
   applyPlaybackButtonsLayout();
+  applyMobileBasicExtras();
   syncTopControlsSpacerHeight();
 };
 

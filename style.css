@@ -303,7 +303,7 @@ body {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  z-index: 100;
+  z-index: 350;
   background: #16161b;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -327,7 +327,7 @@ body {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  z-index: 100;
+  z-index: 350;
   background: #16161b;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -421,57 +421,6 @@ body {
   transform: translateX(18px);
 }
 
-.eq-popup {
-  display: none;
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  z-index: 100;
-  background: #16161b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 18px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-  width: 420px;
-  user-select: none;
-}
-
-.eq-popup.open {
-  display: block;
-}
-
-.eq-popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #f0f0f3;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-#eqResetBtn {
-  font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 10px;
-  background: #2a2a35;
-  color: #8b8b9e;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: all 0.2s;
-}
-
-#eqResetBtn:hover {
-  background: #3a3a48;
-  color: #f0f0f3;
-}
-
 .eq-hint {
   margin: 0 0 14px;
   font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
@@ -479,37 +428,50 @@ body {
   color: #6b6b7b;
 }
 
+/* SP幅でBasicタブ内に移動した時だけ表示する区切り線とタイトル（PC幅のモーダルでは不要） */
+.eq-inline-divider,
+.eq-inline-title {
+  display: none;
+}
+
 .eq-preset-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
-#eqPresetSelect {
-  width: 100%;
+.eq-preset-buttons {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.eq-preset-btn {
+  flex: 1 1 auto;
   padding: 8px 10px;
   background: #22222c;
-  color: #f0f0f3;
+  color: #c8c8d0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238b8b9e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 18px;
-  padding-right: 32px;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
 }
 
-#eqPresetSelect:hover {
+.eq-preset-btn:hover {
   border-color: var(--accent-primary);
+  color: #fff;
 }
 
-#eqPresetSelect:focus {
-  outline: none;
+.eq-preset-btn.active {
+  background: var(--accent-glow);
   border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 .eq-bands {
@@ -742,12 +704,58 @@ body {
 
 #playToggle.playback-inline-btn {
   width: 104px;
-  height: 72px;
+  height: 60px;
 }
 
 #playToggle.playback-inline-btn svg {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
+}
+
+/* PC版TIME行：SELECT FILEとEXPORTはPlayボタンと同じ高さ(60px、マーカーボタンと同程度)に揃え、
+   EXPORTもSELECT FILEと同じグラデーションデザインに統一する。 */
+#playbackButtonsGroup .file-upload-wrapper {
+  width: auto;
+  flex-shrink: 0;
+}
+
+#playbackButtonsGroup .file-upload-btn {
+  width: auto;
+  height: 60px;
+  padding: 0 24px;
+  white-space: nowrap;
+}
+
+#playbackButtonsGroup #exportToggleBtn {
+  flex-shrink: 0;
+  height: 60px;
+  min-height: 0;
+  padding: 0 24px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  box-shadow: 0 6px 20px var(--accent-glow);
+  color: #fff;
+}
+
+#playbackButtonsGroup #exportToggleBtn:hover {
+  background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
+  box-shadow: 0 8px 25px var(--accent-glow);
+}
+
+#playbackButtonsGroup #exportToggleBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+#playbackButtonsGroup #exportToggleBtn .av-toggle-btn-text {
+  flex-direction: row;
+}
+
+#playbackButtonsGroup #exportToggleBtn .av-toggle-btn-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  opacity: 1;
 }
 
 .playback-inline-btn .top-controls-btn-label {
@@ -894,16 +902,38 @@ body {
 }
 
 /* TIME表示（常時）＋ VOL/SPEED/KEY ポップアップボタン群 */
+/* Basicタブ全体を包む1つの箱。TIME行・区切り線・VOL等の行をこの中にまとめる。 */
+.basic-panel-box {
+  background: #16161b;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* overflow: hiddenをやめた分、角丸は最初と最後の子要素に個別に持たせて綺麗に見せる */
+.basic-panel-box > *:first-child {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.basic-panel-box > *:last-child {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* TIME行とVOL行の間の区切り線 */
+.basic-panel-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 0 20px;
+}
+
 .time-controls-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
-  background: #16161b;
   padding: 16px 20px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
   position: relative;
 }
 
@@ -914,11 +944,62 @@ body {
   flex-shrink: 0;
 }
 
+/* PC幅：VOL/SPEED/KEY/EQのボタン列を枠の右端まで幅いっぱいに、隙間なく等間隔に広げる。
+   .av-toggle-btnデフォルトのflex-shrink:0と競合しないよう、flex-grow/shrink/basisを個別に明示して確実に上書きする。 */
+.adjust-controls-row {
+  width: 100%;
+}
+
+.adjust-controls-row .time-controls-buttons {
+  flex-grow: 1;
+  width: 100%;
+  gap: 0;
+}
+
+.adjust-controls-row .header-btn-wrapper {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 0%;
+  min-width: 0;
+}
+
+#volToggleBtn,
+#speedToggleBtn,
+#keyToggleBtn,
+.adjust-controls-row #eqToggleBtn {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 0%;
+  width: 100%;
+  min-width: 0;
+  border-radius: 0;
+  justify-content: center;
+}
+
+/* 隙間をなくした分、ボタン同士の境目が分かるよう縦の区切り線を入れる（両端は枠自体の角丸に任せる） */
+#speedToggleBtn,
+#keyToggleBtn,
+.adjust-controls-row #eqToggleBtn {
+  border-left: none;
+}
+
+#volToggleBtn {
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+.adjust-controls-row #eqToggleBtn {
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+
 .av-toggle-btn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 54px;
+  box-sizing: border-box;
   padding: 10px 18px;
   background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -975,6 +1056,11 @@ body {
   opacity: 0.65;
 }
 
+/* 値表示(av-toggle-btn-value)を持たないボタン(EQ)は、ラベル単体を縦中央に揃える */
+#eqToggleBtn .av-toggle-btn-text {
+  justify-content: center;
+}
+
 .av-toggle-btn.key-disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -996,7 +1082,7 @@ body {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  z-index: 100;
+  z-index: 350;
   background: #16161b;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -1027,11 +1113,6 @@ body {
 .av-popup .control-card {
   min-width: 0;
   width: 100%;
-}
-
-.av-popup.eq-popup {
-  width: 420px;
-  max-width: 90vw;
 }
 
 #loopInfo,
@@ -1172,6 +1253,7 @@ body {
 .control-card {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 6px;
   min-width: 180px;
 }
@@ -1190,7 +1272,10 @@ body {
 }
 
 .control-card input[type="range"] {
+  display: block;
   width: 100%;
+  box-sizing: border-box;
+  margin: 0;
   accent-color: var(--accent-primary);
   cursor: pointer;
 }
@@ -1506,16 +1591,6 @@ body {
   transform: translateY(-2px);
 }
 
-.dnd-hint {
-  margin: 10px 0 0;
-  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b6b7b;
-  text-align: center;
-  letter-spacing: 0.2px;
-}
-
 .shortcut-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1760,6 +1835,86 @@ body.dragover #dropOverlay {
 
 /* --- スマホ表示用スタイル（折りたたみ） --- */
 @media screen and (max-width: 768px) {
+  /* ページ全体のスクロールを止め、ヘッダー〜シークバー〜再生コントロールまでを常に画面内に固定表示し、
+     タブの中身（Basic/Markers/Playlist）だけを独立してスクロールさせる。 */
+  html, body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    padding: 16px 20px 0;
+    align-items: stretch;
+  }
+
+  #appHeader {
+    flex-shrink: 0;
+  }
+
+  .app-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .player-section {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  #vbarContainer {
+    flex-shrink: 0;
+  }
+
+  /* タブ切替UI(mobileTabs)自体は固定エリア側に残し、その中身だけスクロールさせる */
+  #mobileTabs {
+    flex-shrink: 0;
+  }
+
+  /* タブの中身が表示される場所。残りの高さいっぱいを使い、ここだけ独立してスクロールする。
+     画面下部固定のtopControls分の余白(padding-bottom)を持たせ、コンテンツが隠れないようにする。 */
+  #mobileTabSlot:not(:empty) {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary) transparent;
+  }
+
+  /* Webkit系ブラウザ(Chrome/Safari)向けスクロールバーのカスタムデザイン。
+     アプリのダークテーマ・アクセントカラーに合わせた細めのバーにする。 */
+  #mobileTabSlot::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  #mobileTabSlot::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #mobileTabSlot::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 3px;
+    opacity: 0.6;
+  }
+
+  /* サイドバー(Markers/Playlist本体)がスクロール領域内に移動してくるため、外枠の余白は不要にする */
+  .sidebar-section {
+    margin: 0;
+  }
+
+  /* フッターは固定/スクロール構造とは相性が悪いため、SP幅では非表示にする */
+  #appFooter {
+    display: none;
+  }
+
   /* 再生ボタン行を画面下部に常時固定表示（ミニプレイヤー風） */
   #topControls {
     position: fixed;
@@ -1775,10 +1930,12 @@ body.dragover #dropOverlay {
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
   }
 
-  /* 固定化した分、元の位置が空洞にならないよう高さを確保する（JSで実測値をセット） */
+  /* 固定/スクロール構造に変更したことで、#mobileTabSlotのpadding-bottomが
+     topControls分の余白を担うため、body直下のこのスペーサーはもう不要。
+     残したままだとbodyのflexレイアウトの中で高さを消費し、
+     スクロール領域(.app-container)がその分だけ短くなってしまうため非表示にする。 */
   .top-controls-spacer {
-    display: block;
-    width: 100%;
+    display: none;
   }
 
   /* SP幅ではPlay/RepeatがLoopの左（#playbackButtonsSlot）にJSで移動してくる。
@@ -1818,36 +1975,159 @@ body.dragover #dropOverlay {
     gap: 4px;
   }
 
-  /* VOL/SPEED/KEYのポップアップは、ボタン基準の右揃えだと画面からはみ出すため、
-     TIME枠(.time-controls-row)いっぱいに広がる形に切り替える */
+  /* VOL/SPEED/KEYはSP幅では「ボタンを押してポップアップを開く」方式をやめ、
+     常にスライダー等が見えている常時展開表示にする。
+     トグルボタン自体は隠し、中のパネル(.av-popup)をそのまま通常のブロックとして表示する。
+     EQも同様にボタンを隠し、Basicタブ内に移動した帯域バー一式(#eqInlineSection)を常時表示にする。 */
+  #volToggleBtn,
+  #speedToggleBtn,
+  #keyToggleBtn,
+  #eqToggleBtn {
+    display: none;
+  }
+
   .time-controls-buttons .header-btn-wrapper {
     position: static;
+    width: 100%;
   }
 
-  .time-controls-buttons .av-popup {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 0;
-    right: 0;
-    width: auto;
+  .time-controls-buttons .header-btn-wrapper .av-popup {
+    display: block;
+    position: static;
+    opacity: 1;
+    transform: none;
+    width: 100%;
+    box-sizing: border-box;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 14px 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 
-  /* Cグループ(VOL/SPEED/KEY/EQ/EXPORT)は5ボタンあり画面幅からはみ出しやすいため、
-     折り返し可能にしてSP幅でも確実に収まるようにする */
+  /* Basicタブ内の最後のVOL/SPEED/KEY項目には下の境界線を付けない
+     （直後にEQセクションが独自の余白で続くため、二重線を避ける） */
+  .time-controls-buttons .header-btn-wrapper:last-of-type .av-popup {
+    border-bottom: none;
+  }
+
+  /* Basicタブ内は「TIME／VOL／SPEED／KEY／EQ／EXPORT／SELECT FILE」を
+     全て1行ずつ・幅いっぱいの縦積みにする。3列折り返しだった旧レイアウトをやめる。
+     左右パディングは中の.av-popup(常時展開時)側で20px確保するため、
+     ここで重ねて持つと二重パディングになりTIME行より内側にずれて見えるので0にする。 */
   .adjust-controls-row {
     flex-direction: column;
     align-items: stretch;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* TIME行：Play/RepeatはSP幅で固定エリアに移動済みのため、TIME表示だけが残る。幅いっぱいに広げる。 */
+  .mobile-tab-panel[data-tab-panel="basic"] .time-controls-row:first-child {
+    justify-content: center;
+  }
+
+  .mobile-tab-panel[data-tab-panel="basic"] .time-controls-row:first-child #timeDisplay {
+    width: 100%;
+    text-align: center;
   }
 
   .adjust-controls-row .time-controls-buttons {
-    flex-wrap: wrap;
-    justify-content: stretch;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 
   .adjust-controls-row .header-btn-wrapper,
   .adjust-controls-row .av-toggle-btn {
-    flex: 1 1 calc(33.333% - 8px);
-    min-width: 90px;
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* EXPORTボタンはSP幅でSELECT FILEと同じデザイン（グラデーション背景・サイズ感）に揃える。
+     JSでEQ本体の直後に移動されるため、adjust-controls-row外でも幅いっぱいになるよう明示する。 */
+  #exportToggleBtn {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 0;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px 16px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px var(--accent-glow);
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  #exportToggleBtn:hover {
+    background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
+    box-shadow: 0 8px 25px var(--accent-glow);
+  }
+
+  #exportToggleBtn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  #exportToggleBtn .av-toggle-btn-text {
+    flex-direction: row;
+  }
+
+  #exportToggleBtn .av-toggle-btn-label {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    opacity: 1;
+  }
+
+  /* EQセクション(帯域バー一式)がBasicタブ内に常時展開で入るため、
+     モーダル用の余白ではなくタブ内の1要素として自然な余白にする。
+     basic-panel-box自体はパディングを持たないため、TIME行と同じ左右20pxをここで揃える。 */
+  #eqInlineSection {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 20px;
+    margin-bottom: 24px;
+  }
+
+  #eqInlineSection .eq-bands {
+    overflow-x: auto;
+  }
+
+  /* KEYとEQの間の区切り線とタイトル。#eqInlineSectionの左右パディング分を打ち消して
+     basic-panel-divider同様に幅いっぱいの線として見せる。 */
+  .eq-inline-divider {
+    display: block;
+    margin: 0 -20px 14px;
+  }
+
+  .eq-inline-title {
+    display: block;
+    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: #8b8b9e;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* SELECT FILEはBasicタブ最後の1行として、他の要素と同じ幅感・左右余白で表示する。
+     下端の余白は#mobileTabSlot側のpadding-bottom(コントロールバー分)と合算されるため、
+     ここでは最小限に留める。 */
+  #mobileSelectFileSlot:not(:empty) {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 20px 4px;
+  }
+
+  #mobileSelectFileSlot .file-upload-wrapper {
+    width: 100%;
   }
 
   /* ヘッダー：ロゴ＋バージョンとファイル名で2行に収め、Color/Analyzer/EQはハンバーガーメニューに格納 */
@@ -1932,14 +2212,14 @@ body.dragover #dropOverlay {
 
   #colorToggleBtn,
   #analyzerToggleBtn,
-  #eqToggleBtn {
+  #shortcutsToggleBtn {
     width: 100%;
     justify-content: flex-start;
   }
 
-  /* ドロップダウン内のポップアップ(Color/EQ)は右揃えではなく、メニューの下にそのまま広がるようにする */
+  /* ドロップダウン内のポップアップ(Color/Shortcuts)は右揃えではなく、メニューの下にそのまま広がるようにする */
   .color-popup,
-  .eq-popup {
+  .shortcuts-popup {
     position: static;
     width: 100%;
     box-shadow: none;
@@ -2004,6 +2284,7 @@ body.dragover #dropOverlay {
     border-bottom: none;
     border-radius: 14px 14px 0 0;
     padding: 6px;
+    margin-top: 4px;
     margin-bottom: -4px; /* .player-sectionのgap(4px)を打ち消してパネルと密着させる */
     position: relative;
     z-index: 1;
@@ -2011,7 +2292,7 @@ body.dragover #dropOverlay {
 
   .mobile-tab-btn {
     flex: 1;
-    padding: 10px 6px;
+    padding: 13px 6px;
     background: transparent;
     border: none;
     border-radius: 10px;
@@ -2036,18 +2317,34 @@ body.dragover #dropOverlay {
     color: #f0f0f3;
   }
 
-  /* タブパネルは選択中のもの以外を隠す */
+  /* タブパネルは選択中のもの以外を隠す。幅は必ず親いっぱいに広げる（タブごとに幅が変わらないようにする） */
   .mobile-tab-panel {
     display: none;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .mobile-tab-panel.mobile-tab-active {
     display: flex;
+    flex-direction: column;
+    width: 100%;
   }
 
   .mobile-tab-panel[data-tab-panel="playlist"].mobile-tab-active,
   .mobile-tab-panel[data-tab-panel="markers"].mobile-tab-active {
     display: block;
+    width: 100%;
+  }
+
+  /* BasicパネルもMarkers/Playlistと同様、タブの直下は上側の角丸をなくして一体化させる */
+  .basic-panel-box {
+    border-radius: 0 0 16px 16px;
+    border-top: none;
+  }
+
+  .basic-panel-box > *:first-child {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
   /* Markers/Playlistタブの中身も同様にタブと一体化。
@@ -2058,7 +2355,7 @@ body.dragover #dropOverlay {
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-top: none;
     border-radius: 0 0 16px 16px;
-    padding: 10px 20px 16px;
+    padding: 10px 20px 6px;
   }
 
   /* SP版はタブ自体に「Markers」「Playlist」の名前が出ているため、
@@ -2138,6 +2435,11 @@ body.dragover #dropOverlay {
   transform: translateY(0) scale(1);
   opacity: 1;
   transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* EQは10バンドのスライダーが横に並ぶため、通常のモーダルより広めの幅を取る */
+.eq-modal {
+  max-width: 560px;
 }
 
 .export-modal-header {
