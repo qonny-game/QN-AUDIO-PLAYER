@@ -37,7 +37,8 @@ function openPlaylistDB() {
 }
 
 // 曲を1件、実体(Blob)ごと保存する。同名ファイルは上書きする。
-async function savePlaylistTrack(file) {
+// savedAtを明示的に指定しない場合は現在時刻（＝新規追加として最後尾）になる。
+async function savePlaylistTrack(file, savedAt) {
   try {
     const db = await openPlaylistDB();
     await new Promise((resolve, reject) => {
@@ -46,7 +47,7 @@ async function savePlaylistTrack(file) {
         name: file.name,
         type: file.type,
         blob: file,
-        savedAt: Date.now()
+        savedAt: typeof savedAt === "number" ? savedAt : Date.now()
       });
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -88,6 +89,14 @@ async function loadAllPlaylistTracks() {
     console.warn("loadAllPlaylistTracks failed:", err);
     return [];
   }
+}
+
+// 現在のplaylist配列の並び順を、IndexedDB側のsavedAtにも反映する
+// （ドラッグ並び替え後、次回起動時にも並び替えた順序が復元されるようにするため）。
+// savedAtに単純増加の連番を振り直すことで、既存のsavedAt昇順ソートと矛盾なく順序を保てる。
+async function persistPlaylistOrder() {
+  const base = Date.now();
+  await Promise.all(playlist.map((track, i) => savePlaylistTrack(track.file, base + i)));
 }
 
 // 波形解析用
@@ -1020,13 +1029,20 @@ function renderPlaylist() {
   playlist.forEach((track, i) => {
     const item = document.createElement("div");
     item.className = "playlistItem";
+    item.dataset.index = i;
     if (i === currentPlaylistIndex) item.classList.add("playing");
+
+    // ドラッグ並び替え用のハンドル（この部分を掴んでドラッグする）
+    const dragHandle = document.createElement("span");
+    dragHandle.className = "playlist-drag-handle";
+    dragHandle.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+    item.appendChild(dragHandle);
 
     const nameSpan = document.createElement("span");
     nameSpan.className = "playlist-name";
     nameSpan.textContent = track.name;
     nameSpan.title = track.name;
-    nameSpan.onclick = () => playTrackAt(i);
+    nameSpan.onclick = () => playTrackAt(parseInt(item.dataset.index, 10));
     item.appendChild(nameSpan);
 
     const delBtn = document.createElement("button");
@@ -1036,7 +1052,7 @@ function renderPlaylist() {
       e.stopPropagation();
       if (delBtn.classList.contains("confirm")) {
         hapticWarning();
-        removeTrackAt(i);
+        removeTrackAt(parseInt(item.dataset.index, 10));
       } else {
         hapticTap();
         delBtn.classList.add("confirm");
@@ -1052,6 +1068,8 @@ function renderPlaylist() {
 
     box.appendChild(item);
   });
+
+  setupPlaylistDragReorder(box);
 }
 
 function removeTrackAt(index) {
@@ -1089,6 +1107,124 @@ function playTrackAt(index) {
   currentPlaylistIndex = index;
   loadFile(playlist[index].file);
   renderPlaylist();
+}
+
+// ============================================================
+// プレイリストのドラッグ並び替え（マウス・タッチ両対応）
+// ドラッグハンドル(.playlist-drag-handle)を掴んで上下にドラッグすると、
+// 通過した位置に応じて他のアイテムを押しのけながら並び替わる。
+// 離した時点でplaylist配列を実際に並び替え、currentPlaylistIndexも追従させる。
+// ============================================================
+function setupPlaylistDragReorder(box) {
+  const handles = box.querySelectorAll(".playlist-drag-handle");
+
+  handles.forEach(handle => {
+    let dragging = false;
+    let draggedItem = null;
+    let placeholder = null;
+    let startY = 0;
+    let itemStartTop = 0;
+
+    function getItems() {
+      return Array.from(box.querySelectorAll(".playlistItem:not(.dragging-ghost)"));
+    }
+
+    function onMove(clientY) {
+      if (!dragging || !draggedItem) return;
+      const dy = clientY - startY;
+      draggedItem.style.transform = `translateY(${dy}px)`;
+
+      // ドラッグ中のアイテムの現在の中心位置を基準に、隣接アイテムと入れ替えるべきか判定する。
+      // DOM順序による場合分けはせず、単純に「ドラッグ中の中心が相手の中心を追い越したか」だけを見る
+      // ことで、上方向・下方向どちらの並び替えも同じロジックでカバーする。
+      const draggedRect = draggedItem.getBoundingClientRect();
+      const draggedCenter = draggedRect.top + draggedRect.height / 2;
+
+      const items = getItems();
+      for (const other of items) {
+        if (other === draggedItem) continue;
+        const otherRect = other.getBoundingClientRect();
+        const otherCenter = otherRect.top + otherRect.height / 2;
+        const otherIsAfter = !!(draggedItem.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+        if (otherIsAfter && draggedCenter > otherCenter) {
+          // otherは元々ドラッグ中の要素より後ろにあったが、ドラッグ中の要素がそれを追い越した
+          // → otherをドラッグ中の要素の前に持ってくる（＝ドラッグ中の要素をotherの後ろに移動）
+          box.insertBefore(draggedItem, other.nextSibling);
+          startY = clientY - dy; // 挿入し直した分、基準位置をずらして飛び跳ねを防ぐ
+          draggedItem.style.transform = "translateY(0px)";
+          break;
+        } else if (!otherIsAfter && draggedCenter < otherCenter) {
+          // otherは元々ドラッグ中の要素より前にあったが、ドラッグ中の要素がそれを追い越した
+          // → ドラッグ中の要素をotherの前に移動
+          box.insertBefore(draggedItem, other);
+          startY = clientY - dy;
+          draggedItem.style.transform = "translateY(0px)";
+          break;
+        }
+      }
+    }
+
+    function onEnd() {
+      if (!dragging) return;
+      dragging = false;
+      if (draggedItem) {
+        draggedItem.classList.remove("dragging");
+        draggedItem.style.transform = "";
+      }
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+
+      // DOM上の現在の並び順から、playlist配列を作り直す
+      const newOrderNames = getItems().map(el => el.dataset.index).map(i => playlist[parseInt(i, 10)]);
+      const playingTrack = currentPlaylistIndex >= 0 ? playlist[currentPlaylistIndex] : null;
+
+      playlist.length = 0;
+      newOrderNames.forEach(t => playlist.push(t));
+
+      // 再生中トラックの新しいインデックスに追従する
+      if (playingTrack) {
+        currentPlaylistIndex = playlist.indexOf(playingTrack);
+      }
+
+      persistPlaylistOrder();
+      renderPlaylist();
+    }
+
+    function onMouseMove(e) { onMove(e.clientY); }
+    function onMouseUp() { onEnd(); }
+    function onTouchMove(e) {
+      if (e.touches.length !== 1) return;
+      e.preventDefault(); // ドラッグ中はページの縦スクロールを止める
+      onMove(e.touches[0].clientY);
+    }
+    function onTouchEnd() { onEnd(); }
+
+    function startDrag(clientY) {
+      draggedItem = handle.closest(".playlistItem");
+      if (!draggedItem) return;
+      dragging = true;
+      startY = clientY;
+      draggedItem.classList.add("dragging");
+      hapticTap();
+    }
+
+    handle.addEventListener("mousedown", e => {
+      e.preventDefault();
+      startDrag(e.clientY);
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    });
+
+    handle.addEventListener("touchstart", e => {
+      if (e.touches.length !== 1) return;
+      startDrag(e.touches[0].clientY);
+      document.addEventListener("touchmove", onTouchMove, { passive: false });
+      document.addEventListener("touchend", onTouchEnd);
+    }, { passive: true });
+  });
 }
 
 function loadFile(file) {
@@ -2720,6 +2856,143 @@ function hapticWarning() {
 }
 
 // ============================================================
+// エクスポート処理本体：AudioBuffer -> WAV変換、OfflineAudioContextでのレンダリング
+// ============================================================
+
+// AudioBufferをWAV(PCM 16bit, リトルエンディアン)形式のBlobに変換する。
+function audioBufferToWavBlob(audioBuffer) {
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const numFrames = audioBuffer.length;
+  const bytesPerSample = 2; // 16bit
+  const blockAlign = numChannels * bytesPerSample;
+  const dataSize = numFrames * blockAlign;
+  const headerSize = 44;
+  const buffer = new ArrayBuffer(headerSize + dataSize);
+  const view = new DataView(buffer);
+
+  function writeString(offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
+
+  // RIFFヘッダー
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeString(8, "WAVE");
+  // fmtチャンク
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true); // fmtチャンクサイズ
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true); // バイトレート
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true); // ビット深度
+  // dataチャンク
+  writeString(36, "data");
+  view.setUint32(40, dataSize, true);
+
+  // チャンネルごとのサンプルデータを取り出しておく
+  const channelData = [];
+  for (let ch = 0; ch < numChannels; ch++) {
+    channelData.push(audioBuffer.getChannelData(ch));
+  }
+
+  // インターリーブしながら16bit PCMに変換して書き込む
+  let offset = headerSize;
+  for (let i = 0; i < numFrames; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      let sample = channelData[ch][i];
+      sample = Math.max(-1, Math.min(1, sample)); // クリッピング
+      const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+      view.setInt16(offset, intSample, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([buffer], { type: "audio/wav" });
+}
+
+// 指定した範囲(startTime〜endTime秒)・エフェクト設定(applySpeed/applyKey/applyEq)で
+// OfflineAudioContextを使って音声をレンダリングし、結果のAudioBufferを返す。
+// 元ファイルは毎回再デコードする（再生用に保持されているAudioBufferがないため、常に正確な結果を得るため）。
+async function renderExportBuffer(startTime, endTime, applySpeed, applyKey, applyEq) {
+  if (currentPlaylistIndex < 0 || !playlist[currentPlaylistIndex]) {
+    throw new Error("No file loaded");
+  }
+  const file = playlist[currentPlaylistIndex].file;
+  const arrayBuffer = await file.arrayBuffer();
+
+  // 一時的なAudioContextでデコードする（decodeAudioDataはOfflineAudioContextでも呼べるが、
+  // 既存のgetAudioCtx()があればそれを使い回した方が余計なコンテキスト生成を避けられる）。
+  const decodeCtx = getAudioCtx();
+  const sourceBuffer = await decodeCtx.decodeAudioData(arrayBuffer.slice(0));
+
+  const speed = applySpeed ? currentSpeed : 1.0;
+  const keySemitones = applyKey ? currentKeySemitones : 0;
+
+  const clampedStart = Math.max(0, Math.min(startTime, sourceBuffer.duration));
+  const clampedEnd = Math.max(clampedStart, Math.min(endTime, sourceBuffer.duration));
+  const rangeDuration = clampedEnd - clampedStart;
+  if (rangeDuration <= 0) {
+    throw new Error("Invalid export range");
+  }
+
+  // 出力の長さは「元の区間長 / 再生速度」（速度を上げれば短く、下げれば長くなる）
+  const outputDuration = rangeDuration / speed;
+  const outputLength = Math.max(1, Math.ceil(outputDuration * sourceBuffer.sampleRate));
+
+  const offlineCtx = new OfflineAudioContext(
+    sourceBuffer.numberOfChannels,
+    outputLength,
+    sourceBuffer.sampleRate
+  );
+
+  const bufferSource = offlineCtx.createBufferSource();
+  bufferSource.buffer = sourceBuffer;
+  bufferSource.playbackRate.value = speed;
+
+  let currentNode = bufferSource;
+
+  // Key（ピッチシフト）：pitchShiftAvailable（AudioWorkletが使える環境）の場合のみ、
+  // 再生画面と同じ位相ボコーダーWorkletを使う。使えない環境ではKeyの適用自体をスキップする
+  // （速度連動フォールバックは書き出し用途とは相性が悪いため、書き出しでは無理に再現しない）。
+  if (applyKey && keySemitones !== 0 && pitchShiftAvailable) {
+    await ensurePhaseVocoderWorklet(offlineCtx);
+    const pitchNode = new AudioWorkletNode(offlineCtx, "phase-vocoder-processor", {
+      numberOfInputs: 1,
+      numberOfOutputs: 1,
+      outputChannelCount: [sourceBuffer.numberOfChannels]
+    });
+    const pitchParam = pitchNode.parameters.get("pitchSemitones");
+    if (pitchParam) pitchParam.setValueAtTime(keySemitones, 0);
+    currentNode.connect(pitchNode);
+    currentNode = pitchNode;
+  }
+
+  // EQ：再生中と同じ10バンドの設定値をそのまま複製して適用する
+  if (applyEq && eqFilters.length > 0) {
+    for (let i = 0; i < eqFilters.length; i++) {
+      const gain = eqFilters[i].gain.value;
+      if (gain === 0) continue; // 変化がないバンドは接続を省略してよい
+      const filter = offlineCtx.createBiquadFilter();
+      filter.type = "peaking";
+      filter.frequency.value = EQ_FREQS[i];
+      filter.Q.value = 1.4;
+      filter.gain.value = gain;
+      currentNode.connect(filter);
+      currentNode = filter;
+    }
+  }
+
+  currentNode.connect(offlineCtx.destination);
+  bufferSource.start(0, clampedStart, rangeDuration);
+
+  const renderedBuffer = await offlineCtx.startRendering();
+  return renderedBuffer;
+}
+
+// ============================================================
 // エクスポートモーダル：開閉と、Range/Effects/FileName等の状態管理
 // ============================================================
 const exportToggleBtn = document.getElementById("exportToggleBtn");
@@ -2813,11 +3086,66 @@ if (exportRangeMarker) {
 }
 
 if (exportRunBtn) {
-  exportRunBtn.onclick = () => {
-    // 実際のレンダリング・書き出し処理は次のステップで実装する。
-    // ここではUIの状態確認のみ行う。
+  exportRunBtn.onclick = async () => {
     hapticTap();
-    setExportStatus("Export processing is not implemented yet.", "error");
+
+    if (currentPlaylistIndex < 0 || !playlist[currentPlaylistIndex]) {
+      setExportStatus("No file loaded.", "error");
+      return;
+    }
+
+    // 書き出す範囲(開始・終了秒)を決定する
+    let startTime = 0;
+    let endTime = audio.duration || 0;
+
+    if (exportRangeMarker && exportRangeMarker.checked) {
+      const selectedIndex = exportMarkerSelect.value;
+      if (selectedIndex === "" || selectedIndex === null) {
+        setExportStatus("Please select a marker pair.", "error");
+        return;
+      }
+      const activePins = pins.filter(p => p.enabled).sort((a, b) => a.t - b.t);
+      const i = parseInt(selectedIndex, 10);
+      if (!activePins[i] || !activePins[i + 1]) {
+        setExportStatus("Invalid marker pair.", "error");
+        return;
+      }
+      startTime = activePins[i].t;
+      endTime = activePins[i + 1].t;
+    }
+
+    const applySpeed = !!(document.getElementById("exportApplySpeed") && document.getElementById("exportApplySpeed").checked);
+    const applyKey = !!(document.getElementById("exportApplyKey") && document.getElementById("exportApplyKey").checked);
+    const applyEq = !!(document.getElementById("exportApplyEq") && document.getElementById("exportApplyEq").checked);
+
+    const fileNameBase = (exportFileNameInput.value || "output").trim() || "output";
+
+    exportRunBtn.disabled = true;
+    setExportStatus("Processing...");
+
+    try {
+      const renderedBuffer = await renderExportBuffer(startTime, endTime, applySpeed, applyKey, applyEq);
+      const wavBlob = audioBufferToWavBlob(renderedBuffer);
+
+      const url = URL.createObjectURL(wavBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileNameBase.toLowerCase().endsWith(".wav") ? fileNameBase : fileNameBase + ".wav";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // ダウンロード用のURLはこの後すぐには不要になるため、少し待ってから解放する
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      setExportStatus("Export complete.", "success");
+      hapticSuccess();
+    } catch (err) {
+      console.warn("Export failed:", err);
+      setExportStatus("Export failed: " + (err && err.message ? err.message : "unknown error"), "error");
+      hapticWarning();
+    } finally {
+      exportRunBtn.disabled = false;
+    }
   };
 }
 

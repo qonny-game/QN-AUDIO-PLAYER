@@ -719,17 +719,28 @@ body {
 }
 
 /* PC版TIME行：SELECT FILEとEXPORTはPlayボタンと同じ高さ(60px、マーカーボタンと同程度)に揃え、
-   EXPORTもSELECT FILEと同じグラデーションデザインに統一する。 */
+   EXPORTもSELECT FILEと同じグラデーションデザインに統一する。
+   file-upload-wrapperはデフォルトdisplay: inline-blockのままだと中の.file-upload-btnとの
+   高さ・位置の計算がexportToggleBtn(単一のボタン要素)と食い違いズレて見えるため、flexにして揃える。 */
 #playbackButtonsGroup .file-upload-wrapper {
+  display: flex;
+  align-items: center;
   width: auto;
+  height: 60px;
   flex-shrink: 0;
 }
 
 #playbackButtonsGroup .file-upload-btn {
   width: auto;
   height: 60px;
+  box-sizing: border-box;
   padding: 0 24px;
   white-space: nowrap;
+}
+
+#playbackButtonsGroup .file-upload-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 #playbackButtonsGroup #exportToggleBtn {
@@ -746,6 +757,7 @@ body {
 #playbackButtonsGroup #exportToggleBtn:hover {
   background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
   box-shadow: 0 8px 25px var(--accent-glow);
+  transform: translateY(-2px);
 }
 
 #playbackButtonsGroup #exportToggleBtn svg {
@@ -1478,7 +1490,7 @@ body {
 
 .playlistItem {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
@@ -1486,7 +1498,8 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 10px;
   font-size: 13px;
-  transition: all 0.2s;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  position: relative;
 }
 
 .playlistItem:hover {
@@ -1497,6 +1510,36 @@ body {
 .playlistItem.playing {
   border-color: var(--accent-primary);
   background: var(--accent-glow);
+}
+
+/* ドラッグ中のアイテムは他より手前に表示し、少し浮いた見た目にする */
+.playlistItem.dragging {
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  cursor: grabbing;
+  transition: none;
+}
+
+.playlist-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: #6b6b7b;
+  cursor: grab;
+  touch-action: none;
+}
+
+.playlist-drag-handle:hover {
+  color: #f0f0f3;
+}
+
+.playlist-drag-handle svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
 
 .playlistItem .playlist-name {
@@ -2191,15 +2234,19 @@ body.dragover #dropOverlay {
   }
 
   #colorToggleBtn,
-  #analyzerToggleBtn,
-  #shortcutsToggleBtn {
+  #analyzerToggleBtn {
     width: 100%;
     justify-content: flex-start;
   }
 
-  /* ドロップダウン内のポップアップ(Color/Shortcuts)は右揃えではなく、メニューの下にそのまま広がるようにする */
-  .color-popup,
+  /* SP幅ではKeyboard Shortcutsをヘッダーメニューから完全に撤去する（ボタン・中身とも非表示） */
+  #shortcutsToggleBtn,
   .shortcuts-popup {
+    display: none;
+  }
+
+  /* ドロップダウン内のポップアップ(Color)は右揃えではなく、メニューの下にそのまま広がるようにする */
+  .color-popup {
     position: static;
     width: 100%;
     box-shadow: none;
