@@ -1409,7 +1409,7 @@ body {
 
 .pinItem {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -1440,6 +1440,51 @@ body {
   font-weight: 500;
   color: #f0f0f3;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.pin-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  padding: 0;
+  background: #2a2a35;
+  color: #8b8b9e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
+}
+
+.pin-edit-btn:hover {
+  background: #3a3a48;
+  color: var(--accent-primary);
+}
+
+.pin-edit-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+.pin-memo-input {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #f0f0f3;
+  background: #14141a;
+  border: 1px solid var(--accent-primary);
+  border-radius: 6px;
+  padding: 5px 8px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
 }
 
 .pinItem button {
@@ -1498,7 +1543,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 10px;
   font-size: 13px;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s ease-out;
   position: relative;
 }
 

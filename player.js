@@ -1121,75 +1121,90 @@ function setupPlaylistDragReorder(box) {
   handles.forEach(handle => {
     let dragging = false;
     let draggedItem = null;
-    let placeholder = null;
     let startY = 0;
-    let itemStartTop = 0;
+    let startIndex = 0; // ドラッグ開始時点でのdraggedItemのDOM上のインデックス
+    let itemHeight = 0; // 1アイテムあたりの高さ(gapを含む)。ドラッグ開始時に実測して固定する。
+    let itemCount = 0;
 
     function getItems() {
-      return Array.from(box.querySelectorAll(".playlistItem:not(.dragging-ghost)"));
+      return Array.from(box.querySelectorAll(".playlistItem"));
     }
 
+    // ドラッグ中のアイテム以外を、最終的にあるべき位置に並べ直す。
+    // draggedItem自体はtransformで見た目だけ動かし続け、実際のDOM順序の変更は
+    // ドラッグ終了時(onEnd)に一度だけ行う（ドラッグ中に頻繁にinsertBeforeし直すと、
+    // その都度レイアウトが変わって基準がずれ、複数要素が一気に動いて見える不具合の原因になっていたため）。
     function onMove(clientY) {
       if (!dragging || !draggedItem) return;
       const dy = clientY - startY;
       draggedItem.style.transform = `translateY(${dy}px)`;
 
-      // ドラッグ中のアイテムの現在の中心位置を基準に、隣接アイテムと入れ替えるべきか判定する。
-      // DOM順序による場合分けはせず、単純に「ドラッグ中の中心が相手の中心を追い越したか」だけを見る
-      // ことで、上方向・下方向どちらの並び替えも同じロジックでカバーする。
-      const draggedRect = draggedItem.getBoundingClientRect();
-      const draggedCenter = draggedRect.top + draggedRect.height / 2;
+      if (itemHeight <= 0) return;
+
+      // dyをアイテム高さで割って「何個分移動したか」を直接求める。
+      // Math.roundにより、半分以上重なったところで初めて順位が入れ替わる自然な挙動になる。
+      const moveSteps = Math.round(dy / itemHeight);
+      let targetIndex = startIndex + moveSteps;
+      targetIndex = Math.max(0, Math.min(itemCount - 1, targetIndex));
 
       const items = getItems();
-      for (const other of items) {
-        if (other === draggedItem) continue;
-        const otherRect = other.getBoundingClientRect();
-        const otherCenter = otherRect.top + otherRect.height / 2;
-        const otherIsAfter = !!(draggedItem.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING);
-
-        if (otherIsAfter && draggedCenter > otherCenter) {
-          // otherは元々ドラッグ中の要素より後ろにあったが、ドラッグ中の要素がそれを追い越した
-          // → otherをドラッグ中の要素の前に持ってくる（＝ドラッグ中の要素をotherの後ろに移動）
-          box.insertBefore(draggedItem, other.nextSibling);
-          startY = clientY - dy; // 挿入し直した分、基準位置をずらして飛び跳ねを防ぐ
-          draggedItem.style.transform = "translateY(0px)";
-          break;
-        } else if (!otherIsAfter && draggedCenter < otherCenter) {
-          // otherは元々ドラッグ中の要素より前にあったが、ドラッグ中の要素がそれを追い越した
-          // → ドラッグ中の要素をotherの前に移動
-          box.insertBefore(draggedItem, other);
-          startY = clientY - dy;
-          draggedItem.style.transform = "translateY(0px)";
-          break;
+      items.forEach((item, currentIndex) => {
+        if (item === draggedItem) return;
+        // このアイテムが現在ドラッグ中アイテムより手前(index的に小さい)にあり、
+        // かつドラッグ中アイテムの移動先がそのアイテムの位置以下になった場合、1つ下にずらす。
+        // 逆に後ろにあり、移動先がそのアイテムの位置以上になった場合は1つ上にずらす。
+        // （実際のDOM順序は変えず、見た目の位置だけtransformでずらす。確定はonEndでまとめて行う。）
+        const originalIndex = parseInt(item.dataset.dragOriginalIndex, 10);
+        let shift = 0;
+        if (originalIndex < startIndex && originalIndex >= targetIndex) {
+          shift = 1; // ドラッグ中アイテムがこのアイテムを追い越して上に来た分、このアイテムは1つ下にずれる
+        } else if (originalIndex > startIndex && originalIndex <= targetIndex) {
+          shift = -1; // ドラッグ中アイテムがこのアイテムを追い越して下に来た分、このアイテムは1つ上にずれる
         }
-      }
+        item.style.transform = shift !== 0 ? `translateY(${shift * itemHeight}px)` : "translateY(0px)";
+      });
+
+      draggedItem.dataset.dragTargetIndex = targetIndex;
     }
 
     function onEnd() {
       if (!dragging) return;
       dragging = false;
-      if (draggedItem) {
-        draggedItem.classList.remove("dragging");
-        draggedItem.style.transform = "";
-      }
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
 
-      // DOM上の現在の並び順から、playlist配列を作り直す
-      const newOrderNames = getItems().map(el => el.dataset.index).map(i => playlist[parseInt(i, 10)]);
-      const playingTrack = currentPlaylistIndex >= 0 ? playlist[currentPlaylistIndex] : null;
+      const targetIndex = draggedItem ? parseInt(draggedItem.dataset.dragTargetIndex || startIndex, 10) : startIndex;
 
-      playlist.length = 0;
-      newOrderNames.forEach(t => playlist.push(t));
+      if (draggedItem) {
+        draggedItem.classList.remove("dragging");
+        draggedItem.style.transform = "";
+      }
+      getItems().forEach(item => { item.style.transform = ""; });
 
-      // 再生中トラックの新しいインデックスに追従する
-      if (playingTrack) {
-        currentPlaylistIndex = playlist.indexOf(playingTrack);
+      // playlist配列を、ドラッグ開始時の元の並び順(dragOriginalIndex)を基準に、
+      // draggedItemだけをtargetIndexの位置に差し替えて作り直す。
+      if (targetIndex !== startIndex) {
+        const originalOrder = getItems()
+          .slice()
+          .sort((a, b) => parseInt(a.dataset.dragOriginalIndex, 10) - parseInt(b.dataset.dragOriginalIndex, 10))
+          .map(el => playlist[parseInt(el.dataset.index, 10)]);
+
+        const movedTrack = originalOrder[startIndex];
+        originalOrder.splice(startIndex, 1);
+        originalOrder.splice(targetIndex, 0, movedTrack);
+
+        const playingTrack = currentPlaylistIndex >= 0 ? playlist[currentPlaylistIndex] : null;
+        playlist.length = 0;
+        originalOrder.forEach(t => playlist.push(t));
+        if (playingTrack) {
+          currentPlaylistIndex = playlist.indexOf(playingTrack);
+        }
+
+        persistPlaylistOrder();
       }
 
-      persistPlaylistOrder();
       renderPlaylist();
     }
 
@@ -1205,9 +1220,31 @@ function setupPlaylistDragReorder(box) {
     function startDrag(clientY) {
       draggedItem = handle.closest(".playlistItem");
       if (!draggedItem) return;
+
+      const items = getItems();
+      itemCount = items.length;
+      startIndex = items.indexOf(draggedItem);
+      if (startIndex === -1) return;
+
+      // ドラッグ開始時点の並び順を、各アイテムのdatasetに固定で記録しておく。
+      // ドラッグ中はDOM順序自体を変えないため、この記録がそのままonMoveでの位置計算の基準になる。
+      items.forEach((item, i) => { item.dataset.dragOriginalIndex = i; });
+
+      // 実際のアイテム1個分の高さ(gap込み)を実測する。2個以上ある時だけ隣接アイテムとの差分から求め、
+      // 1個しかない場合はアイテム自体の高さをそのまま使う。
+      const rect = draggedItem.getBoundingClientRect();
+      if (items.length > 1) {
+        const otherIndex = startIndex === 0 ? 1 : startIndex - 1;
+        const otherRect = items[otherIndex].getBoundingClientRect();
+        itemHeight = Math.abs(otherRect.top - rect.top) || rect.height;
+      } else {
+        itemHeight = rect.height;
+      }
+
       dragging = true;
       startY = clientY;
       draggedItem.classList.add("dragging");
+      draggedItem.dataset.dragTargetIndex = startIndex;
       hapticTap();
     }
 
@@ -1253,7 +1290,7 @@ function loadFile(file) {
     if (savedPins) {
       try {
         const raw = JSON.parse(savedPins);
-        pins = raw.map(p => typeof p === 'number' ? { t: p, enabled: true } : { t: p.t, enabled: p.enabled !== false });
+        pins = raw.map(p => typeof p === 'number' ? { t: p, enabled: true, memo: "" } : { t: p.t, enabled: p.enabled !== false, memo: p.memo || "" });
       } catch (e) { pins = []; }
     } else {
       pins = [];
@@ -1387,7 +1424,7 @@ document.getElementById("playToggle").onclick = togglePlay;
 function addCurrentPin() {
   if (!audio.duration) return;
   hapticSuccess();
-  pins.push({ t: audio.currentTime, enabled: true });
+  pins.push({ t: audio.currentTime, enabled: true, memo: "" });
   pins.sort((a, b) => a.t - b.t);
   renderPins();
   renderSegments();
@@ -2475,8 +2512,12 @@ function renderPinList() {
 
     const infoSpan = document.createElement("span");
     infoSpan.className = "pin-info";
-    infoSpan.textContent = `#${i + 1} - ${pinObj.t.toFixed(2)}s`;
-    
+    // メモが入っていれば時間の代わりにメモを表示し、メモがなければ従来通り時間を表示する
+    infoSpan.textContent = pinObj.memo
+      ? `#${i + 1} - ${pinObj.memo}`
+      : `#${i + 1} - ${pinObj.t.toFixed(2)}s`;
+    if (pinObj.memo) infoSpan.title = pinObj.memo;
+
     infoSpan.onclick = () => { 
       isSeeking = true;
       audio.currentTime = pinObj.t; 
@@ -2487,6 +2528,17 @@ function renderPinList() {
       setTimeout(() => { isSeeking = false; }, 150);
     };
     div.appendChild(infoSpan);
+
+    // メモ編集用の鉛筆ボタン。押すとinfoSpanの表示をテキスト入力に一時的に切り替える。
+    const editBtn = document.createElement("button");
+    editBtn.className = "pin-edit-btn";
+    editBtn.title = "Edit memo";
+    editBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+    editBtn.onclick = (e) => {
+      e.stopPropagation();
+      startPinMemoEdit(div, infoSpan, pinObj, i);
+    };
+    div.appendChild(editBtn);
 
     const toggleBtn = document.createElement("button");
     toggleBtn.className = "toggle-btn";
@@ -2532,6 +2584,50 @@ function renderPinList() {
       list.appendChild(div);
     }
   });
+}
+
+// マーカーのメモ編集：infoSpanをその場でテキスト入力に差し替える。
+// Enterまたはフォーカスアウトで確定し、Escでキャンセルする。
+function startPinMemoEdit(itemDiv, infoSpan, pinObj, index) {
+  if (itemDiv.querySelector(".pin-memo-input")) return; // 既に編集中なら何もしない
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "pin-memo-input";
+  input.value = pinObj.memo || "";
+  input.placeholder = `#${index + 1} - ${pinObj.t.toFixed(2)}s`;
+  input.maxLength = 60;
+
+  infoSpan.style.display = "none";
+  itemDiv.insertBefore(input, infoSpan);
+  input.focus();
+  input.select();
+
+  let finished = false;
+  function commit() {
+    if (finished) return;
+    finished = true;
+    pinObj.memo = input.value.trim();
+    savePins();
+    renderPinList();
+  }
+  function cancel() {
+    if (finished) return;
+    finished = true;
+    renderPinList();
+  }
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancel();
+    }
+  });
+  input.addEventListener("blur", commit);
+  input.addEventListener("click", e => e.stopPropagation());
 }
 
 // Keyboard Shortcuts はヘッダーのポップアップ(shortcutsToggleBtn/shortcutsPopup)に統合済み
