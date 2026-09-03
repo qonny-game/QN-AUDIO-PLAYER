@@ -598,6 +598,12 @@ body {
   margin-bottom: 6px;
 }
 
+/* SP幅限定：MARKERS/PLAYLISTタブ内リスト最上部のアクションボタン（+MARKER, SELECT FILE）。
+   PC幅では他の場所に同じ機能のボタンが既にあるため非表示。 */
+.tab-inline-action-btn {
+  display: none;
+}
+
 .top-controls {
   display: flex;
   gap: 12px;
@@ -818,6 +824,7 @@ body {
 
 .markernav-half:active {
   transform: scale(0.94);
+  background: #2a2a35;
 }
 
 .markernav-half svg {
@@ -829,10 +836,6 @@ body {
 .markernav-half:hover {
   background: #252530;
   color: var(--accent-primary);
-}
-
-.markernav-half:active {
-  background: #2a2a35;
 }
 
 .markernav-left {
@@ -852,17 +855,6 @@ body {
 /* スマホ専用タブUIはPC幅では非表示。中身(.mobile-tab-panel)はPC幅では常に表示されたまま */
 .mobile-tabs {
   display: none;
-}
-
-/* PC幅（768px超）では折りたたみヘッダーは非表示にし、中身を常に展開表示 */
-.collapse-header {
-  display: none;
-}
-
-.collapse-body {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
 #timeDisplay {
@@ -945,9 +937,11 @@ body {
 }
 
 /* PC幅：VOL/SPEED/KEY/EQのボタン列を枠の右端まで幅いっぱいに、隙間なく等間隔に広げる。
-   .av-toggle-btnデフォルトのflex-shrink:0と競合しないよう、flex-grow/shrink/basisを個別に明示して確実に上書きする。 */
+   .av-toggle-btnデフォルトのflex-shrink:0と競合しないよう、flex-grow/shrink/basisを個別に明示して確実に上書きする。
+   width:100%はパディング(左右20px)を含まないcontent-boxのままだと右にはみ出すため、border-boxに明示する。 */
 .adjust-controls-row {
   width: 100%;
+  box-sizing: border-box;
 }
 
 .adjust-controls-row .time-controls-buttons {
@@ -1836,10 +1830,13 @@ body.dragover #dropOverlay {
 /* --- スマホ表示用スタイル（折りたたみ） --- */
 @media screen and (max-width: 768px) {
   /* ページ全体のスクロールを止め、ヘッダー〜シークバー〜再生コントロールまでを常に画面内に固定表示し、
-     タブの中身（Basic/Markers/Playlist）だけを独立してスクロールさせる。 */
+     タブの中身（Basic/Markers/Playlist）だけを独立してスクロールさせる。
+     overscroll-behavior-x: none は、横スワイプ時にブラウザ標準のバウンス/戻る操作等が
+     発生して画面全体がガクッとズレて見える現象を防ぐための保険。 */
   html, body {
     height: 100dvh;
     overflow: hidden;
+    overscroll-behavior-x: none;
   }
 
   body {
@@ -1878,11 +1875,14 @@ body.dragover #dropOverlay {
   }
 
   /* タブの中身が表示される場所。残りの高さいっぱいを使い、ここだけ独立してスクロールする。
-     画面下部固定のtopControls分の余白(padding-bottom)を持たせ、コンテンツが隠れないようにする。 */
+     画面下部固定のtopControls分の余白(padding-bottom)を持たせ、コンテンツが隠れないようにする。
+     overflow-x: hiddenは、横スワイプでのタブ切替操作時にブラウザ標準の横方向スクロール/バウンスが
+     発生し画面全体がズレて見える現象（横方向のオーバースクロール）を防ぐためのもの。 */
   #mobileTabSlot:not(:empty) {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8px;
     scrollbar-width: thin;
@@ -1977,12 +1977,11 @@ body.dragover #dropOverlay {
 
   /* VOL/SPEED/KEYはSP幅では「ボタンを押してポップアップを開く」方式をやめ、
      常にスライダー等が見えている常時展開表示にする。
-     トグルボタン自体は隠し、中のパネル(.av-popup)をそのまま通常のブロックとして表示する。
-     EQも同様にボタンを隠し、Basicタブ内に移動した帯域バー一式(#eqInlineSection)を常時表示にする。 */
+     EQだけはドラッグでの一括描画操作がページのスクロールと競合するため、
+     常時展開はやめてモーダルのまま維持し、ボタンも表示し続ける。 */
   #volToggleBtn,
   #speedToggleBtn,
-  #keyToggleBtn,
-  #eqToggleBtn {
+  #keyToggleBtn {
     display: none;
   }
 
@@ -2047,6 +2046,19 @@ body.dragover #dropOverlay {
     min-width: 0;
   }
 
+  /* EQボタンはSP幅では縦積みの1行に戻るため、PC幅専用の「隣接ボタン連結」用スタイル
+     （角丸なし・左ボーダーなし）を解除し、通常の単独ボタンの見た目に戻す。
+     adjust-controls-row自体は左右パディング0のため、EQボタン単体に左右マージンを持たせて
+     SELECT FILE/Exportボタン（左右20pxパディングの中にある）と横幅の基準を揃える。 */
+  .adjust-controls-row #eqToggleBtn {
+    border-radius: 14px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    width: auto;
+    flex-grow: 0;
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
   /* EXPORTボタンはSP幅でSELECT FILEと同じデザイン（グラデーション背景・サイズ感）に揃える。
      JSでEQ本体の直後に移動されるため、adjust-controls-row外でも幅いっぱいになるよう明示する。 */
   #exportToggleBtn {
@@ -2083,38 +2095,6 @@ body.dragover #dropOverlay {
     font-weight: 600;
     letter-spacing: 1px;
     opacity: 1;
-  }
-
-  /* EQセクション(帯域バー一式)がBasicタブ内に常時展開で入るため、
-     モーダル用の余白ではなくタブ内の1要素として自然な余白にする。
-     basic-panel-box自体はパディングを持たないため、TIME行と同じ左右20pxをここで揃える。 */
-  #eqInlineSection {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 20px;
-    margin-bottom: 24px;
-  }
-
-  #eqInlineSection .eq-bands {
-    overflow-x: auto;
-  }
-
-  /* KEYとEQの間の区切り線とタイトル。#eqInlineSectionの左右パディング分を打ち消して
-     basic-panel-divider同様に幅いっぱいの線として見せる。 */
-  .eq-inline-divider {
-    display: block;
-    margin: 0 -20px 14px;
-  }
-
-  .eq-inline-title {
-    display: block;
-    font-family: var(--font-display, 'Outfit'), sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    color: #8b8b9e;
-    text-transform: uppercase;
-    margin-bottom: 12px;
   }
 
   /* SELECT FILEはBasicタブ最後の1行として、他の要素と同じ幅感・左右余白で表示する。
@@ -2226,50 +2206,6 @@ body.dragover #dropOverlay {
     margin-top: 8px;
   }
 
-  /* コントロールエリア全体の折りたたみ枠 */
-  .collapsible-section {
-    background: #16161b;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  /* 折りたたみのヘッダー（常に表示され、タップで開閉） */
-  .collapse-header {
-    display: flex;
-    padding: 14px 20px;
-    font-family: var(--font-display, 'Outfit'), sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    color: #8b8b9e;
-    text-transform: uppercase;
-    cursor: pointer;
-    background: #1c1c24;
-    justify-content: space-between;
-    align-items: center;
-    user-select: none;
-  }
-
-  .collapse-header:hover {
-    background: #252530;
-    color: #f0f0f3;
-  }
-
-  /* 折りたたみ中身（初期状態は非表示） */
-  .collapse-body {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-    padding: 0 20px;
-  }
-
-  /* 開いたときのスタイル */
-  .collapsible-section.open .collapse-body {
-    max-height: 400px;
-    padding: 20px;
-  }
-
   .control-card {
     min-width: 0;
     width: 100%;
@@ -2355,7 +2291,7 @@ body.dragover #dropOverlay {
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-top: none;
     border-radius: 0 0 16px 16px;
-    padding: 10px 20px 6px;
+    padding: 10px 20px 20px;
   }
 
   /* SP版はタブ自体に「Markers」「Playlist」の名前が出ているため、
@@ -2363,6 +2299,41 @@ body.dragover #dropOverlay {
   .mobile-tab-panel[data-tab-panel="playlist"] .markers-heading-row,
   .mobile-tab-panel[data-tab-panel="markers"] .markers-heading-row {
     display: none;
+  }
+
+  /* SP幅限定：MARKERS/PLAYLISTタブ内リスト最上部のアクションボタン（+MARKER, SELECT FILE）。
+     コントロールバーのbigbtn-accentと同系のアクセントカラーで、横幅いっぱいに表示する。 */
+  .tab-inline-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    background: var(--accent-glow);
+    border: 1px solid var(--accent-primary);
+    border-radius: 12px;
+    color: var(--accent-primary);
+    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+  }
+
+  .tab-inline-action-btn:active {
+    transform: scale(0.98);
+  }
+
+  .tab-inline-action-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex-shrink: 0;
   }
 
   .sidebar-section {

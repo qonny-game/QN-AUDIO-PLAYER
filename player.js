@@ -11,6 +11,85 @@ let prevTime = 0;
 let playlist = []; // { file: File, name: string }[]
 let currentPlaylistIndex = -1;
 
+// ============================================================
+// プレイリスト永続化(IndexedDB)
+// 音声ファイルの実体(Blob)ごとブラウザ内に保存し、ページを再読み込みしても
+// プレイリストが「表示だけ残って再生できない」状態にならないようにする。
+// キーはファイル名（savePins等、既存のマーカー保存キーと合わせる）。
+// ============================================================
+const PLAYLIST_DB_NAME = "qnaudio_playlist_db";
+const PLAYLIST_DB_VERSION = 1;
+const PLAYLIST_STORE_NAME = "tracks";
+
+function openPlaylistDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error("IndexedDB not supported")); return; }
+    const req = indexedDB.open(PLAYLIST_DB_NAME, PLAYLIST_DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(PLAYLIST_STORE_NAME)) {
+        db.createObjectStore(PLAYLIST_STORE_NAME, { keyPath: "name" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// 曲を1件、実体(Blob)ごと保存する。同名ファイルは上書きする。
+async function savePlaylistTrack(file) {
+  try {
+    const db = await openPlaylistDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(PLAYLIST_STORE_NAME, "readwrite");
+      tx.objectStore(PLAYLIST_STORE_NAME).put({
+        name: file.name,
+        type: file.type,
+        blob: file,
+        savedAt: Date.now()
+      });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.warn("savePlaylistTrack failed:", err);
+  }
+}
+
+// 指定ファイル名の曲をストレージから削除する。
+async function deletePlaylistTrack(name) {
+  try {
+    const db = await openPlaylistDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(PLAYLIST_STORE_NAME, "readwrite");
+      tx.objectStore(PLAYLIST_STORE_NAME).delete(name);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (err) {
+    console.warn("deletePlaylistTrack failed:", err);
+  }
+}
+
+// 保存されている全曲を読み込む。File相当のオブジェクト（Blobにname/typeを持たせたもの）の配列を返す。
+async function loadAllPlaylistTracks() {
+  try {
+    const db = await openPlaylistDB();
+    const records = await new Promise((resolve, reject) => {
+      const tx = db.transaction(PLAYLIST_STORE_NAME, "readonly");
+      const req = tx.objectStore(PLAYLIST_STORE_NAME).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+    // savedAt昇順（保存された順）に並べ、BlobをFile相当のオブジェクトに復元する
+    records.sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
+    return records.map(r => new File([r.blob], r.name, { type: r.type || r.blob.type }));
+  } catch (err) {
+    console.warn("loadAllPlaylistTracks failed:", err);
+    return [];
+  }
+}
+
 // 波形解析用
 let waveformPeaks = null; // Float32Array (0-1 正規化された振幅の配列)
 let waveformDecodeToken = 0;
@@ -21,6 +100,7 @@ let currentFileName = "No file loaded";
 
 function setAppTitle(name) {
   currentFileName = name;
+  updateMediaSessionMetadata(name); // Media Session連携。不要なら本行を削除するだけでよい。
   const appTitle = document.getElementById("appTitle");
   const appTitleText = document.getElementById("appTitleText");
   if (!appTitle || !appTitleText) return;
@@ -242,6 +322,41 @@ class PhaseVocoderProcessor extends AudioWorkletProcessor {
     // Hann窓・75%オーバーラップ(hop = frameSize/4)でのOLA正規化ゲイン。
     // 窓を2回(分析・合成)掛けるため、理論上の合計ゲインの逆数を掛けて振幅を正しく戻す。
     this.olaGain = 1 / 1.5;
+
+    // ピッチキーがちょうど0半音の時は、FFT分析・合成を一切通さず入力をそのまま出力する
+    // バイパス経路を使う（丸め誤差やHann窓によるわずかな音質劣化を避けるため）。
+    // FFT経路は約frameSize分の遅延を持つため、切替時に音がずれないよう同じ遅延を意図的に持たせる。
+    this.bypassDelaySize = this.frameSize * 2; // 余裕を持たせたリングバッファサイズ
+    this.bypassDelayLine = [new Float32Array(this.bypassDelaySize), new Float32Array(this.bypassDelaySize)];
+    this.bypassWritePos = [0, 0];
+    this.bypassReadPos = [0, 0];
+    this.bypassFilled = [0, 0]; // 遅延分がまだ溜まっていない起動直後は0埋めで出力する
+  }
+
+  // バイパス経路：FFTを一切通さず、hopSize分の遅延だけ与えて入力をそのまま出力にコピーする。
+  // FFT経路と同程度の遅延（hopSize * バッファ充填分）を持たせることで、
+  // ピッチキーを0↔非0に切り替えた瞬間の出力タイミングのズレ（ノイズ・音飛びの原因）を避ける。
+  processChannelBypass(ch, inputChunk, outputChunk) {
+    const size = this.bypassDelaySize;
+    const delayLine = this.bypassDelayLine[ch];
+
+    for (let i = 0; i < inputChunk.length; i++) {
+      delayLine[this.bypassWritePos[ch]] = inputChunk[i];
+      this.bypassWritePos[ch] = (this.bypassWritePos[ch] + 1) % size;
+      if (this.bypassFilled[ch] < size) this.bypassFilled[ch]++;
+    }
+
+    // FFT経路の遅延（frameSizeがまとまるまで無音、以降hopSizeずつ進む）に合わせて、
+    // 遅延バッファがhopSize分以上溜まるまでは無音を出す。
+    for (let i = 0; i < outputChunk.length; i++) {
+      if (this.bypassFilled[ch] > this.hopSize) {
+        outputChunk[i] = delayLine[this.bypassReadPos[ch]];
+        this.bypassReadPos[ch] = (this.bypassReadPos[ch] + 1) % size;
+        this.bypassFilled[ch]--;
+      } else {
+        outputChunk[i] = 0;
+      }
+    }
   }
 
   processChannel(ch, pitchRatio) {
@@ -319,9 +434,23 @@ class PhaseVocoderProcessor extends AudioWorkletProcessor {
     if (!output || output.length === 0) return true;
 
     const pitchSemitones = parameters.pitchSemitones[0];
-    const pitchRatio = Math.pow(2, pitchSemitones / 12);
-
     const numChannels = Math.min((input && input.length) || 0, this.channels) || 1;
+
+    // ピッチキーがちょうど0半音の時はFFT処理を一切通さずバイパスする（音質劣化を避けるため）。
+    if (pitchSemitones === 0) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        const inputChunk = (input && input[ch] && input[ch].length > 0) ? input[ch] : new Float32Array(output[ch] ? output[ch].length : 0);
+        if (output[ch]) {
+          this.processChannelBypass(ch, inputChunk, output[ch]);
+        }
+      }
+      if (numChannels === 1 && output.length > 1) {
+        output[1].set(output[0]);
+      }
+      return true;
+    }
+
+    const pitchRatio = Math.pow(2, pitchSemitones / 12);
 
     for (let ch = 0; ch < numChannels; ch++) {
       if (input && input[ch] && input[ch].length > 0) {
@@ -870,6 +999,9 @@ function addFilesToPlaylist(files) {
   const wasEmpty = playlist.length === 0;
   audioFiles.forEach(file => {
     playlist.push({ file, name: file.name });
+    // 実体ごとIndexedDBに自動保存する（次回起動時に自動復元するため）。
+    // 保存自体は非同期・失敗しても再生には影響しないため、結果を待たずに進める。
+    savePlaylistTrack(file);
   });
   renderPlaylist();
 
@@ -926,7 +1058,10 @@ function removeTrackAt(index) {
   if (index < 0 || index >= playlist.length) return;
 
   const removingCurrent = index === currentPlaylistIndex;
+  const removedName = playlist[index].name;
   playlist.splice(index, 1);
+  // 実体もIndexedDBから削除する（残したままだと次回起動時に消したはずの曲が復活してしまう）
+  deletePlaylistTrack(removedName);
 
   if (removingCurrent) {
     // 再生中の曲を削除した場合：可能なら次の曲、なければ前の曲、どちらもなければ停止
@@ -1007,6 +1142,7 @@ function savePins() {
 
 function updatePlayButtonState() {
   const playBtn = document.getElementById("playToggle");
+  updateMediaSessionPlaybackState(); // Media Session連携。不要なら本行を削除するだけでよい。
   if (!playBtn) return;
 
   const label = playBtn.querySelector(".top-controls-btn-label");
@@ -1042,6 +1178,44 @@ function togglePlay() {
     audio.pause();
   }
   updatePlayButtonState();
+}
+
+// ============================================================
+// Media Session API（ロック画面・通知に曲名や再生コントロールを表示する）
+// この節は既存の再生ロジックに変更を加えず、navigator.mediaSessionへ情報を渡すだけの独立した機能。
+// 非対応ブラウザでは"mediaSession" in navigatorがfalseになり、何もせず安全にスキップされる。
+// 不要になった場合はこのブロックと、setAppTitle内のupdateMediaSessionMetadata()呼び出し1行を
+// 削除するだけで元に戻せる。
+// ============================================================
+function updateMediaSessionMetadata(name) {
+  if (!("mediaSession" in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: name || "QN AUDIO PLAYER",
+      artist: "QNAUDIO"
+    });
+  } catch (e) {
+    // MediaMetadata非対応環境などは無視する
+  }
+}
+
+function updateMediaSessionPlaybackState() {
+  if (!("mediaSession" in navigator)) return;
+  navigator.mediaSession.playbackState = audio.paused ? "paused" : "playing";
+}
+
+if ("mediaSession" in navigator) {
+  // ロック画面・通知のコントロールボタンから、既存のtogglePlay等をそのまま呼ぶ
+  navigator.mediaSession.setActionHandler("play", () => togglePlay());
+  navigator.mediaSession.setActionHandler("pause", () => togglePlay());
+  navigator.mediaSession.setActionHandler("previoustrack", () => {
+    if (currentPlaylistIndex > 0) playTrackAt(currentPlaylistIndex - 1);
+  });
+  navigator.mediaSession.setActionHandler("nexttrack", () => {
+    if (currentPlaylistIndex >= 0 && currentPlaylistIndex < playlist.length - 1) {
+      playTrackAt(currentPlaylistIndex + 1);
+    }
+  });
 }
 
 audio.onplay = updatePlayButtonState;
@@ -1878,6 +2052,22 @@ if (allRepeatToggleBtn) {
 
 document.getElementById("addPinBtn").onclick = addCurrentPin;
 
+// SP幅限定：MARKERSタブ内リスト最上部の+MARKERボタン。コントロールバーのaddPinBtnと全く同じ機能。
+const addPinBtnInline = document.getElementById("addPinBtnInline");
+if (addPinBtnInline) {
+  addPinBtnInline.onclick = addCurrentPin;
+}
+
+// SP幅限定：PLAYLISTタブ内リスト最上部のSELECT FILEボタン。既存のfileInputを発火させるだけの、
+// SELECT FILE(#fileUploadWrapper)と全く同じ機能。
+const selectFileBtnInline = document.getElementById("selectFileBtnInline");
+if (selectFileBtnInline) {
+  selectFileBtnInline.onclick = () => {
+    const fileInputEl = document.getElementById("fileInput");
+    if (fileInputEl) fileInputEl.click();
+  };
+}
+
 function getPinRow(t, dur) {
   const { s1, s2, s3, s4, s5 } = getSegments(dur);
   if (t <= s1) return 1;
@@ -2328,8 +2518,9 @@ function createDualSlotMoveController(elementId, mobileSlotId, pcSlotId, insertB
   };
 }
 
-// EQセクションはSP幅限定でBasicタブ内（mobileSelectFileSlotの直前）に移動し、
-// PC幅では常にEQモーダル内（元の位置）に戻す（EQはTIME行には移動しない）。
+// EQセクションはSP幅・PC幅を問わず常にEQモーダル内（元の位置）に留める。
+// SP版では画面のスクロールとEQスライダーのドラッグ操作が競合し、
+// スクロールできなくなる問題があったため、モーダルの中に閉じ込めて解決する。
 const eqInlineSection = document.getElementById("eqInlineSection");
 const mobileSelectFileSlotEl = document.getElementById("mobileSelectFileSlot");
 let eqInlineOrigin = null;
@@ -2341,15 +2532,9 @@ if (eqInlineSection) {
 }
 
 function applyEqInlineLayout() {
-  if (!eqInlineSection || !mobileSelectFileSlotEl || !eqInlineOrigin) return;
-  if (isMobileLayout()) {
-    if (eqInlineSection.parentNode !== mobileSelectFileSlotEl.parentNode || eqInlineSection.nextSibling !== mobileSelectFileSlotEl) {
-      mobileSelectFileSlotEl.parentNode.insertBefore(eqInlineSection, mobileSelectFileSlotEl);
-    }
-  } else {
-    if (eqInlineSection.parentNode !== eqInlineOrigin.parent) {
-      eqInlineOrigin.parent.insertBefore(eqInlineSection, eqInlineOrigin.nextSibling);
-    }
+  if (!eqInlineSection || !eqInlineOrigin) return;
+  if (eqInlineSection.parentNode !== eqInlineOrigin.parent) {
+    eqInlineOrigin.parent.insertBefore(eqInlineSection, eqInlineOrigin.nextSibling);
   }
 }
 
@@ -2408,6 +2593,9 @@ if (mobileTabSlot) {
     isHorizontalSwipe = false;
   }, { passive: true });
 
+  // 横スワイプだと判定できた瞬間だけpreventDefault()でブラウザ標準の横方向の
+  // スクロール/バウンス（画面全体がガクッとズレて見える現象）を止めたいため、
+  // このリスナーはpassive: falseで登録する（縦スクロール中は何もキャンセルしない）。
   mobileTabSlot.addEventListener("touchmove", e => {
     if (e.touches.length !== 1) return;
     const dx = e.touches[0].clientX - touchStartX;
@@ -2420,7 +2608,11 @@ if (mobileTabSlot) {
         swipeDecided = true;
       }
     }
-  }, { passive: true });
+
+    if (isHorizontalSwipe) {
+      e.preventDefault();
+    }
+  }, { passive: false });
 
   mobileTabSlot.addEventListener("touchend", e => {
     if (!swipeDecided || !isHorizontalSwipe) return;
@@ -2481,12 +2673,30 @@ function syncTopControlsSpacerHeight() {
 syncTopControlsSpacerHeight();
 window.addEventListener("resize", syncTopControlsSpacerHeight);
 
-window.onload = () => {
+window.onload = async () => {
   updatePlayButtonState();
   applyPlaybackButtonsLayout();
   applyMobileBasicExtras();
   syncTopControlsSpacerHeight();
+  await restorePlaylistFromStorage();
 };
+
+// 起動時、IndexedDBに保存されている曲を全てプレイリストへ復元する。
+// addFilesToPlaylistと違い、復元時は自動再生しない（ユーザー操作なしのplay()はブラウザにブロックされ得るうえ、
+// 意図せず音が鳴るのを避けるため）。また復元した曲を再度IndexedDBに書き戻す必要はない。
+async function restorePlaylistFromStorage() {
+  const savedFiles = await loadAllPlaylistTracks();
+  if (savedFiles.length === 0) return;
+
+  savedFiles.forEach(file => {
+    playlist.push({ file, name: file.name });
+  });
+  renderPlaylist();
+
+  // 1曲目を選曲済み状態にする（タイトル表示・波形読み込みまで行うが、
+  // loadFile()自体はaudio.play()を呼ばないため自動再生はされない）。
+  playTrackAt(0);
+}
 
 // ============================================================
 // ハプティクス（対応デバイスのみ、非対応環境では何も起きず安全に無視される）
