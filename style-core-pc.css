@@ -1,0 +1,273 @@
+/* ============================================================
+   style-core-pc.css
+   PC幅でのみ実際に使われるデザイン・レイアウト。
+   対象の要素自体がSP幅で完全に非表示・撤去されているため、
+   このファイルの内容はSP幅では一切使われない。
+   style-core.css の後に読み込むこと。
+   ============================================================ */
+
+/* PC幅：VOL/SPEED/KEYボタンは、隙間なく横並びにして幅いっぱいに広げる
+   （EQボタンはSP幅でも表示されるため style-core.css 側に共通スタイルとして残っている）。
+   左端(VOL)だけ角丸を付け、隙間をなくした分の区切りとして左ボーダーを消す。 */
+.adjust-controls-row .header-btn-wrapper {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 0%;
+  min-width: 0;
+}
+
+#volToggleBtn,
+#speedToggleBtn,
+#keyToggleBtn {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 0%;
+  width: 100%;
+  min-width: 0;
+  border-radius: 0;
+  justify-content: center;
+}
+
+#speedToggleBtn,
+#keyToggleBtn {
+  border-left: none;
+}
+
+#volToggleBtn {
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+/* フッター：SP幅では固定/スクロール構造と相性が悪いため完全非表示にしているため実質PC専用 */
+#appFooter {
+  width: 100%;
+  max-width: 1400px;
+  text-align: center;
+  margin-top: 32px;
+  padding: 16px 0 4px;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: #5a5a68;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+}
+
+/* Keyboard Shortcuts：SP幅では機能自体が撤去されているため完全にPC専用 */
+#shortcutsToggleBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  color: #f0f0f3;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+
+#shortcutsToggleBtn:active {
+  transform: scale(0.96);
+}
+
+#shortcutsToggleBtn:hover {
+  background: #1c1c24;
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+#shortcutsToggleBtn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+#shortcutsToggleBtn.active {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  background: var(--accent-glow);
+}
+
+.shortcuts-popup {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 350;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  width: 480px;
+  max-width: 90vw;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+  transition: opacity var(--dur-open) var(--ease-dismiss), transform var(--dur-open) var(--ease-dismiss);
+}
+
+.shortcuts-popup.open {
+  display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity var(--dur-open) var(--ease-pop), transform var(--dur-open) var(--ease-pop);
+}
+
+.shortcuts-popup.open-upward {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+
+.shortcuts-popup .shortcut-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.shortcuts-popup .shortcut-table {
+  flex: 1;
+  min-width: 200px;
+}
+
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.shortcut-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.shortcut-table th, .shortcut-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.shortcut-table th {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  color: #8b8b9e;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.shortcut-table td {
+  color: #f0f0f3;
+}
+
+.shortcut-table kbd {
+  background: #252530;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--accent-primary);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+}
+
+/* ハンバーガーメニューボタン自体はPC幅では常に非表示。
+   #headerControlsはPC幅では常時横並び表示、SP幅では完全に別スタイル（ドロップダウン）に
+   上書きされるため、このデフォルト値は実質PC専用。 */
+#headerMenuBtn {
+  display: none;
+}
+
+#headerControls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* スマホ専用タブUI（Basic/Markers/Playlistの切り替えボタン自体）はPC幅では非表示。
+   中身(.mobile-tab-panel)はPC幅では常に表示されるため、こちらはstyle-core.css側に残る。 */
+.mobile-tabs {
+  display: none;
+}
+
+/* PC版TIME行：SELECT FILEとEXPORTはPlayボタンと同じ高さ(60px、マーカーボタンと同程度)に揃え、
+   EXPORTもSELECT FILEと同じグラデーションデザインに統一する。
+   file-upload-wrapperはデフォルトdisplay: inline-blockのままだと中の.file-upload-btnとの
+   高さ・位置の計算がexportToggleBtn(単一のボタン要素)と食い違いズレて見えるため、flexにして揃える。
+   #playbackButtonsGroupというコンテナ自体、SP幅ではこの構成では使われないため実質PC専用。 */
+#playbackButtonsGroup .file-upload-wrapper {
+  display: flex;
+  align-items: center;
+  width: auto;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+#playbackButtonsGroup .file-upload-btn {
+  width: auto;
+  height: 60px;
+  box-sizing: border-box;
+  padding: 0 24px;
+  white-space: nowrap;
+}
+
+#playbackButtonsGroup .file-upload-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+#playbackButtonsGroup #exportToggleBtn {
+  flex-shrink: 0;
+  height: 60px;
+  min-height: 0;
+  padding: 0 24px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  box-shadow: 0 6px 20px var(--accent-glow);
+  color: #fff;
+}
+
+#playbackButtonsGroup #exportToggleBtn:hover {
+  background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
+  box-shadow: 0 8px 25px var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+#playbackButtonsGroup #exportToggleBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+#playbackButtonsGroup #exportToggleBtn .av-toggle-btn-text {
+  flex-direction: row;
+}
+
+#playbackButtonsGroup #exportToggleBtn .av-toggle-btn-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  opacity: 1;
+}
+
+/* PC幅ではPlay/RepeatはTIME行側に表示されるため、topControls側のスロットは空のまま非表示。
+   SP幅ではこのスロットが実際に使われる（Play/Repeatがここに移動してくる）ため実質PC専用。 */
+#playbackButtonsSlot {
+  display: none;
+}
+
+/* SP幅限定：MARKERS/PLAYLISTタブ内リスト最上部のアクションボタン（+MARKER, SELECT FILE）。
+   PC幅では他の場所に同じ機能のボタンが既にあるため非表示。 */
+.tab-inline-action-btn {
+  display: none;
+}
