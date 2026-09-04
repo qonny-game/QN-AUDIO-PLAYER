@@ -959,14 +959,16 @@ document.addEventListener("keydown", e => {
   }
   else if (!e.ctrlKey && e.key >= "1" && e.key <= "9") {
     const index = parseInt(e.key) - 1;
-    if (activePins[index] !== undefined) {
+    // リストに表示されている番号（1〜9、OFFのマーカーも含む通し番号）と一致させるため、
+    // ONのものだけを抜き出したactivePinsではなく、pins配列を直接参照する。
+    if (pins[index] !== undefined) {
       e.preventDefault();
       isSeeking = true;
-      audio.currentTime = activePins[index].t;
-      prevTime = activePins[index].t;
+      audio.currentTime = pins[index].t;
+      prevTime = pins[index].t;
       audio.play();
       updatePlayButtonState();
-      renderSegments(getActiveSegment(activePins[index].t));
+      renderSegments(getActiveSegment(pins[index].t));
       setTimeout(() => { isSeeking = false; }, 150);
     }
   }
