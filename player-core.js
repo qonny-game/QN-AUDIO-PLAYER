@@ -795,10 +795,52 @@ function audioBufferToWavBlob(audioBuffer) {
   return new Blob([buffer], { type: "audio/wav" });
 }
 
+// AudioBufferをMP3形式のBlobに変換する（lamejsを使用）。
+// kbpsは128/192/320などのビットレート。lamejsが読み込まれていない環境では例外を投げる。
+function audioBufferToMp3Blob(audioBuffer, kbps) {
+  if (typeof lamejs === "undefined" || !lamejs.Mp3Encoder) {
+    throw new Error("MP3 encoder (lamejs) is not available");
+  }
+
+  const numChannels = Math.min(2, audioBuffer.numberOfChannels); // lamejsはモノラル/ステレオのみ対応
+  const sampleRate = audioBuffer.sampleRate;
+  const numFrames = audioBuffer.length;
+
+  // Float32サンプルを16bit PCM整数(Int16Array)に変換しておく（WAV変換と同じクリッピング処理）
+  function toInt16Array(channelData) {
+    const out = new Int16Array(numFrames);
+    for (let i = 0; i < numFrames; i++) {
+      let sample = Math.max(-1, Math.min(1, channelData[i]));
+      out[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+    }
+    return out;
+  }
+
+  const left = toInt16Array(audioBuffer.getChannelData(0));
+  const right = numChannels === 2 ? toInt16Array(audioBuffer.getChannelData(1)) : null;
+
+  const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, kbps || 128);
+  const mp3Chunks = [];
+  const blockSize = 1152; // lamejsが1回のencodeBufferで処理する推奨サンプル数
+
+  for (let i = 0; i < numFrames; i += blockSize) {
+    const leftChunk = left.subarray(i, i + blockSize);
+    const mp3buf = numChannels === 2
+      ? encoder.encodeBuffer(leftChunk, right.subarray(i, i + blockSize))
+      : encoder.encodeBuffer(leftChunk);
+    if (mp3buf.length > 0) mp3Chunks.push(mp3buf);
+  }
+
+  const finalBuf = encoder.flush();
+  if (finalBuf.length > 0) mp3Chunks.push(finalBuf);
+
+  return new Blob(mp3Chunks, { type: "audio/mp3" });
+}
+
 // 指定した範囲(startTime〜endTime秒)・エフェクト設定(applySpeed/applyKey/applyEq)で
 // OfflineAudioContextを使って音声をレンダリングし、結果のAudioBufferを返す。
 // 元ファイルは毎回再デコードする（再生用に保持されているAudioBufferがないため、常に正確な結果を得るため）。
-async function renderExportBuffer(startTime, endTime, applySpeed, applyKey, applyEq) {
+async function renderExportBuffer(startTime, endTime, applySpeed, applyKey, applyEq, targetSampleRate) {
   if (currentPlaylistIndex < 0 || !playlist[currentPlaylistIndex]) {
     throw new Error("No file loaded");
   }
@@ -812,6 +854,10 @@ async function renderExportBuffer(startTime, endTime, applySpeed, applyKey, appl
 
   const speed = applySpeed ? currentSpeed : 1.0;
   const keySemitones = applyKey ? currentKeySemitones : 0;
+  // 出力サンプルレート。未指定なら元ファイルのサンプルレートのまま（従来通り）。
+  // OfflineAudioContextのサンプルレートと入力(sourceBuffer)のサンプルレートが異なる場合、
+  // AudioBufferSourceNode側で自動的にリサンプリングされるため、明示的な変換処理は不要。
+  const outputSampleRate = targetSampleRate || sourceBuffer.sampleRate;
 
   const clampedStart = Math.max(0, Math.min(startTime, sourceBuffer.duration));
   const clampedEnd = Math.max(clampedStart, Math.min(endTime, sourceBuffer.duration));
@@ -822,12 +868,12 @@ async function renderExportBuffer(startTime, endTime, applySpeed, applyKey, appl
 
   // 出力の長さは「元の区間長 / 再生速度」（速度を上げれば短く、下げれば長くなる）
   const outputDuration = rangeDuration / speed;
-  const outputLength = Math.max(1, Math.ceil(outputDuration * sourceBuffer.sampleRate));
+  const outputLength = Math.max(1, Math.ceil(outputDuration * outputSampleRate));
 
   const offlineCtx = new OfflineAudioContext(
     sourceBuffer.numberOfChannels,
     outputLength,
-    sourceBuffer.sampleRate
+    outputSampleRate
   );
 
   const bufferSource = offlineCtx.createBufferSource();

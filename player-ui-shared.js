@@ -2196,7 +2196,8 @@ const exportModalOverlay = document.getElementById("exportModalOverlay");
 const exportModalCloseBtn = document.getElementById("exportModalCloseBtn");
 const exportRangeAll = document.getElementById("exportRangeAll");
 const exportRangeMarker = document.getElementById("exportRangeMarker");
-const exportMarkerSelect = document.getElementById("exportMarkerSelect");
+const exportMarkerStartSelect = document.getElementById("exportMarkerStartSelect");
+const exportMarkerEndSelect = document.getElementById("exportMarkerEndSelect");
 const exportFileNameInput = document.getElementById("exportFileName");
 const exportRunBtn = document.getElementById("exportRunBtn");
 const exportStatusEl = document.getElementById("exportStatus");
@@ -2204,29 +2205,47 @@ const exportStatusEl = document.getElementById("exportStatus");
 // currentFileNameの拡張子を除いた部分を、エクスポートファイル名の初期値として使う
 
 
-// 有効なマーカー（ON状態）のペア一覧をプルダウンに反映する
+// 有効なマーカー（ON状態）の一覧を、開始・終了それぞれのプルダウンに反映する。
+// 隣り合ったペアだけでなく、任意の2つのマーカーを自由に開始/終了として選べるようにする。
 function populateExportMarkerSelect() {
   const activePins = pins.filter(p => p.enabled).sort((a, b) => a.t - b.t);
-  exportMarkerSelect.innerHTML = "";
+  exportMarkerStartSelect.innerHTML = "";
+  exportMarkerEndSelect.innerHTML = "";
 
   if (activePins.length < 2) {
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = "No marker pairs available";
-    exportMarkerSelect.appendChild(opt);
-    exportMarkerSelect.disabled = true;
+    [exportMarkerStartSelect, exportMarkerEndSelect].forEach(sel => {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "No markers available";
+      sel.appendChild(opt);
+      sel.disabled = true;
+    });
     if (exportRangeMarker) exportRangeMarker.disabled = true;
     return;
   }
 
   if (exportRangeMarker) exportRangeMarker.disabled = false;
-  for (let i = 0; i < activePins.length - 1; i++) {
-    const opt = document.createElement("option");
-    opt.value = i;
-    opt.textContent = `#${i + 1} (${activePins[i].t.toFixed(2)}s) → #${i + 2} (${activePins[i + 1].t.toFixed(2)}s)`;
-    exportMarkerSelect.appendChild(opt);
-  }
-  exportMarkerSelect.disabled = !exportRangeMarker.checked;
+  activePins.forEach((pin, i) => {
+    const label = `${i + 1} (${pin.t.toFixed(2)}s)`;
+
+    const startOpt = document.createElement("option");
+    startOpt.value = i;
+    startOpt.textContent = label;
+    exportMarkerStartSelect.appendChild(startOpt);
+
+    const endOpt = document.createElement("option");
+    endOpt.value = i;
+    endOpt.textContent = label;
+    exportMarkerEndSelect.appendChild(endOpt);
+  });
+
+  // デフォルトは最初のマーカーを開始、最後のマーカーを終了にしておく（従来の全区間相当に近い初期値）
+  exportMarkerStartSelect.value = "0";
+  exportMarkerEndSelect.value = String(activePins.length - 1);
+
+  const enabled = exportRangeMarker && exportRangeMarker.checked;
+  exportMarkerStartSelect.disabled = !enabled;
+  exportMarkerEndSelect.disabled = !enabled;
 }
 
 function setExportStatus(text, kind) {
@@ -2235,10 +2254,26 @@ function setExportStatus(text, kind) {
   if (kind) exportStatusEl.classList.add(kind);
 }
 
+// Format(WAV/MP3)の切り替えに応じて、対応する詳細設定欄(サンプルレート/ビットレート)だけを表示する
+const exportFormatWav = document.getElementById("exportFormatWav");
+const exportFormatMp3 = document.getElementById("exportFormatMp3");
+const exportWavDetail = document.getElementById("exportWavDetail");
+const exportMp3Detail = document.getElementById("exportMp3Detail");
+
+function updateExportFormatDetailVisibility() {
+  const isMp3 = exportFormatMp3 && exportFormatMp3.checked;
+  if (exportWavDetail) exportWavDetail.style.display = isMp3 ? "none" : "";
+  if (exportMp3Detail) exportMp3Detail.style.display = isMp3 ? "" : "none";
+}
+
+if (exportFormatWav) exportFormatWav.onchange = updateExportFormatDetailVisibility;
+if (exportFormatMp3) exportFormatMp3.onchange = updateExportFormatDetailVisibility;
+
 function openExportModal() {
   hapticTap();
   exportFileNameInput.value = suggestExportFileName();
   populateExportMarkerSelect();
+  updateExportFormatDetailVisibility();
   setExportStatus("");
   exportModalOverlay.classList.add("open");
 }
@@ -2268,12 +2303,15 @@ document.addEventListener("keydown", e => {
 
 if (exportRangeAll) {
   exportRangeAll.onchange = () => {
-    exportMarkerSelect.disabled = true;
+    exportMarkerStartSelect.disabled = true;
+    exportMarkerEndSelect.disabled = true;
   };
 }
 if (exportRangeMarker) {
   exportRangeMarker.onchange = () => {
-    exportMarkerSelect.disabled = !exportRangeMarker.checked || exportMarkerSelect.options.length === 0 || exportMarkerSelect.options[0].value === "";
+    const hasMarkers = exportMarkerStartSelect.options.length > 0 && exportMarkerStartSelect.options[0].value !== "";
+    exportMarkerStartSelect.disabled = !exportRangeMarker.checked || !hasMarkers;
+    exportMarkerEndSelect.disabled = !exportRangeMarker.checked || !hasMarkers;
   };
 }
 
@@ -2291,19 +2329,28 @@ if (exportRunBtn) {
     let endTime = audio.duration || 0;
 
     if (exportRangeMarker && exportRangeMarker.checked) {
-      const selectedIndex = exportMarkerSelect.value;
-      if (selectedIndex === "" || selectedIndex === null) {
-        setExportStatus("Please select a marker pair.", "error");
+      const startIndexRaw = exportMarkerStartSelect.value;
+      const endIndexRaw = exportMarkerEndSelect.value;
+      if (startIndexRaw === "" || startIndexRaw === null || endIndexRaw === "" || endIndexRaw === null) {
+        setExportStatus("Please select start and end markers.", "error");
         return;
       }
       const activePins = pins.filter(p => p.enabled).sort((a, b) => a.t - b.t);
-      const i = parseInt(selectedIndex, 10);
-      if (!activePins[i] || !activePins[i + 1]) {
-        setExportStatus("Invalid marker pair.", "error");
+      const startIdx = parseInt(startIndexRaw, 10);
+      const endIdx = parseInt(endIndexRaw, 10);
+      if (!activePins[startIdx] || !activePins[endIdx]) {
+        setExportStatus("Invalid marker selection.", "error");
         return;
       }
-      startTime = activePins[i].t;
-      endTime = activePins[i + 1].t;
+      // 開始・終了は任意の組み合わせを許すため、選んだ順序に関わらず時刻の小さい方を開始にする
+      const t1 = activePins[startIdx].t;
+      const t2 = activePins[endIdx].t;
+      if (t1 === t2) {
+        setExportStatus("Start and end markers must be different.", "error");
+        return;
+      }
+      startTime = Math.min(t1, t2);
+      endTime = Math.max(t1, t2);
     }
 
     const applySpeed = !!(document.getElementById("exportApplySpeed") && document.getElementById("exportApplySpeed").checked);
@@ -2312,17 +2359,26 @@ if (exportRunBtn) {
 
     const fileNameBase = (exportFileNameInput.value || "output").trim() || "output";
 
+    const isMp3 = exportFormatMp3 && exportFormatMp3.checked;
+    const wavSampleRate = parseInt(document.getElementById("exportWavSampleRate").value, 10) || 44100;
+    const mp3Bitrate = parseInt(document.getElementById("exportMp3Bitrate").value, 10) || 128;
+
     exportRunBtn.disabled = true;
     setExportStatus("Processing...");
 
     try {
-      const renderedBuffer = await renderExportBuffer(startTime, endTime, applySpeed, applyKey, applyEq);
-      const wavBlob = audioBufferToWavBlob(renderedBuffer);
+      // WAVは元ファイルのサンプルレートに関わらず選択したサンプルレートで出力する。
+      // MP3はビットレートのみの選択のため、サンプルレート自体は元ファイルのまま(undefined)にする。
+      const renderedBuffer = await renderExportBuffer(startTime, endTime, applySpeed, applyKey, applyEq, isMp3 ? undefined : wavSampleRate);
+      const blob = isMp3
+        ? audioBufferToMp3Blob(renderedBuffer, mp3Bitrate)
+        : audioBufferToWavBlob(renderedBuffer);
+      const ext = isMp3 ? ".mp3" : ".wav";
 
-      const url = URL.createObjectURL(wavBlob);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = fileNameBase.toLowerCase().endsWith(".wav") ? fileNameBase : fileNameBase + ".wav";
+      a.download = fileNameBase.toLowerCase().endsWith(ext) ? fileNameBase : fileNameBase + ext;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

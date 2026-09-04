@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>QN AUDIO PLAYER 1.4.1</title>
+<title>QN AUDIO PLAYER 1.4.3</title>
 <link rel="stylesheet" href="style-core.css">
 <link rel="stylesheet" href="style-core-pc.css">
 <link rel="stylesheet" href="style-layout-sp.css">
@@ -26,7 +26,7 @@
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.4.1</span></h1>
+    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.4.3</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
   </div>
   <button id="headerMenuBtn" title="Menu">
@@ -456,9 +456,20 @@
             <span>Marker Range</span>
           </label>
         </div>
-        <select id="exportMarkerSelect" class="export-marker-select" disabled>
-          <option value="">No marker pairs available</option>
-        </select>
+        <div class="export-marker-range-selects" id="exportMarkerRangeSelects">
+          <div class="export-marker-select-group">
+            <label class="export-marker-select-label">Start</label>
+            <select id="exportMarkerStartSelect" class="export-marker-select" disabled>
+              <option value="">No markers available</option>
+            </select>
+          </div>
+          <div class="export-marker-select-group">
+            <label class="export-marker-select-label">End</label>
+            <select id="exportMarkerEndSelect" class="export-marker-select" disabled>
+              <option value="">No markers available</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div class="export-section">
@@ -491,6 +502,29 @@
             <input type="radio" name="exportFormat" id="exportFormatWav" value="wav" checked>
             <span>WAV</span>
           </label>
+          <label class="export-radio-row">
+            <input type="radio" name="exportFormat" id="exportFormatMp3" value="mp3">
+            <span>MP3</span>
+          </label>
+        </div>
+
+        <!-- WAV選択時：サンプルレート -->
+        <div class="export-format-detail" id="exportWavDetail">
+          <label class="export-marker-select-label">Sample Rate</label>
+          <select id="exportWavSampleRate" class="export-marker-select">
+            <option value="44100" selected>44.1 kHz</option>
+            <option value="48000">48 kHz</option>
+          </select>
+        </div>
+
+        <!-- MP3選択時：ビットレート -->
+        <div class="export-format-detail" id="exportMp3Detail" style="display:none;">
+          <label class="export-marker-select-label">Bitrate</label>
+          <select id="exportMp3Bitrate" class="export-marker-select">
+            <option value="128" selected>128 kbps</option>
+            <option value="192">192 kbps</option>
+            <option value="320">320 kbps</option>
+          </select>
         </div>
       </div>
     </div>
@@ -505,8 +539,9 @@
 <!-- スマホ幅でtop-controlsを画面下部に固定した際、ページ最下部（フッター前）に高さ分の余白を確保する -->
 <div class="top-controls-spacer" id="topControlsSpacer"></div>
 
-<footer id="appFooter">QNAUDIO Ver1.4.1 by QONNY</footer>
+<footer id="appFooter">QNAUDIO Ver1.4.3 by QONNY</footer>
 
+<script src="lame.min.js"></script>
 <script src="player-core.js"></script>
 <script src="player-ui-shared.js"></script>
 <script src="player-ui-sp.js"></script>
