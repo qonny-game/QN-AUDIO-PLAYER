@@ -419,14 +419,26 @@ class PhaseVocoderProcessor extends AudioWorkletProcessor {
       trueFreq[k] = this.omega[k] + deltaPhaseWrapped;
     }
 
-    // ピッチシフト：振幅スペクトルをビン単位でシフト（テンポは変えず音程だけ動かす）
+    // ピッチシフト：出力ビンごとに対応する入力位置を逆算し、前後のビンを線形補間する。
+    // （以前は入力ビンを整数丸めでシフト先に配る「順方向」方式だったが、
+    //  シフト量によっては出力ビンの1割前後が誰にも埋められず「歯抜け」になり、
+    //  これが金属的・ロボットっぽいノイズの主因だったため、逆方向の補間方式に変更した。）
     const shiftedMag = new Float32Array(half + 1);
     const shiftedFreq = new Float32Array(half + 1);
-    for (let k = 0; k <= half; k++) {
-      const dst = Math.round(k * pitchRatio);
-      if (dst >= 0 && dst <= half) {
-        shiftedMag[dst] += magnitude[k];
-        shiftedFreq[dst] = trueFreq[k] * pitchRatio;
+    for (let dst = 0; dst <= half; dst++) {
+      const srcPos = dst / pitchRatio;
+      const srcLow = Math.floor(srcPos);
+      const srcHigh = srcLow + 1;
+      const frac = srcPos - srcLow;
+
+      if (srcLow >= 0 && srcLow <= half) {
+        const magLow = magnitude[srcLow];
+        const magHigh = srcHigh <= half ? magnitude[srcHigh] : 0;
+        shiftedMag[dst] = magLow * (1 - frac) + magHigh * frac;
+
+        const freqLow = trueFreq[srcLow];
+        const freqHigh = srcHigh <= half ? trueFreq[srcHigh] : freqLow;
+        shiftedFreq[dst] = (freqLow * (1 - frac) + freqHigh * frac) * pitchRatio;
       }
     }
 
