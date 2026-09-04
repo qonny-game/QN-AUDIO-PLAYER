@@ -29,6 +29,13 @@
   --dur-dismiss: 200ms;
 }
 
+/* ピンチズーム（拡大縮小ジェスチャー）を無効化する。
+   viewportメタタグのuser-scalable=noと合わせ、二重の保険としてtouch-actionでも制限する。
+   pan-x pan-yは通常のスクロール操作自体は引き続き許可し、拡大縮小ジェスチャーだけを禁止する。 */
+html {
+  touch-action: pan-x pan-y;
+}
+
 [data-theme="blue"] {
   --accent-primary: #3b82f6;
   --accent-secondary: #1d4ed8;
@@ -1928,7 +1935,7 @@ body.dragover #dropOverlay {
   }
 
   body {
-    padding: 16px 20px 0;
+    padding: 16px 28px 0;
     align-items: stretch;
   }
 
