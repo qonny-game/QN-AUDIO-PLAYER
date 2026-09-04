@@ -10,6 +10,27 @@
 let audio = new Audio();
 let pins = [];
 let loopEnabled = false;
+
+// マーカーの色付けに使うカラーパレット。テーマカラー(RANDOM_THEME_POOL、player-ui-shared.js)と
+// 同じ配色・同じ--accent-primaryの値を流用する。テーマを切り替えてもマーカーの色自体は
+// 変わらないよう、名前と色コードをここに固定で持つ（テーマ変更時のCSS変数切替とは独立させる）。
+const MARKER_COLOR_PALETTE = {
+  red: "#ef4444",
+  orange: "#f97316",
+  amber: "#f59e0b",
+  lime: "#84cc16",
+  emerald: "#10b981",
+  teal: "#14b8a6",
+  cyan: "#06b6d4",
+  sky: "#0ea5e9",
+  blue: "#3b82f6",
+  indigo: "#6366f1",
+  purple: "#8b5cf6",
+  violet: "#a855f7",
+  pink: "#ec4899",
+  rose: "#f43f5e"
+};
+
 // リピートモード: "off" -> "one"（1曲リピート） -> "all"（プレイリスト全体を繰り返し） -> "off" ...
 let repeatMode = "off";
 let isSeeking = false;
@@ -656,26 +677,31 @@ function savePins() {
 
 function getActiveSegment(atTime) {
   const dur = audio.duration;
-  const activePins = pins.filter(p => p.enabled).map(p => p.t);
+  const activePinObjs = pins.filter(p => p.enabled);
+  const activePins = activePinObjs.map(p => p.t);
   if (!dur || activePins.length < 2) return null;
 
   const ct = atTime !== undefined ? atTime : audio.currentTime;
+
+  function withColor(startIndex, endIndex) {
+    return { start: activePins[startIndex], end: activePins[endIndex], color: activePinObjs[startIndex].color || null };
+  }
 
   for (let i = 0; i < activePins.length - 1; i++) {
     const start = activePins[i];
     const end = activePins[i+1];
 
     if (i === activePins.length - 2) {
-      if (ct >= start && ct <= end) return { start, end };
+      if (ct >= start && ct <= end) return withColor(i, i + 1);
     } else {
-      if (ct >= start && ct < end) return { start, end };
+      if (ct >= start && ct < end) return withColor(i, i + 1);
     }
   }
 
-  if (ct < activePins[0]) return { start: activePins[0], end: activePins[1] };
-  if (ct > activePins[activePins.length - 1]) return { start: activePins[activePins.length - 2], end: activePins[activePins.length - 1] };
+  if (ct < activePins[0]) return withColor(0, 1);
+  if (ct > activePins[activePins.length - 1]) return withColor(activePins.length - 2, activePins.length - 1);
 
-  return { start: activePins[0], end: activePins[1] };
+  return withColor(0, 1);
 }
 
 function getSegments(dur) {

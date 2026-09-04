@@ -164,6 +164,15 @@ function hslToHex(h, s, l) {
   return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
 }
 
+// マーカーの色付け機能で使う、#rrggbb形式をrgba(r,g,b,alpha)に変換するヘルパー。
+function hexToRgba(hex, alpha) {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function updateRainbowAnimation(themeName) {
   if (rainbowAnimId) {
     cancelAnimationFrame(rainbowAnimId);
@@ -661,7 +670,7 @@ function loadFile(file) {
     if (savedPins) {
       try {
         const raw = JSON.parse(savedPins);
-        pins = raw.map(p => typeof p === 'number' ? { t: p, enabled: true, memo: "" } : { t: p.t, enabled: p.enabled !== false, memo: p.memo || "" });
+        pins = raw.map(p => typeof p === 'number' ? { t: p, enabled: true, memo: "", color: null } : { t: p.t, enabled: p.enabled !== false, memo: p.memo || "", color: p.color || null });
       } catch (e) { pins = []; }
     } else {
       pins = [];
@@ -791,7 +800,7 @@ document.getElementById("playToggle").onclick = togglePlay;
 function addCurrentPin() {
   if (!audio.duration) return;
   hapticSuccess();
-  pins.push({ t: audio.currentTime, enabled: true, memo: "" });
+  pins.push({ t: audio.currentTime, enabled: true, memo: "", color: null });
   pins.sort((a, b) => a.t - b.t);
   renderPins();
   renderSegments();
@@ -1551,12 +1560,22 @@ function renderPins() {
       line.classList.add("move-mode-active");
     }
     line.style.left = `${x}%`;
+    // マーカーに色が設定されていれば、ラインとラベルの背景色に反映する。
+    // ただし無効化中(disabled)やMOVEモード中(move-mode-active)は専用の見た目を優先し、
+    // インラインスタイルで上書きしないようにする（詳細度でCSS側の状態表現が負けてしまうため）。
+    const applyMarkerColor = pinObj.color && MARKER_COLOR_PALETTE[pinObj.color] && pinObj.enabled && moveModeMarkerIndex !== i;
+    if (applyMarkerColor) {
+      line.style.background = MARKER_COLOR_PALETTE[pinObj.color];
+    }
 
     const label = document.createElement("span");
     label.className = "vbar-label";
-    label.textContent = `#${i + 1}`;
+    label.textContent = `${i + 1}`;
     if (moveModeMarkerIndex === i) {
       label.classList.add("move-mode-active");
+    }
+    if (applyMarkerColor) {
+      label.style.background = MARKER_COLOR_PALETTE[pinObj.color];
     }
 
     function handleMarkerTapOrDrag(e) {
@@ -1650,6 +1669,14 @@ function renderSegments(overrideSegment) {
       seg.className = "segmentHighlight";
       seg.style.left = leftPct + "%";
       seg.style.width = widthPct + "%";
+      // マーカーに色が設定されていれば、その色をループエリアの背景・枠線に反映する。
+      // 未設定（null）ならCSS側のデフォルト(--accent-glow/--accent-primary)のまま。
+      if (active.color && MARKER_COLOR_PALETTE[active.color]) {
+        const hex = MARKER_COLOR_PALETTE[active.color];
+        seg.style.background = hexToRgba(hex, 0.35);
+        seg.style.borderTop = `2px solid ${hex}`;
+        seg.style.borderBottom = `2px solid ${hex}`;
+      }
 
       seg.onclick = () => {
         isSeeking = true;
@@ -1679,12 +1706,24 @@ function renderPinList() {
       div.classList.add("disabled");
     }
 
+    // マーカーの左端の色の目印。クリックするとカラーパレットが開く（色未設定ならグレー表示）。
+    const colorMark = document.createElement("button");
+    colorMark.className = "pin-color-mark";
+    colorMark.title = "Set marker color";
+    colorMark.style.background = (pinObj.color && MARKER_COLOR_PALETTE[pinObj.color]) ? MARKER_COLOR_PALETTE[pinObj.color] : "#3a3a48";
+    colorMark.onclick = (e) => {
+      e.stopPropagation();
+      openMarkerColorPicker(colorMark, pinObj, i);
+    };
+    div.appendChild(colorMark);
+
     const infoSpan = document.createElement("span");
     infoSpan.className = "pin-info";
-    // メモが入っていれば時間の代わりにメモを表示し、メモがなければ従来通り時間を表示する
+    // メモが入っていれば時間の代わりにメモを表示し、メモがなければ従来通り時間を表示する。
+    // 番号は残すが「#」記号は表示しない。
     infoSpan.textContent = pinObj.memo
-      ? `#${i + 1} - ${pinObj.memo}`
-      : `#${i + 1} - ${pinObj.t.toFixed(2)}s`;
+      ? `${i + 1} - ${pinObj.memo}`
+      : `${i + 1} - ${pinObj.t.toFixed(2)}s`;
     if (pinObj.memo) infoSpan.title = pinObj.memo;
 
     infoSpan.onclick = () => { 
@@ -1711,8 +1750,11 @@ function renderPinList() {
 
     const toggleBtn = document.createElement("button");
     toggleBtn.className = "toggle-btn";
-    toggleBtn.textContent = pinObj.enabled ? "ON" : "OFF";
-    toggleBtn.style.color = pinObj.enabled ? "var(--accent-primary)" : "#8b8b9e";
+    toggleBtn.title = pinObj.enabled ? "Marker enabled (click to disable)" : "Marker disabled (click to enable)";
+    // ON: 目が開いたアイコン、OFF: 目に斜線が入ったアイコン（スラッシュ付き）
+    toggleBtn.innerHTML = pinObj.enabled
+      ? '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="M12 6.5c3.79 0 7.17 2.13 8.82 5.5-.59 1.2-1.42 2.25-2.42 3.11l1.42 1.42c1.39-1.23 2.49-2.77 3.18-4.53C21.27 7.61 17 4.5 12 4.5c-1.27 0-2.49.2-3.64.57l1.65 1.65c.62-.14 1.28-.22 1.99-.22zM2.71 3.16L1.29 4.57 4 7.27C2.36 8.53 1.07 10.15 0.18 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l3.01 3.01 1.41-1.41L2.71 3.16zM12 17c-2.76 0-5-2.24-5-5 0-.77.18-1.5.49-2.14l1.57 1.57c-.03.18-.06.37-.06.57 0 1.66 1.34 3 3 3 .2 0 .38-.03.57-.07l1.57 1.57c-.65.32-1.37.5-2.14.5zm2.97-5.33c-.15-1.4-1.25-2.49-2.64-2.64l2.64 2.64z"/></svg>';
     toggleBtn.onclick = (e) => {
       e.stopPropagation();
       pinObj.enabled = !pinObj.enabled;
@@ -1755,6 +1797,90 @@ function renderPinList() {
   });
 }
 
+// マーカーの色選択ポップアップを開く。既存のポップアップがあれば一旦閉じてから開き直す。
+let activeMarkerColorPopup = null;
+function closeMarkerColorPicker() {
+  if (activeMarkerColorPopup) {
+    activeMarkerColorPopup.remove();
+    activeMarkerColorPopup = null;
+    document.removeEventListener("click", closeMarkerColorPicker);
+  }
+}
+
+function openMarkerColorPicker(anchorBtn, pinObj, index) {
+  closeMarkerColorPicker();
+
+  const popup = document.createElement("div");
+  popup.className = "marker-color-popup";
+
+  // 「色なし」に戻すスウォッチ（グレー、×アイコン）
+  const noneSwatch = document.createElement("button");
+  noneSwatch.type = "button";
+  noneSwatch.className = "marker-color-swatch marker-color-none";
+  noneSwatch.title = "No color";
+  if (!pinObj.color) noneSwatch.classList.add("active");
+  noneSwatch.onclick = (e) => {
+    e.stopPropagation();
+    pinObj.color = null;
+    savePins();
+    renderPins();
+    renderSegments();
+    renderPinList();
+    closeMarkerColorPicker();
+  };
+  popup.appendChild(noneSwatch);
+
+  Object.keys(MARKER_COLOR_PALETTE).forEach(colorName => {
+    const swatch = document.createElement("button");
+    swatch.type = "button";
+    swatch.className = "marker-color-swatch";
+    swatch.style.background = MARKER_COLOR_PALETTE[colorName];
+    swatch.title = colorName;
+    if (pinObj.color === colorName) swatch.classList.add("active");
+    swatch.onclick = (e) => {
+      e.stopPropagation();
+      pinObj.color = colorName;
+      savePins();
+      renderPins();
+      renderSegments();
+      renderPinList();
+      closeMarkerColorPicker();
+    };
+    popup.appendChild(swatch);
+  });
+
+  document.body.appendChild(popup);
+  activeMarkerColorPopup = popup;
+
+  // ボタンのすぐ下に配置し、画面外にはみ出す場合は横位置・縦位置を画面内に収める。
+  const rect = anchorBtn.getBoundingClientRect();
+  popup.style.position = "fixed";
+  popup.style.top = `${rect.bottom + 6}px`;
+  popup.style.left = `${rect.left}px`;
+
+  requestAnimationFrame(() => {
+    const popupRect = popup.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // 右端がはみ出す場合は右揃えに切り替える
+    if (popupRect.right > viewportWidth - 8) {
+      popup.style.left = `${Math.max(8, viewportWidth - popupRect.width - 8)}px`;
+    }
+    // 下端がはみ出す場合はボタンの上に開き直す
+    if (popupRect.bottom > viewportHeight - 8) {
+      popup.style.top = `${rect.top - popupRect.height - 6}px`;
+    }
+  });
+
+  // ポップアップの外側をクリックしたら閉じる（次のクリックイベントループで登録し、
+  // 今開いた瞬間のクリック自体で即座に閉じてしまわないようにする）。
+  setTimeout(() => {
+    document.addEventListener("click", closeMarkerColorPicker);
+  }, 0);
+  popup.onclick = e => e.stopPropagation();
+}
+
 // マーカーのメモ編集：infoSpanをその場でテキスト入力に差し替える。
 // Enterまたはフォーカスアウトで確定し、Escでキャンセルする。
 function startPinMemoEdit(itemDiv, infoSpan, pinObj, index) {
@@ -1764,7 +1890,7 @@ function startPinMemoEdit(itemDiv, infoSpan, pinObj, index) {
   input.type = "text";
   input.className = "pin-memo-input";
   input.value = pinObj.memo || "";
-  input.placeholder = `#${index + 1} - ${pinObj.t.toFixed(2)}s`;
+  input.placeholder = `${index + 1} - ${pinObj.t.toFixed(2)}s`;
   input.maxLength = 60;
 
   infoSpan.style.display = "none";

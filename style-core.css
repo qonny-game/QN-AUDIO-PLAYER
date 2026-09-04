@@ -1287,7 +1287,7 @@ body {
 
 .pinItem {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: auto 1fr auto auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -1350,6 +1350,82 @@ body {
   fill: currentColor;
 }
 
+/* マーカーリスト左端の色の目印。クリックするとカラーパレットが開く（選択色または未設定時はグレー）。
+   ボタン要素だが枠線・パディングをリセットして丸いドットだけの見た目にする。 */
+.pin-color-mark {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: transform var(--dur-hover) var(--ease-snap), box-shadow var(--dur-hover) var(--ease-snap);
+}
+
+.pin-color-mark:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+/* マーカー色選択のポップアップ。カラースウォッチをグリッドで並べる。 */
+.marker-color-popup {
+  z-index: 500;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 12px;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.marker-color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap);
+}
+
+.marker-color-swatch:hover {
+  transform: scale(1.12);
+}
+
+.marker-color-swatch.active {
+  border-color: #fff;
+}
+
+.marker-color-swatch.marker-color-none {
+  background: #2a2a35;
+  position: relative;
+}
+
+.marker-color-swatch.marker-color-none::before,
+.marker-color-swatch.marker-color-none::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 2px;
+  background: #8b8b9e;
+  transform-origin: center;
+}
+
+.marker-color-swatch.marker-color-none::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.marker-color-swatch.marker-color-none::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
 .pin-memo-input {
   font-family: var(--font-display, 'Outfit'), sans-serif;
   font-size: 14px;
@@ -1381,8 +1457,28 @@ body {
 }
 
 .pinItem .toggle-btn {
-  width: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
+  padding: 0;
+}
+
+.pinItem .toggle-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* ON(表示中)は目立たせ、OFF(非表示)はグレーアウトする */
+.pinItem:not(.disabled) .toggle-btn {
+  color: var(--accent-primary);
+}
+
+.pinItem.disabled .toggle-btn {
+  color: #8b8b9e;
 }
 
 .pinItem button:hover {
