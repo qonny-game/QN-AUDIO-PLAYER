@@ -1663,6 +1663,11 @@ function setSpeed(value) {
 }
 
 let lastSpeedTickValue = currentSpeed;
+// iOS Safari等では、スライダードラッグ中にaudio.playbackRateを高頻度で更新すると
+// 音声デコードが追いつかず「ぶつ切り」に聞こえる不具合があるため、
+// ドラッグ中は表示テキストだけ即座に更新し、実際の音声エンジンへの反映(updatePlaybackRate)は
+// 操作が一段落してから(最後のinputイベントから90ms後)にまとめて1回だけ行う。
+let speedApplyDebounceTimer = null;
 speedRange.oninput = e => {
   currentSpeed = parseFloat(e.target.value);
   if (currentSpeed !== lastSpeedTickValue) {
@@ -1671,7 +1676,11 @@ speedRange.oninput = e => {
   }
   speedDisplay.textContent = currentSpeed.toFixed(2);
   updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
-  updatePlaybackRate();
+
+  clearTimeout(speedApplyDebounceTimer);
+  speedApplyDebounceTimer = setTimeout(() => {
+    updatePlaybackRate();
+  }, 90);
 };
 
 const speedResetBtn = document.getElementById("speedResetBtn");
