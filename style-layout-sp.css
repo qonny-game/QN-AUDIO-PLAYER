@@ -97,60 +97,6 @@
     display: none;
   }
 
-  /* 再生ボタン行を画面下部に常時固定表示（ミニプレイヤー風） */
-  #topControls {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 300;
-    margin: 0;
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
-    background: rgba(13, 13, 15, 0.92);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
-  }
-
-  /* 固定/スクロール構造に変更したことで、#mobileTabSlotのpadding-bottomが
-     topControls分の余白を担うため、body直下のこのスペーサーはもう不要。
-     残したままだとbodyのflexレイアウトの中で高さを消費し、
-     スクロール領域(.app-container)がその分だけ短くなってしまうため非表示にする。 */
-  .top-controls-spacer {
-    display: none;
-  }
-
-  /* SP幅ではPlay/RepeatがLoopの左（#playbackButtonsSlot）にJSで移動してくる。
-     Playが横長(104px)になった分、他のボタン(Loop/Marker追加/前後移動)を少し狭めてバランスを取る。 */
-  #playbackButtonsSlot:not(:empty) {
-    display: flex;
-    gap: 10px;
-    flex: 0 0 auto;
-  }
-
-  #playbackButtonsSlot .playback-inline-btn {
-    width: 48px;
-    height: 56px;
-  }
-
-  #playbackButtonsSlot #playToggle.playback-inline-btn {
-    width: 72px;
-    height: 56px;
-  }
-
-  #playbackButtonsSlot .top-controls-btn-label {
-    display: none;
-  }
-
-  /* Play/Repeatがtop-controlsに加わる分、前後マーカー移動の比率を少し狭める */
-  #topControls .markernav-btn {
-    flex: 1.4;
-  }
-
-  #topControls .loopbtn {
-    flex: 0.8;
-  }
-
   /* 再生ボタン行がfixedで浮いて場所を取らないため、
      シークバー・TIME間の見た目の間隔はgapのみで決まる。詰める。 */
   .player-section {
@@ -208,16 +154,6 @@
     align-items: stretch;
     padding-left: 0;
     padding-right: 0;
-  }
-
-  /* TIME行：Play/RepeatはSP幅で固定エリアに移動済みのため、TIME表示だけが残る。幅いっぱいに広げる。 */
-  .mobile-tab-panel[data-tab-panel="basic"] .time-controls-row:first-child {
-    justify-content: center;
-  }
-
-  .mobile-tab-panel[data-tab-panel="basic"] .time-controls-row:first-child #timeDisplay {
-    width: 100%;
-    text-align: center;
   }
 
   .adjust-controls-row .time-controls-buttons {
@@ -402,98 +338,9 @@
     width: 100%;
   }
 
-  /* スマホ専用タブ切り替えUI（下のパネルと隙間なく繋げるため角丸は上側だけ） */
-  .mobile-tabs {
-    display: flex;
-    gap: 6px;
-    background: #16161b;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-bottom: none;
-    border-radius: 14px 14px 0 0;
-    padding: 6px;
-    margin-top: 4px;
-    margin-bottom: -4px; /* .player-sectionのgap(4px)を打ち消してパネルと密着させる */
-    position: relative;
-    z-index: 1;
-  }
 
-  .mobile-tab-btn {
-    flex: 1;
-    padding: 13px 6px;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    color: #8b8b9e;
-    font-family: var(--font-display, 'Outfit'), sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-  }
-
-  .mobile-tab-btn.active {
-    background: var(--accent-primary);
-    color: #fff;
-  }
-
-  .mobile-tab-btn:not(.active):hover {
-    background: #22222c;
-    color: #f0f0f3;
-  }
-
-  /* タブパネルは選択中のもの以外を隠す。幅は必ず親いっぱいに広げる（タブごとに幅が変わらないようにする） */
-  .mobile-tab-panel {
-    display: none;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .mobile-tab-panel.mobile-tab-active {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .mobile-tab-panel[data-tab-panel="playlist"].mobile-tab-active,
-  .mobile-tab-panel[data-tab-panel="markers"].mobile-tab-active {
-    display: block;
-    width: 100%;
-  }
-
-  /* BasicパネルもMarkers/Playlistと同様、タブの直下は上側の角丸をなくして一体化させる */
-  .basic-panel-box {
-    border-radius: 0 0 16px 16px;
-    border-top: none;
-  }
-
-  .basic-panel-box > *:first-child {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-  }
-
-  /* Markers/Playlistタブの中身も同様にタブと一体化。
-     見出し(h3)直下の余白を詰めるため上パディングは小さめにする */
-  .mobile-tab-panel[data-tab-panel="playlist"],
-  .mobile-tab-panel[data-tab-panel="markers"] {
-    background: #16161b;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-top: none;
-    border-radius: 0 0 16px 16px;
-    padding: 10px 20px 20px;
-  }
-
-  /* SP版はタブ自体に「Markers」「Playlist」の名前が出ているため、
-     パネル内の見出し(タイトル・ACTIVE数/トラック数)は重複するので非表示にする */
-  .mobile-tab-panel[data-tab-panel="playlist"] .markers-heading-row,
-  .mobile-tab-panel[data-tab-panel="markers"] .markers-heading-row {
-    display: none;
-  }
-
-  /* SP幅限定：MARKERS/PLAYLISTタブ内リスト最上部のアクションボタン（+MARKER, SELECT FILE）。
-     コントロールバーのbigbtn-accentと同系のアクセントカラーで、横幅いっぱいに表示する。 */
+  /* SP幅限定：MARKERS/PLAYLISTタブ内リスト最上部のアクションボタン（+MARKER, ADD FILE）。
+     コントロールバーの中央ボタン(tripleNavBtn-center)と同系のアクセントカラーで、横幅いっぱいに表示する。 */
   .tab-inline-action-btn {
     display: flex;
     align-items: center;

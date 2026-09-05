@@ -195,12 +195,6 @@
   gap: 10px;
 }
 
-/* スマホ専用タブUI（Basic/Markers/Playlistの切り替えボタン自体）はPC幅では非表示。
-   中身(.mobile-tab-panel)はPC幅では常に表示されるため、こちらはstyle-core.css側に残る。 */
-.mobile-tabs {
-  display: none;
-}
-
 /* PC版TIME行：SELECT FILEとEXPORTはPlayボタンと同じ高さ(60px、マーカーボタンと同程度)に揃え、
    EXPORTもSELECT FILEと同じグラデーションデザインに統一する。
    file-upload-wrapperはデフォルトdisplay: inline-blockのままだと中の.file-upload-btnとの
@@ -258,12 +252,6 @@
   font-weight: 600;
   letter-spacing: 1px;
   opacity: 1;
-}
-
-/* PC幅ではPlay/RepeatはTIME行側に表示されるため、topControls側のスロットは空のまま非表示。
-   SP幅ではこのスロットが実際に使われる（Play/Repeatがここに移動してくる）ため実質PC専用。 */
-#playbackButtonsSlot {
-  display: none;
 }
 
 /* SP幅限定：MARKERS/PLAYLISTタブ内リスト最上部のアクションボタン（+MARKER, SELECT FILE）。

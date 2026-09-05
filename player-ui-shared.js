@@ -6,8 +6,7 @@
 // 後に読み込むこと。
 //
 // このファイルの中には、isMobileLayout()でPC/SPの分岐を行っている関数が
-// 多数含まれる（例: renderPins, applyPlaybackButtonsLayout,
-// applyMobileTabLayout等）。将来的にPC専用/SP専用ファイルへ分割する場合は、
+// 含まれる（例: renderPins等）。将来的にPC専用/SP専用ファイルへ分割する場合は、
 // これらの分岐を持つ関数を書き直す必要がある点に注意。
 // 下記のSECTIONコメントは、将来の分割時の切り出し単位の目安として付けている。
 // ============================================================
@@ -526,6 +525,24 @@ function findEnabledTrackIndex(fromIndex, direction, wrapAround) {
   return -1;
 }
 
+// プレイリストの前/次の曲へ手動で移動する（コントロール部分の三分割ボタンから使う）。
+// OFFの曲は自動でスキップする。全体リピート(all)の時だけ端まで来たら反対側からループする。
+function playPrevTrack() {
+  if (currentPlaylistIndex < 0) return;
+  hapticTap();
+  const wrapAround = repeatMode === "all";
+  const prevIndex = findEnabledTrackIndex(currentPlaylistIndex, -1, wrapAround);
+  if (prevIndex !== -1) playTrackAt(prevIndex);
+}
+
+function playNextTrack() {
+  if (currentPlaylistIndex < 0) return;
+  hapticTap();
+  const wrapAround = repeatMode === "all";
+  const nextIndex = findEnabledTrackIndex(currentPlaylistIndex, 1, wrapAround);
+  if (nextIndex !== -1) playTrackAt(nextIndex);
+}
+
 // ============================================================
 // プレイリストのドラッグ並び替え（マウス・タッチ両対応）
 // ドラッグハンドル(.playlist-drag-handle)を掴んで上下にドラッグすると、
@@ -942,6 +959,12 @@ if (prevMarkerBtn) prevMarkerBtn.onclick = jumpToPrevMarker;
 
 const nextMarkerBtn = document.getElementById("nextMarkerBtn");
 if (nextMarkerBtn) nextMarkerBtn.onclick = jumpToNextMarker;
+
+const prevTrackBtn = document.getElementById("prevTrackBtn");
+if (prevTrackBtn) prevTrackBtn.onclick = playPrevTrack;
+
+const nextTrackBtn = document.getElementById("nextTrackBtn");
+if (nextTrackBtn) nextTrackBtn.onclick = playNextTrack;
 
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
@@ -2007,53 +2030,16 @@ function startPinMemoEdit(itemDiv, infoSpan, pinObj, index) {
 // Keyboard Shortcuts はヘッダーのポップアップ(shortcutsToggleBtn/shortcutsPopup)に統合済み
 
 // スマホ専用タブ切り替え（Time&Vol / Speed&Key / Markers / Playlist）
-// デフォルトは "time"。
-// スマホ幅では選択中タブのパネルを #mobileTabSlot （タブのすぐ下）に移動して表示する。
-// これによりMarkers/Playlistタブに切り替えた際、波形や再生ボタンを飛び越えてスクロールする必要がなくなる。
-// PC幅では移動処理自体を行わず、各パネルは元のレイアウト位置（Time/Speed行、サイドバー内）にそのまま表示される。
+// Markers/Playlistのタブ切り替え。PC/SP完全に同じレイアウトに統一されたため、
+// 以前あった「SP幅だけ選択中タブを#mobileTabSlotへ移動する」複雑な仕組みは不要になった。
+// 今は単純に、選択中のパネルにだけ.mobile-tab-activeを付けてCSS側で表示を切り替えるだけで済む。
 const mobileTabBtns = document.querySelectorAll(".mobile-tab-btn");
-const mobileTabSlot = document.getElementById("mobileTabSlot");
-const mobileTabMedia = window.matchMedia("(max-width: 768px)");
-
-// 各パネルの元の位置（親要素と直前の兄弟）を記録しておき、PC幅に戻すときに正確に復元する
-const mobileTabPanelOrigins = new Map();
-document.querySelectorAll(".mobile-tab-panel").forEach(panel => {
-  mobileTabPanelOrigins.set(panel, {
-    parent: panel.parentNode,
-    nextSibling: panel.nextSibling
-  });
-});
-
-let currentMobileTab = "basic";
+let currentMobileTab = "markers";
 
 function applyMobileTabLayout() {
-  const isMobile = mobileTabMedia.matches;
-
   document.querySelectorAll(".mobile-tab-panel").forEach(panel => {
     const tabName = panel.getAttribute("data-tab-panel");
-    const origin = mobileTabPanelOrigins.get(panel);
-
-    if (isMobile) {
-      // スマホ幅：選択中タブのパネルだけをスロットに移動する
-      if (tabName === currentMobileTab) {
-        if (mobileTabSlot && panel.parentNode !== mobileTabSlot) {
-          mobileTabSlot.appendChild(panel);
-        }
-        panel.classList.add("mobile-tab-active");
-      } else {
-        // 非選択タブは元の位置に戻したまま非表示にする（スロットを専有しないように）
-        if (origin && panel.parentNode === mobileTabSlot) {
-          origin.parent.insertBefore(panel, origin.nextSibling);
-        }
-        panel.classList.remove("mobile-tab-active");
-      }
-    } else {
-      // PC幅：全パネルを元の位置に戻し、常時表示state（mobile-tab-activeクラス自体はもう無関係）
-      if (origin && panel.parentNode === mobileTabSlot) {
-        origin.parent.insertBefore(panel, origin.nextSibling);
-      }
-      panel.classList.remove("mobile-tab-active");
-    }
+    panel.classList.toggle("mobile-tab-active", tabName === currentMobileTab);
   });
 }
 
@@ -2065,70 +2051,16 @@ function setMobileTab(tabName) {
   applyMobileTabLayout();
 }
 
-// playbackButtonsGroup(Play/Repeat)の元の位置を、タブ移動処理が走る前に必ず記録しておく。
-// これを後回しにすると、Basicタブパネルの移動でplaybackButtonsGroupも巻き込まれて位置がずれた後に
-// 記録することになり、元の位置に正しく復元できなくなる。
-const playbackButtonsGroup = document.getElementById("playbackButtonsGroup");
-const playbackButtonsSlot = document.getElementById("playbackButtonsSlot");
-let playbackButtonsOrigin = null;
-if (playbackButtonsGroup) {
-  playbackButtonsOrigin = {
-    parent: playbackButtonsGroup.parentNode,
-    nextSibling: playbackButtonsGroup.nextSibling
-  };
-}
-
-function applyPlaybackButtonsLayout() {
-  if (!playbackButtonsGroup || !playbackButtonsSlot || !playbackButtonsOrigin) return;
-
-  if (isMobileLayout()) {
-    if (playbackButtonsGroup.parentNode !== playbackButtonsSlot) {
-      playbackButtonsSlot.appendChild(playbackButtonsGroup);
-    }
-  } else {
-    if (playbackButtonsGroup.parentNode === playbackButtonsSlot) {
-      playbackButtonsOrigin.parent.insertBefore(playbackButtonsGroup, playbackButtonsOrigin.nextSibling);
-    }
-  }
-}
+// Play/Repeat/前後曲送りの三分割ボタンは、PC/SP完全に同じレイアウト（topControls内に常時表示）に
+// 統一されたため、以前あった「PC幅⇔SP幅で#playbackButtonsGroupを移動する」ロジックは不要になり、
+// 呼び出し元も含めて完全に削除した。
 
 // ============================================================
-// SELECT FILE・EXPORTは画面幅を問わず、常に
-//   PC幅: TIME行のPlay/Repeatの右（#pcSelectFileSlot）
-//   SP幅: Basicタブの一番下、EQ本体の直後（#mobileSelectFileSlot）
-// のどちらかに存在する（元のサイドバー内・adjust-controls-row内には戻さない）。
-// EQ本体(#eqInlineSection)は従来通りSP幅限定でBasicタブ内に移動、PC幅ではEQモーダル内に戻す。
-// ============================================================
-function createDualSlotMoveController(elementId, mobileSlotId, pcSlotId, insertBeforePcSlot) {
-  const element = document.getElementById(elementId);
-  const mobileSlot = document.getElementById(mobileSlotId);
-  const pcSlot = document.getElementById(pcSlotId);
-  if (!element || !mobileSlot || !pcSlot) return null;
-
-  return function apply() {
-    if (isMobileLayout()) {
-      if (element.parentNode !== mobileSlot) {
-        mobileSlot.appendChild(element);
-      }
-    } else {
-      if (insertBeforePcSlot) {
-        if (element.nextSibling !== pcSlot || element.parentNode !== pcSlot.parentNode) {
-          pcSlot.parentNode.insertBefore(element, pcSlot);
-        }
-      } else {
-        if (element.parentNode !== pcSlot) {
-          pcSlot.appendChild(element);
-        }
-      }
-    }
-  };
-}
-
-// EQセクションはSP幅・PC幅を問わず常にEQモーダル内（元の位置）に留める。
+// EQセクションはPC/SP問わず常にEQモーダル内（元の位置）に留める。
 // SP版では画面のスクロールとEQスライダーのドラッグ操作が競合し、
-// スクロールできなくなる問題があったため、モーダルの中に閉じ込めて解決する。
+// スクロールできなくなる問題があったため、モーダルの中に閉じ込めて解決している。
+// ============================================================
 const eqInlineSection = document.getElementById("eqInlineSection");
-const mobileSelectFileSlotEl = document.getElementById("mobileSelectFileSlot");
 let eqInlineOrigin = null;
 if (eqInlineSection) {
   eqInlineOrigin = {
@@ -2144,49 +2076,18 @@ function applyEqInlineLayout() {
   }
 }
 
-// EXPORTボタン：SP幅ではEQ本体の直後・SELECT FILEの直前、PC幅ではpcSelectFileSlotの直前（Repeatの右、SelectFileより先）
-const applyExportBtnLayout = createDualSlotMoveController("exportToggleBtn", "mobileSelectFileSlot", "pcSelectFileSlot", true);
-
-// SELECT FILE：SP幅ではExportの直後（Basicタブ最後）、PC幅ではpcSelectFileSlotの中（Exportの後）
-const applySelectFileLayout = createDualSlotMoveController("fileUploadWrapper", "mobileSelectFileSlot", "pcSelectFileSlot", false);
-
-function applyMobileBasicExtras() {
-  applyEqInlineLayout();
-  if (applyExportBtnLayout) applyExportBtnLayout();
-  if (applySelectFileLayout) applySelectFileLayout();
-}
-
 mobileTabBtns.forEach(btn => {
   btn.onclick = () => {
     hapticTap();
     setMobileTab(btn.getAttribute("data-tab"));
-    applyPlaybackButtonsLayout();
-    applyMobileBasicExtras();
   };
 });
 
-// 画面幅がPC⇔スマホの境界を跨いだ時にも再配置する
-if (mobileTabMedia.addEventListener) {
-  mobileTabMedia.addEventListener("change", () => {
-    applyMobileTabLayout();
-    applyPlaybackButtonsLayout();
-    applyMobileBasicExtras();
-  });
-} else if (mobileTabMedia.addListener) {
-  mobileTabMedia.addListener(() => {
-    applyMobileTabLayout();
-    applyPlaybackButtonsLayout();
-    applyMobileBasicExtras();
-  });
-}
-
-setMobileTab("basic");
-applyPlaybackButtonsLayout();
-applyMobileBasicExtras();
+setMobileTab("markers");
+applyEqInlineLayout();
 
 function syncAllMobileLayout() {
-  applyPlaybackButtonsLayout();
-  applyMobileBasicExtras();
+  applyEqInlineLayout();
 }
 window.addEventListener("resize", syncAllMobileLayout);
 
@@ -2214,8 +2115,6 @@ window.addEventListener("resize", syncTopControlsSpacerHeight);
 
 window.onload = async () => {
   updatePlayButtonState();
-  applyPlaybackButtonsLayout();
-  applyMobileBasicExtras();
   syncTopControlsSpacerHeight();
   await restorePlaylistFromStorage();
 };

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>QN AUDIO PLAYER 1.4.4</title>
+<title>QN AUDIO PLAYER 1.5.0</title>
 <link rel="stylesheet" href="style-core.css">
 <link rel="stylesheet" href="style-core-pc.css">
 <link rel="stylesheet" href="style-layout-sp.css">
@@ -26,7 +26,7 @@
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.4.4</span></h1>
+    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.5.0</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
   </div>
   <button id="headerMenuBtn" title="Menu">
@@ -166,124 +166,145 @@
     </div>
     
     <div class="top-controls" id="topControls">
-      <!-- SP幅ではJSでこの位置(Loopの左)にPlay/Repeatが移動してくる -->
-      <div id="playbackButtonsSlot"></div>
-      <button id="loopToggleBtn" class="loopbtn" title="Toggle Loop">
-        <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-        <span class="top-controls-btn-label">Loop</span>
-      </button>
-      <div class="markernav-btn" id="markerNavBtn" title="Prev / Next Marker">
-        <button id="prevMarkerBtn" class="markernav-half markernav-left" title="Prev Marker">
-          <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-          <span class="top-controls-btn-label">Marker</span>
-        </button>
-        <span class="markernav-divider"></span>
-        <button id="nextMarkerBtn" class="markernav-half markernav-right" title="Next Marker">
-          <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
-          <span class="top-controls-btn-label">Marker</span>
+      <!-- 1段目：前の曲 / 再生・停止 / 次の曲（三分割ボタン） + Repeat（単体） -->
+      <div class="top-controls-row">
+        <div class="tripleNavBtn" id="playbackTripleBtn" title="Prev / Play / Next Track">
+          <button id="prevTrackBtn" class="tripleNavBtn-third tripleNavBtn-left" title="Prev Track">
+            <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            <span class="top-controls-btn-label">Track</span>
+          </button>
+          <span class="tripleNavBtn-divider"></span>
+          <button id="playToggle" class="tripleNavBtn-third tripleNavBtn-center" title="Play / Pause">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <span class="top-controls-btn-label">Play</span>
+          </button>
+          <span class="tripleNavBtn-divider"></span>
+          <button id="nextTrackBtn" class="tripleNavBtn-third tripleNavBtn-right" title="Next Track">
+            <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
+            <span class="top-controls-btn-label">Track</span>
+          </button>
+        </div>
+        <button id="allRepeatToggleBtn" class="loopbtn" title="Toggle All Repeat">
+          <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+          <span class="top-controls-btn-label">Repeat</span>
         </button>
       </div>
-      <button id="addPinBtn" class="loopbtn bigbtn-accent" title="Add Marker">
-        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        <span class="top-controls-btn-label">Marker</span>
-      </button>
+
+      <!-- 2段目：前マーカー / マーカー追加 / 次マーカー（三分割ボタン） + Loop（単体） -->
+      <div class="top-controls-row">
+        <div class="tripleNavBtn" id="markerNavBtn" title="Prev / Add / Next Marker">
+          <button id="prevMarkerBtn" class="tripleNavBtn-third tripleNavBtn-left" title="Prev Marker">
+            <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            <span class="top-controls-btn-label">Marker</span>
+          </button>
+          <span class="tripleNavBtn-divider"></span>
+          <button id="addPinBtn" class="tripleNavBtn-third tripleNavBtn-center" title="Add Marker">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            <span class="top-controls-btn-label">Marker</span>
+          </button>
+          <span class="tripleNavBtn-divider"></span>
+          <button id="nextMarkerBtn" class="tripleNavBtn-third tripleNavBtn-right" title="Next Marker">
+            <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
+            <span class="top-controls-btn-label">Marker</span>
+          </button>
+        </div>
+        <button id="loopToggleBtn" class="loopbtn" title="Toggle Loop">
+          <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+          <span class="top-controls-btn-label">Loop</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Basicタブの中身：TIME、VOL/SPEED/KEY/EQ、Export、Select File。
-         PC/SP共通で1つの枠(box)にまとめ、TIME行とVOL行の間は境界線(basic-panel-divider)で区切る。
-         SP幅ではCSSで縦積み・全項目フル幅の表示に切り替える。
-         Play/RepeatはSP幅限定でこのBasicパネルの外（固定エリアのtopControls）へJSで移動する。 -->
-    <div class="mobile-tab-panel" data-tab-panel="basic">
-      <div class="basic-panel-box">
-        <!-- 1行目：TIME表示 ＋ Play/Pause ＋ Repeat -->
-        <div class="time-controls-row">
-          <div id="timeDisplay">
-            <span id="currentTimeVal" class="time-val">00:00.00</span>
-            <span class="time-sep">/</span>
-            <span id="durationVal" class="time-dur">00:00.00</span>
-          </div>
+    <!-- 常時表示のメインコントロール：TIME、VOL/SPEED/KEY（1行）、EQ/Export/Add File（1行）。
+         旧「Basicタブ」の中身をタブ化せず常時表示に変更したもの。
+         PC/SP共通の1つの枠(box)にまとめ、各行の間は境界線(basic-panel-divider)で区切る。
+         VOLはiOS Safariの仕様上機能しないため、SP幅ではCSS側で非表示にする
+         （#volToggleBtn自体はPC/SP共通のDOM構造としてここに置いたまま、表示だけ出し分ける）。 -->
+    <div class="basic-panel-box">
+      <!-- 1行目：TIME表示のみ -->
+      <div class="time-controls-row">
+        <div id="timeDisplay">
+          <span id="currentTimeVal" class="time-val">00:00.00</span>
+          <span class="time-sep">/</span>
+          <span id="durationVal" class="time-dur">00:00.00</span>
+        </div>
+      </div>
 
-          <div class="time-controls-buttons" id="playbackButtonsGroup">
-            <button id="playToggle" class="bigbtn playback-inline-btn" title="Play / Pause">
-              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              <span class="top-controls-btn-label">Play</span>
-            </button>
-            <button id="allRepeatToggleBtn" class="loopbtn playback-inline-btn" title="Toggle All Repeat">
-              <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-              <span class="top-controls-btn-label">Repeat</span>
-            </button>
-            <!-- PC幅限定：SELECT FILEとEXPORTがJSでここに移動してくる（Time, Play, Repeat, Select, Exportの並びにする） -->
-            <span id="pcSelectFileSlot"></span>
+      <!-- 2行目：境界線 -->
+      <div class="basic-panel-divider"></div>
+
+      <!-- 3行目：Vol(PC幅のみ表示) / Speed / Key -->
+      <div class="time-controls-row adjust-controls-row">
+        <div class="time-controls-buttons">
+        <div class="header-btn-wrapper">
+          <button id="volToggleBtn" class="av-toggle-btn" title="Volume">
+            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <span class="av-toggle-btn-text">
+              <span class="av-toggle-btn-value" id="volToggleValue">80%</span>
+              <span class="av-toggle-btn-label">Vol</span>
+            </span>
+          </button>
+          <div class="av-popup" id="volPopup">
+            <div class="control-card">
+              <label>Volume <span id="volumeDisplay" style="color:#fff;">0.80</span></label>
+              <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8">
+            </div>
           </div>
         </div>
 
-        <!-- 2行目：境界線 -->
-        <div class="basic-panel-divider"></div>
-
-        <!-- 3行目：Vol / Speed / Key / EQ / Export（全体の調整をまとめる） -->
-        <div class="time-controls-row adjust-controls-row">
-          <div class="time-controls-buttons">
-          <div class="header-btn-wrapper">
-            <button id="volToggleBtn" class="av-toggle-btn" title="Volume">
-              <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-              <span class="av-toggle-btn-text">
-                <span class="av-toggle-btn-value" id="volToggleValue">80%</span>
-                <span class="av-toggle-btn-label">Vol</span>
-              </span>
-            </button>
-            <div class="av-popup" id="volPopup">
-              <div class="control-card">
-                <label>Volume <span id="volumeDisplay" style="color:#fff;">0.80</span></label>
-                <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8">
-              </div>
+        <div class="header-btn-wrapper">
+          <button id="speedToggleBtn" class="av-toggle-btn" title="Speed">
+            <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+            <span class="av-toggle-btn-text">
+              <span class="av-toggle-btn-value" id="speedToggleValue">1.0x</span>
+              <span class="av-toggle-btn-label">Speed</span>
+            </span>
+          </button>
+          <div class="av-popup" id="speedPopup">
+            <div class="control-card">
+              <label>
+                Speed <span id="speedDisplay" style="color:#fff;">1.00</span>x
+                <button class="mini-reset-btn" id="speedResetBtn" title="Reset speed to 1.00x">↺</button>
+              </label>
+              <input type="range" id="speedRange" min="0.5" max="1.5" step="0.01" value="1.0">
             </div>
           </div>
+        </div>
 
-          <div class="header-btn-wrapper">
-            <button id="speedToggleBtn" class="av-toggle-btn" title="Speed">
-              <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-              <span class="av-toggle-btn-text">
-                <span class="av-toggle-btn-value" id="speedToggleValue">1.0x</span>
-                <span class="av-toggle-btn-label">Speed</span>
-              </span>
-            </button>
-            <div class="av-popup" id="speedPopup">
-              <div class="control-card">
-                <label>
-                  Speed <span id="speedDisplay" style="color:#fff;">1.00</span>x
-                  <button class="mini-reset-btn" id="speedResetBtn" title="Reset speed to 1.00x">↺</button>
-                </label>
-                <input type="range" id="speedRange" min="0.5" max="1.5" step="0.01" value="1.0">
-              </div>
-            </div>
-          </div>
-
-          <div class="header-btn-wrapper">
-            <button id="keyToggleBtn" class="av-toggle-btn key-disabled" title="Key change is temporarily disabled while we improve its sound quality" disabled>
-              <svg viewBox="0 0 24 24"><path d="M7 14c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm14.71-2.37l-1.34-1.34c-.2-.2-.51-.2-.71 0L9 16.96V19h2.04l10.66-10.66c.2-.2.2-.51.01-.71z"/></svg>
-              <span class="av-toggle-btn-text">
-                <span class="av-toggle-btn-value" id="keyToggleValue">0</span>
-                <span class="av-toggle-btn-label">Key</span>
-              </span>
-              <span class="key-disabled-badge">SOON</span>
-            </button>
-            <div class="av-popup" id="keyPopup">
-              <div class="control-card key-control-card">
-                <label>
-                  Key <span id="keyDisplay" style="color:#fff;">0</span> st
-                  <button class="mini-reset-btn" id="keyResetBtn" title="Reset key to 0" disabled>↺</button>
-                </label>
-                <div class="key-stepper">
-                  <button id="keyDownBtn" class="key-step-btn" title="Key down 1 semitone" disabled>−</button>
-                  <div class="key-stepper-bar">
-                    <div class="key-stepper-fill" id="keyStepperFill"></div>
-                  </div>
-                  <button id="keyUpBtn" class="key-step-btn" title="Key up 1 semitone" disabled>+</button>
+        <div class="header-btn-wrapper">
+          <button id="keyToggleBtn" class="av-toggle-btn key-disabled" title="Key change is temporarily disabled while we improve its sound quality" disabled>
+            <svg viewBox="0 0 24 24"><path d="M7 14c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm14.71-2.37l-1.34-1.34c-.2-.2-.51-.2-.71 0L9 16.96V19h2.04l10.66-10.66c.2-.2.2-.51.01-.71z"/></svg>
+            <span class="av-toggle-btn-text">
+              <span class="av-toggle-btn-value" id="keyToggleValue">0</span>
+              <span class="av-toggle-btn-label">Key</span>
+            </span>
+            <span class="key-disabled-badge">SOON</span>
+          </button>
+          <div class="av-popup" id="keyPopup">
+            <div class="control-card key-control-card">
+              <label>
+                Key <span id="keyDisplay" style="color:#fff;">0</span> st
+                <button class="mini-reset-btn" id="keyResetBtn" title="Reset key to 0" disabled>↺</button>
+              </label>
+              <div class="key-stepper">
+                <button id="keyDownBtn" class="key-step-btn" title="Key down 1 semitone" disabled>−</button>
+                <div class="key-stepper-bar">
+                  <div class="key-stepper-fill" id="keyStepperFill"></div>
                 </div>
+                <button id="keyUpBtn" class="key-step-btn" title="Key up 1 semitone" disabled>+</button>
               </div>
             </div>
           </div>
+        </div>
+        </div>
+      </div>
 
+      <!-- 4行目：境界線 -->
+      <div class="basic-panel-divider"></div>
+
+      <!-- 5行目：EQ / Export / Add File（全て同じav-toggle-btnデザインで統一） -->
+      <div class="time-controls-row adjust-controls-row">
+        <div class="time-controls-buttons">
           <button id="eqToggleBtn" class="av-toggle-btn" title="Equalizer">
             <svg viewBox="0 0 24 24"><path d="M3 17h4v4H3v-4zm7-8h4v12h-4V9zm7-6h4v18h-4V3z"/></svg>
             <span class="av-toggle-btn-text">
@@ -297,34 +318,26 @@
               <span class="av-toggle-btn-label">Export</span>
             </span>
           </button>
-        </div>
 
+          <div class="header-btn-wrapper" id="fileUploadWrapper">
+            <label for="fileInput" class="av-toggle-btn" title="Add File" style="cursor: pointer;">
+              <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+              <span class="av-toggle-btn-text">
+                <span class="av-toggle-btn-label">Add File</span>
+              </span>
+            </label>
+            <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.webm,.opus" multiple style="display:none;">
+          </div>
         </div>
-
-        <!-- SP幅限定：EQ本体・SELECT FILEがこの下にJSで移動してくる（3行目の下、境界線で区切りたい場合はCSS側で対応） -->
-        <div id="mobileSelectFileSlot"></div>
       </div>
     </div>
-
-
-    <!-- スマホ幅専用のタブ切替UI（PC幅では非表示） -->
-    <div class="mobile-tabs" id="mobileTabs">
-      <button class="mobile-tab-btn active" data-tab="basic">Basic</button>
-      <button class="mobile-tab-btn" data-tab="markers">Markers</button>
-      <button class="mobile-tab-btn" data-tab="playlist">Playlist</button>
-    </div>
-
-    <!-- スマホ幅ではここに選択中タブの中身がJSで移動してくる（PC幅では使われない） -->
-    <div id="mobileTabSlot"></div>
   </div>
 
   <div class="sidebar-section">
-    <div class="file-upload-wrapper" id="fileUploadWrapper">
-      <span class="file-upload-btn">
-        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-        <span>SELECT FILES</span>
-      </span>
-      <input type="file" id="fileInput" accept="audio/*,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.webm,.opus" multiple>
+    <!-- Markers / Playlist の切り替えタブ（旧Basicタブは撤去、この2つだけになった） -->
+    <div class="mobile-tabs" id="mobileTabs">
+      <button class="mobile-tab-btn active" data-tab="markers">Markers</button>
+      <button class="mobile-tab-btn" data-tab="playlist">Playlist</button>
     </div>
 
     <div class="mobile-tab-panel" data-tab-panel="markers">
@@ -332,7 +345,7 @@
         <h3>Markers</h3>
         <span id="loopInfo">ACTIVE 0/0</span>
       </div>
-      <!-- SP幅限定：MARKERSタブ内リスト最上部の+MARKERボタン。コントロールバーのaddPinBtnと同じ機能。 -->
+      <!-- リストを見ながら追加できるよう、コントロールバーのaddPinBtnと同じ機能のボタンをここにも置く。 -->
       <button id="addPinBtnInline" class="tab-inline-action-btn" title="Add Marker">
         <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         <span>Add Marker</span>
@@ -345,10 +358,10 @@
         <h3>Playlist</h3>
         <span id="playlistInfo">0 tracks</span>
       </div>
-      <!-- SP幅限定：PLAYLISTタブ内リスト最上部のSELECT FILEボタン。既存のfileInputを発火させる。 -->
-      <button id="selectFileBtnInline" class="tab-inline-action-btn" title="Select Files">
+      <!-- リストを見ながら追加できるよう、既存のfileInputを発火させるボタンをここにも置く。 -->
+      <button id="selectFileBtnInline" class="tab-inline-action-btn" title="Add File">
         <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-        <span>Select Files</span>
+        <span>Add File</span>
       </button>
       <div id="playlistBox"></div>
     </div>
@@ -539,7 +552,7 @@
 <!-- スマホ幅でtop-controlsを画面下部に固定した際、ページ最下部（フッター前）に高さ分の余白を確保する -->
 <div class="top-controls-spacer" id="topControlsSpacer"></div>
 
-<footer id="appFooter">QNAUDIO Ver1.4.4 by QONNY</footer>
+<footer id="appFooter">QNAUDIO Ver1.5.0 by QONNY</footer>
 
 <script src="lame.min.js"></script>
 <script src="player-core.js"></script>
