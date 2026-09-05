@@ -2051,6 +2051,48 @@ function setMobileTab(tabName) {
   applyMobileTabLayout();
 }
 
+// SP幅限定：サイドバー(Markers/Playlist)の開閉。画面右端の吸着ボタン(sidebarToggleTabs)を押すと、
+// 対応するタブに切り替えつつサイドバーをスライドインさせる。オーバーレイタップやCloseで閉じる。
+// PC幅ではサイドバーは常時表示のため、これらの要素自体がCSS側で非表示になり実質何もしない。
+const sidebarSection = document.getElementById("sidebarSection");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+const sidebarToggleBtns = document.querySelectorAll(".sidebar-toggle-btn");
+
+function openSidebar(tabName) {
+  if (tabName) setMobileTab(tabName);
+  if (sidebarSection) sidebarSection.classList.add("open");
+  if (sidebarOverlay) sidebarOverlay.classList.add("open");
+  updateSidebarToggleActiveState();
+  hapticTap();
+}
+
+function closeSidebar() {
+  if (sidebarSection) sidebarSection.classList.remove("open");
+  if (sidebarOverlay) sidebarOverlay.classList.remove("open");
+  updateSidebarToggleActiveState();
+}
+
+function updateSidebarToggleActiveState() {
+  const isOpen = sidebarSection && sidebarSection.classList.contains("open");
+  sidebarToggleBtns.forEach(btn => {
+    btn.classList.toggle("active", isOpen && btn.getAttribute("data-tab") === currentMobileTab);
+  });
+}
+
+sidebarToggleBtns.forEach(btn => {
+  btn.onclick = () => {
+    const tabName = btn.getAttribute("data-tab");
+    // 既に同じタブでサイドバーが開いている状態でもう一度押した場合は閉じる（トグル動作）
+    if (sidebarSection && sidebarSection.classList.contains("open") && currentMobileTab === tabName) {
+      closeSidebar();
+    } else {
+      openSidebar(tabName);
+    }
+  };
+});
+
+if (sidebarOverlay) sidebarOverlay.onclick = closeSidebar;
+
 // Play/Repeat/前後曲送りの三分割ボタンは、PC/SP完全に同じレイアウト（topControls内に常時表示）に
 // 統一されたため、以前あった「PC幅⇔SP幅で#playbackButtonsGroupを移動する」ロジックは不要になり、
 // 呼び出し元も含めて完全に削除した。
@@ -2080,6 +2122,7 @@ mobileTabBtns.forEach(btn => {
   btn.onclick = () => {
     hapticTap();
     setMobileTab(btn.getAttribute("data-tab"));
+    updateSidebarToggleActiveState();
   };
 });
 
@@ -2094,20 +2137,20 @@ window.addEventListener("resize", syncAllMobileLayout);
 function syncTopControlsSpacerHeight() {
   const topControls = document.getElementById("topControls");
   const spacer = document.getElementById("topControlsSpacer");
-  const tabSlot = document.getElementById("mobileTabSlot");
+  const sidebarSection = document.querySelector(".sidebar-section");
   if (!topControls || !spacer) return;
   if (isMobileLayout()) {
     const h = topControls.getBoundingClientRect().height;
     spacer.style.height = h + "px";
     // SP幅ではbody自体はスクロールしない(overflow: hidden)ため、bodyへのpadding-bottomは意味を持たない。
-    // 実際にスクロールするのは#mobileTabSlotなので、そちらにtopControlsの高さ分の余白を確保し、
-    // スクロール最下部のコンテンツがtopControls(画面下部固定)の裏に隠れないようにする。
-    if (tabSlot) tabSlot.style.paddingBottom = (h + 8) + "px";
+    // 実際にスクロールするのは.sidebar-section（タブ+中身）なので、そちらにtopControlsの高さ分の
+    // 余白を確保し、スクロール最下部のコンテンツがtopControls(画面下部固定)の裏に隠れないようにする。
+    if (sidebarSection) sidebarSection.style.paddingBottom = (h + 8) + "px";
     document.body.style.paddingBottom = "";
   } else {
     spacer.style.height = "0px";
     document.body.style.paddingBottom = "";
-    if (tabSlot) tabSlot.style.paddingBottom = "";
+    if (sidebarSection) sidebarSection.style.paddingBottom = "";
   }
 }
 syncTopControlsSpacerHeight();

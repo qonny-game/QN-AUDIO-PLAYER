@@ -2,58 +2,16 @@
    style-core-pc.css
    PC幅でのみ実際に使われるデザイン・レイアウト。
    対象の要素自体がSP幅で完全に非表示・撤去されているため、
-   このファイルの内容はSP幅では一切使われない。
+   このファイルの内容はSP幅では一切使われない、という前提で運用している。
    style-core.css の後に読み込むこと。
+
+   【注意】このファイル自体は@mediaクエリで囲まれておらず、実際には
+   SP幅でも常に読み込まれ適用される。そのため、SP幅でも意味を持つ要素
+   （表示が必要な要素）をこのファイルで触ると、意図せず非表示になる等の
+   事故につながる。SP幅でも使われる要素へのスタイルは、必ずstyle-core.css
+   （共通）かstyle-layout-sp.css（SP限定、@media内）側に書くこと。
    ============================================================ */
 
-/* PC幅：VOL/SPEED/KEYボタンは、隙間なく横並びにして幅いっぱいに広げる
-   （EQボタンはSP幅でも表示されるため style-core.css 側に共通スタイルとして残っている）。
-   左端(VOL)だけ角丸を付け、隙間をなくした分の区切りとして左ボーダーを消す。 */
-.adjust-controls-row .header-btn-wrapper {
-  flex-grow: 1;
-  flex-shrink: 1;
-  flex-basis: 0%;
-  min-width: 0;
-}
-
-#volToggleBtn,
-#speedToggleBtn,
-#keyToggleBtn {
-  flex-grow: 1;
-  flex-shrink: 1;
-  flex-basis: 0%;
-  width: 100%;
-  min-width: 0;
-  border-radius: 0;
-  justify-content: center;
-}
-
-#speedToggleBtn,
-#keyToggleBtn {
-  border-left: none;
-}
-
-#volToggleBtn {
-  border-top-left-radius: 14px;
-  border-bottom-left-radius: 14px;
-}
-
-/* フッター：SP幅では固定/スクロール構造と相性が悪いため完全非表示にしているため実質PC専用 */
-#appFooter {
-  width: 100%;
-  max-width: 1400px;
-  text-align: center;
-  margin-top: 32px;
-  padding: 16px 0 4px;
-  font-family: var(--font-display, 'Outfit'), sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 1px;
-  color: #5a5a68;
-  text-transform: uppercase;
-  position: relative;
-  z-index: 1;
-}
 
 /* Keyboard Shortcuts：SP幅では機能自体が撤去されているため完全にPC専用 */
 #shortcutsToggleBtn {
@@ -195,67 +153,9 @@
   gap: 10px;
 }
 
-/* PC版TIME行：SELECT FILEとEXPORTはPlayボタンと同じ高さ(60px、マーカーボタンと同程度)に揃え、
-   EXPORTもSELECT FILEと同じグラデーションデザインに統一する。
-   file-upload-wrapperはデフォルトdisplay: inline-blockのままだと中の.file-upload-btnとの
-   高さ・位置の計算がexportToggleBtn(単一のボタン要素)と食い違いズレて見えるため、flexにして揃える。
-   #playbackButtonsGroupというコンテナ自体、SP幅ではこの構成では使われないため実質PC専用。 */
-#playbackButtonsGroup .file-upload-wrapper {
-  display: flex;
-  align-items: center;
-  width: auto;
-  height: 60px;
-  flex-shrink: 0;
-}
-
-#playbackButtonsGroup .file-upload-btn {
-  width: auto;
-  height: 60px;
-  box-sizing: border-box;
-  padding: 0 24px;
-  white-space: nowrap;
-}
-
-#playbackButtonsGroup .file-upload-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-#playbackButtonsGroup #exportToggleBtn {
-  flex-shrink: 0;
-  height: 60px;
-  min-height: 0;
-  padding: 0 24px;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  border: none;
-  box-shadow: 0 6px 20px var(--accent-glow);
-  color: #fff;
-}
-
-#playbackButtonsGroup #exportToggleBtn:hover {
-  background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
-  box-shadow: 0 8px 25px var(--accent-glow);
-  transform: translateY(-2px);
-}
-
-#playbackButtonsGroup #exportToggleBtn svg {
-  width: 20px;
-  height: 20px;
-}
-
-#playbackButtonsGroup #exportToggleBtn .av-toggle-btn-text {
-  flex-direction: row;
-}
-
-#playbackButtonsGroup #exportToggleBtn .av-toggle-btn-label {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  opacity: 1;
-}
-
-/* SP幅限定：MARKERS/PLAYLISTタブ内リスト最上部のアクションボタン（+MARKER, SELECT FILE）。
-   PC幅では他の場所に同じ機能のボタンが既にあるため非表示。 */
-.tab-inline-action-btn {
+/* サイドバー(Markers/Playlist)を開閉する吸着ボタン・オーバーレイはSP幅限定の機能。
+   PC幅では常時表示のサイドバーがあるため完全に非表示にする。 */
+#sidebarToggleTabs,
+#sidebarOverlay {
   display: none;
 }

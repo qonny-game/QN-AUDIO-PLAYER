@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>QN AUDIO PLAYER 1.5.0</title>
+<title>QN AUDIO PLAYER 1.5.1</title>
 <link rel="stylesheet" href="style-core.css">
 <link rel="stylesheet" href="style-core-pc.css">
 <link rel="stylesheet" href="style-layout-sp.css">
@@ -26,7 +26,7 @@
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.5.0</span></h1>
+    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.5.1</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
   </div>
   <button id="headerMenuBtn" title="Menu">
@@ -217,23 +217,20 @@
 
     <!-- 常時表示のメインコントロール：TIME、VOL/SPEED/KEY（1行）、EQ/Export/Add File（1行）。
          旧「Basicタブ」の中身をタブ化せず常時表示に変更したもの。
-         PC/SP共通の1つの枠(box)にまとめ、各行の間は境界線(basic-panel-divider)で区切る。
+         TIME表示は外枠なしの単独行。VOL/SPEED/KEY行とEQ/Export/AddFile行だけを
+         1つの角丸ボックス(basic-panel-box)にまとめ、行間の境界線は無くして１枚に見せる。
          VOLはiOS Safariの仕様上機能しないため、SP幅ではCSS側で非表示にする
          （#volToggleBtn自体はPC/SP共通のDOM構造としてここに置いたまま、表示だけ出し分ける）。 -->
-    <div class="basic-panel-box">
-      <!-- 1行目：TIME表示のみ -->
-      <div class="time-controls-row">
-        <div id="timeDisplay">
-          <span id="currentTimeVal" class="time-val">00:00.00</span>
-          <span class="time-sep">/</span>
-          <span id="durationVal" class="time-dur">00:00.00</span>
-        </div>
+    <div class="time-controls-row">
+      <div id="timeDisplay">
+        <span id="currentTimeVal" class="time-val">00:00.00</span>
+        <span class="time-sep">/</span>
+        <span id="durationVal" class="time-dur">00:00.00</span>
       </div>
+    </div>
 
-      <!-- 2行目：境界線 -->
-      <div class="basic-panel-divider"></div>
-
-      <!-- 3行目：Vol(PC幅のみ表示) / Speed / Key -->
+    <div class="basic-panel-box">
+      <!-- 1行目：Vol(PC幅のみ表示) / Speed / Key -->
       <div class="time-controls-row adjust-controls-row">
         <div class="time-controls-buttons">
         <div class="header-btn-wrapper">
@@ -299,10 +296,7 @@
         </div>
       </div>
 
-      <!-- 4行目：境界線 -->
-      <div class="basic-panel-divider"></div>
-
-      <!-- 5行目：EQ / Export / Add File（全て同じav-toggle-btnデザインで統一） -->
+      <!-- 2行目：EQ / Export / Add File（全て同じav-toggle-btnデザインで統一） -->
       <div class="time-controls-row adjust-controls-row">
         <div class="time-controls-buttons">
           <button id="eqToggleBtn" class="av-toggle-btn" title="Equalizer">
@@ -333,7 +327,17 @@
     </div>
   </div>
 
-  <div class="sidebar-section">
+  <!-- SP幅限定：サイドバー(Markers/Playlist)を開閉する画面右端の縦長吸着ボタン。
+       PC幅では常時表示のサイドバーがあるため不要（CSS側で非表示にする）。 -->
+  <div class="sidebar-toggle-tabs" id="sidebarToggleTabs">
+    <button class="sidebar-toggle-btn" id="sidebarToggleMarkers" data-tab="markers">Markers</button>
+    <button class="sidebar-toggle-btn" id="sidebarTogglePlaylist" data-tab="playlist">Playlist</button>
+  </div>
+
+  <!-- SP幅でサイドバーを開いている間、背後をタップして閉じるためのオーバーレイ -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="sidebar-section" id="sidebarSection">
     <!-- Markers / Playlist の切り替えタブ（旧Basicタブは撤去、この2つだけになった） -->
     <div class="mobile-tabs" id="mobileTabs">
       <button class="mobile-tab-btn active" data-tab="markers">Markers</button>
@@ -552,7 +556,6 @@
 <!-- スマホ幅でtop-controlsを画面下部に固定した際、ページ最下部（フッター前）に高さ分の余白を確保する -->
 <div class="top-controls-spacer" id="topControlsSpacer"></div>
 
-<footer id="appFooter">QNAUDIO Ver1.5.0 by QONNY</footer>
 
 <script src="lame.min.js"></script>
 <script src="player-core.js"></script>

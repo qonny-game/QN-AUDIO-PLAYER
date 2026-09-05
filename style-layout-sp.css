@@ -11,8 +11,11 @@
 }
 
 @media screen and (max-width: 768px) {
-  /* ページ全体のスクロールを止め、ヘッダー〜シークバー〜再生コントロールまでを常に画面内に固定表示し、
-     タブの中身（Basic/Markers/Playlist）だけを独立してスクロールさせる。
+  /* ページ全体のスクロールを止め、ヘッダー〜シークバー〜TIME/VOL/EQ〜再生コントロールまでを
+     常に画面内に固定表示し、サイドバー(タブ+中身)だけを独立してスクロールさせる。
+     以前は「タブの中身だけを#mobileTabSlotへ移動してそこだけスクロール」という設計だったが、
+     PC/SP統一でタブ構造自体がサイドバー(.sidebar-section)側にまとまったため、
+     .sidebar-section自体を残りの高さいっぱいのスクロール領域として扱う設計に変更した。
      overscroll-behavior-x: none は、横スワイプ時にブラウザ標準のバウンス/戻る操作等が
      発生して画面全体がガクッとズレて見える現象を防ぐための保険。 */
   html, body {
@@ -37,11 +40,16 @@
     flex-direction: column;
     width: 100%;
     margin-top: 8px;
+    /* PC幅ではposition: relative; z-index: 1; を持つが、これがスタッキングコンテキストを
+       作ってしまい、中の.sidebar-section(position: fixed)がヘッダーより奥に沈んで
+       見える原因になっていたため、SP幅ではリセットする。 */
+    position: static;
+    z-index: auto;
   }
 
+  /* 波形・TIME・VOL/EQ等は必要な高さのまま、縮まずそのまま表示する（ここはスクロールしない） */
   .player-section {
-    flex: 1;
-    min-height: 0;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -51,186 +59,155 @@
     flex-shrink: 0;
   }
 
-  /* タブ切替UI(mobileTabs)自体は固定エリア側に残し、その中身だけスクロールさせる */
-  #mobileTabs {
+  /* サイドバー（タブボタン+タブの中身）は、SP幅では常時表示ではなく、
+     画面右端の吸着ボタン(#sidebarToggleTabs)を押した時だけ右からスライドインする
+     不透明パネルとして表示する。普段は画面外(right: -100%)に隠しておく。
+     サイドバー自体(この枠)は常に画面の縦幅いっぱいに固定し、中身が増えた時にサイドバー自体が
+     伸び縮みするのではなく、内側の.mobile-tab-panel側だけが独立してスクロールする設計にする
+     （枠のサイズが常に一定なので、開閉アニメーションや高さ計算が安定する）。 */
+  .sidebar-section {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    bottom: 0;
+    width: 85%;
+    max-width: 360px;
+    height: 100dvh;
+    z-index: 400;
+    background: #0d0d0f;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 16px 16px calc(90px + 16px);
+    box-sizing: border-box;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+    transition: right var(--dur-open, 260ms) var(--ease-pop, ease-out);
+    margin: 0;
+  }
+
+  .sidebar-section.open {
+    right: 0;
+  }
+
+  /* タブボタン自体はサイドバーの先頭に固定表示（スクロールしない） */
+  .mobile-tabs {
     flex-shrink: 0;
   }
 
-  /* タブの中身が表示される場所。残りの高さいっぱいを使い、ここだけ独立してスクロールする。
-     画面下部固定のtopControls分の余白(padding-bottom)を持たせ、コンテンツが隠れないようにする。
-     overflow-x: hiddenは、横スワイプでのタブ切替操作時にブラウザ標準の横方向スクロール/バウンスが
-     発生し画面全体がズレて見える現象（横方向のオーバースクロール）を防ぐためのもの。 */
-  #mobileTabSlot:not(:empty) {
+  /* タブの中身がここで独立してスクロールする。サイドバー自体の高さは固定されているため、
+     マーカーやプレイリストの項目がどれだけ増えても、この内側だけがスクロールし、
+     枠自体（サイドバーの見た目・開閉位置）は一切変わらない。 */
+  .mobile-tab-panel.mobile-tab-active {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 8px;
     scrollbar-width: thin;
     scrollbar-color: var(--accent-primary) transparent;
   }
 
   /* Webkit系ブラウザ(Chrome/Safari)向けスクロールバーのカスタムデザイン。
      アプリのダークテーマ・アクセントカラーに合わせた細めのバーにする。 */
-  #mobileTabSlot::-webkit-scrollbar {
+  .mobile-tab-panel.mobile-tab-active::-webkit-scrollbar {
     width: 5px;
   }
 
-  #mobileTabSlot::-webkit-scrollbar-track {
+  .mobile-tab-panel.mobile-tab-active::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  #mobileTabSlot::-webkit-scrollbar-thumb {
+  .mobile-tab-panel.mobile-tab-active::-webkit-scrollbar-thumb {
     background: var(--accent-primary);
     border-radius: 3px;
     opacity: 0.6;
   }
 
-  /* サイドバー(Markers/Playlist本体)がスクロール領域内に移動してくるため、外枠の余白は不要にする */
-  .sidebar-section {
-    margin: 0;
+  /* Webkit系ブラウザ(Chrome/Safari)向けスクロールバーのカスタムデザイン。
+     アプリのダークテーマ・アクセントカラーに合わせた細めのバーにする。 */
+  .sidebar-section::-webkit-scrollbar {
+    width: 5px;
   }
 
-  /* フッターは固定/スクロール構造とは相性が悪いため、SP幅では非表示にする */
-  #appFooter {
+  .sidebar-section::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-section::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 3px;
+    opacity: 0.6;
+  }
+
+  /* サイドバーを開いている間、背後に薄暗いオーバーレイを表示する。タップで閉じられる。 */
+  .sidebar-overlay {
     display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 390;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  /* 画面右端に吸着する縦長のタブ切替ボタン（サイドバーが閉じている時だけ意味を持つ）。
+     開いている間はサイドバー自体に隠れる位置関係になるため、特別な非表示制御はしていない。
+     style-core-pc.cssは実際には@mediaで囲まれておらず常時読み込まれるファイルで、そちらに
+     #sidebarToggleTabs { display: none; } というIDセレクタでのPC幅向け非表示指定があるため、
+     クラスセレクタだけでは詳細度で負けてしまう。ここでは同じIDセレクタ+!importantで
+     確実にSP幅での表示を保証する。 */
+  #sidebarToggleTabs {
+    display: flex !important;
+  }
+
+  #sidebarOverlay.open {
+    display: block !important;
+  }
+
+  .sidebar-toggle-tabs {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 380;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px 0 0 12px;
+    overflow: hidden;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .sidebar-toggle-btn {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    padding: 18px 10px;
+    background: #1c1c24;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: none;
+    color: #8b8b9e;
+    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .sidebar-toggle-btn:not(:first-child) {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .sidebar-toggle-btn.active {
+    background: var(--accent-primary);
+    color: #fff;
   }
 
   /* 再生ボタン行がfixedで浮いて場所を取らないため、
      シークバー・TIME間の見た目の間隔はgapのみで決まる。詰める。 */
   .player-section {
     gap: 4px;
-  }
-
-  /* VOL/SPEED/KEYはSP幅では「ボタンを押してポップアップを開く」方式をやめ、
-     常にスライダー等が見えている常時展開表示にする。
-     EQだけはドラッグでの一括描画操作がページのスクロールと競合するため、
-     常時展開はやめてモーダルのまま維持し、ボタンも表示し続ける。
-     VOLはiOS Safariの仕様上audio要素のvolumeプロパティが機能しないため、SP幅では完全に撤去する。 */
-  #volToggleBtn,
-  #speedToggleBtn,
-  #keyToggleBtn {
-    display: none;
-  }
-
-  #volPopup {
-    display: none !important;
-  }
-
-  .time-controls-buttons .header-btn-wrapper {
-    position: static;
-    width: 100%;
-  }
-
-  .time-controls-buttons .header-btn-wrapper .av-popup {
-    display: block;
-    position: static;
-    opacity: 1;
-    transform: none;
-    width: 100%;
-    box-sizing: border-box;
-    background: none;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    padding: 14px 20px;
-    margin-bottom: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  }
-
-  /* Basicタブ内の最後のVOL/SPEED/KEY項目には下の境界線を付けない
-     （直後にEQセクションが独自の余白で続くため、二重線を避ける） */
-  .time-controls-buttons .header-btn-wrapper:last-of-type .av-popup {
-    border-bottom: none;
-  }
-
-  /* Basicタブ内は「TIME／VOL／SPEED／KEY／EQ／EXPORT／SELECT FILE」を
-     全て1行ずつ・幅いっぱいの縦積みにする。3列折り返しだった旧レイアウトをやめる。
-     左右パディングは中の.av-popup(常時展開時)側で20px確保するため、
-     ここで重ねて持つと二重パディングになりTIME行より内側にずれて見えるので0にする。 */
-  .adjust-controls-row {
-    flex-direction: column;
-    align-items: stretch;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .adjust-controls-row .time-controls-buttons {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .adjust-controls-row .header-btn-wrapper,
-  .adjust-controls-row .av-toggle-btn {
-    width: 100%;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  /* EQボタンはSP幅では縦積みの1行に戻るため、PC幅専用の「隣接ボタン連結」用スタイル
-     （角丸なし・左ボーダーなし）を解除し、通常の単独ボタンの見た目に戻す。
-     adjust-controls-row自体は左右パディング0のため、EQボタン単体に左右マージンを持たせて
-     SELECT FILE/Exportボタン（左右20pxパディングの中にある）と横幅の基準を揃える。 */
-  .adjust-controls-row #eqToggleBtn {
-    border-radius: 14px;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    width: auto;
-    flex-grow: 0;
-    margin-left: 20px;
-    margin-right: 20px;
-  }
-
-  /* EXPORTボタンはSP幅でSELECT FILEと同じデザイン（グラデーション背景・サイズ感）に揃える。
-     JSでEQ本体の直後に移動されるため、adjust-controls-row外でも幅いっぱいになるよう明示する。 */
-  #exportToggleBtn {
-    width: 100%;
-    box-sizing: border-box;
-    min-height: 0;
-    justify-content: center;
-    gap: 10px;
-    padding: 18px 16px;
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    border: none;
-    border-radius: 14px;
-    box-shadow: 0 6px 20px var(--accent-glow);
-    color: #fff;
-    margin-bottom: 10px;
-  }
-
-  #exportToggleBtn:hover {
-    background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
-    box-shadow: 0 8px 25px var(--accent-glow);
-  }
-
-  #exportToggleBtn svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  #exportToggleBtn .av-toggle-btn-text {
-    flex-direction: row;
-  }
-
-  #exportToggleBtn .av-toggle-btn-label {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    opacity: 1;
-  }
-
-  /* SELECT FILEはBasicタブ最後の1行として、他の要素と同じ幅感・左右余白で表示する。
-     下端の余白は#mobileTabSlot側のpadding-bottom(コントロールバー分)と合算されるため、
-     ここでは最小限に留める。 */
-  #mobileSelectFileSlot:not(:empty) {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 20px 4px;
-  }
-
-  #mobileSelectFileSlot .file-upload-wrapper {
-    width: 100%;
   }
 
   /* ヘッダー：ロゴ＋バージョンとファイル名で2行に収め、Color/Analyzer/EQはハンバーガーメニューに格納 */
@@ -336,63 +313,6 @@
   .control-card {
     min-width: 0;
     width: 100%;
-  }
-
-
-  /* SP幅限定：MARKERS/PLAYLISTタブ内リスト最上部のアクションボタン（+MARKER, ADD FILE）。
-     コントロールバーの中央ボタン(tripleNavBtn-center)と同系のアクセントカラーで、横幅いっぱいに表示する。 */
-  .tab-inline-action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 12px 16px;
-    margin-bottom: 10px;
-    background: var(--accent-glow);
-    border: 1px solid var(--accent-primary);
-    border-radius: 12px;
-    color: var(--accent-primary);
-    font-family: var(--font-display, 'Outfit'), sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
-  }
-
-  .tab-inline-action-btn:active {
-    transform: scale(0.98);
-  }
-
-  .tab-inline-action-btn svg {
-    width: 18px;
-    height: 18px;
-    fill: currentColor;
-    flex-shrink: 0;
-  }
-
-  .sidebar-section {
-    border: none;
-    background: transparent;
-    padding: 0;
-  }
-
-  /* スマホ幅ではタブの中身がここ（タブ直下）に移動してくる */
-  #mobileTabSlot {
-    width: 100%;
-  }
-
-  #mobileTabSlot:empty {
-    display: none;
-  }
-
-  /* フッターが画面下部固定のtopControlsの裏に隠れないよう、
-     ページ全体の下側にtopControlsの高さ分の余白を確保する（JSで実測値をセット） */
-  body {
-    padding-bottom: 90px;
   }
 }
 
