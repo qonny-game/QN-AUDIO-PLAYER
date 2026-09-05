@@ -387,7 +387,7 @@ function addFilesToPlaylist(files) {
 
   const wasEmpty = playlist.length === 0;
   audioFiles.forEach(file => {
-    playlist.push({ file, name: file.name });
+    playlist.push({ file, name: file.name, enabled: true });
     // 実体ごとIndexedDBに自動保存する（次回起動時に自動復元するため）。
     // 保存自体は非同期・失敗しても再生には影響しないため、結果を待たずに進める。
     savePlaylistTrack(file);
@@ -424,6 +424,25 @@ function renderPlaylist() {
     nameSpan.title = track.name;
     nameSpan.onclick = () => playTrackAt(parseInt(item.dataset.index, 10));
     item.appendChild(nameSpan);
+
+    if (!track.enabled) {
+      item.classList.add("disabled");
+    }
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.className = "toggle-btn";
+    toggleBtn.title = track.enabled ? "Track enabled (click to disable)" : "Track disabled (click to enable, skipped during playback)";
+    // ON: 目が開いたアイコン、OFF: 目に斜線が入ったアイコン（マーカーのON/OFFアイコンと同じデザイン）
+    toggleBtn.innerHTML = track.enabled
+      ? '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="M12 6.5c3.79 0 7.17 2.13 8.82 5.5-.59 1.2-1.42 2.25-2.42 3.11l1.42 1.42c1.39-1.23 2.49-2.77 3.18-4.53C21.27 7.61 17 4.5 12 4.5c-1.27 0-2.49.2-3.64.57l1.65 1.65c.62-.14 1.28-.22 1.99-.22zM2.71 3.16L1.29 4.57 4 7.27C2.36 8.53 1.07 10.15 0.18 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l3.01 3.01 1.41-1.41L2.71 3.16zM12 17c-2.76 0-5-2.24-5-5 0-.77.18-1.5.49-2.14l1.57 1.57c-.03.18-.06.37-.06.57 0 1.66 1.34 3 3 3 .2 0 .38-.03.57-.07l1.57 1.57c-.65.32-1.37.5-2.14.5zm2.97-5.33c-.15-1.4-1.25-2.49-2.64-2.64l2.64 2.64z"/></svg>';
+    toggleBtn.onclick = (e) => {
+      e.stopPropagation();
+      track.enabled = !track.enabled;
+      renderPlaylist();
+      persistPlaylistOrder();
+    };
+    item.appendChild(toggleBtn);
 
     const delBtn = document.createElement("button");
     delBtn.textContent = "✕";
@@ -487,6 +506,24 @@ function playTrackAt(index) {
   currentPlaylistIndex = index;
   loadFile(playlist[index].file);
   renderPlaylist();
+}
+
+// 指定したインデックスより後ろ（direction=1）または前（direction=-1）で、
+// 最初に見つかったON(enabled)な曲のインデックスを返す。wrapAroundがtrueなら
+// 端まで来たら反対の端から探し直す（プレイリスト全体をループする場面向け）。
+// 見つからなければ(全曲OFF等)-1を返す。
+function findEnabledTrackIndex(fromIndex, direction, wrapAround) {
+  if (playlist.length === 0) return -1;
+  let i = fromIndex + direction;
+  for (let steps = 0; steps < playlist.length; steps++) {
+    if (i < 0 || i >= playlist.length) {
+      if (!wrapAround) return -1;
+      i = i < 0 ? playlist.length - 1 : 0;
+    }
+    if (playlist[i] && playlist[i].enabled !== false) return i;
+    i += direction;
+  }
+  return -1;
 }
 
 // ============================================================
@@ -758,41 +795,81 @@ if ("mediaSession" in navigator) {
   navigator.mediaSession.setActionHandler("play", () => togglePlay());
   navigator.mediaSession.setActionHandler("pause", () => togglePlay());
   navigator.mediaSession.setActionHandler("previoustrack", () => {
-    if (currentPlaylistIndex > 0) playTrackAt(currentPlaylistIndex - 1);
+    const prevIndex = findEnabledTrackIndex(currentPlaylistIndex, -1, false);
+    if (prevIndex !== -1) playTrackAt(prevIndex);
   });
   navigator.mediaSession.setActionHandler("nexttrack", () => {
-    if (currentPlaylistIndex >= 0 && currentPlaylistIndex < playlist.length - 1) {
-      playTrackAt(currentPlaylistIndex + 1);
-    }
+    const nextIndex = findEnabledTrackIndex(currentPlaylistIndex, 1, false);
+    if (nextIndex !== -1) playTrackAt(nextIndex);
   });
 }
 
-audio.onplay = updatePlayButtonState;
-audio.onpause = updatePlayButtonState;
+// 再生中、AudioContextがBluetooth接続の瞬断等で予期せず"suspended"状態になった場合に
+// 自動的にresume()する定期監視。再生開始で監視を始め、一時停止/終了で止める
+// （止まっている間は監視する意味がないうえ、無駄なタイマーを残さないため）。
+let audioContextWatchTimer = null;
+function startAudioContextWatch() {
+  if (audioContextWatchTimer) return;
+  audioContextWatchTimer = setInterval(() => {
+    if (window.__qnAudioCtx && window.__qnAudioCtx.state === "suspended") {
+      console.warn("AudioContext became suspended during playback — attempting to resume.");
+      window.__qnAudioCtx.resume().catch(err => console.warn("AudioContext resume failed:", err));
+    }
+  }, 2000);
+}
+function stopAudioContextWatch() {
+  if (audioContextWatchTimer) {
+    clearInterval(audioContextWatchTimer);
+    audioContextWatchTimer = null;
+  }
+}
+
+audio.onplay = () => {
+  updatePlayButtonState();
+  startAudioContextWatch();
+};
+audio.onpause = () => {
+  updatePlayButtonState();
+  stopAudioContextWatch();
+};
 audio.onended = () => {
+  // iOS(Safari/Chrome)では、Bluetooth接続の瞬断・オーディオセッションの再構築などが起きた際に、
+  // 実際には曲の途中なのに"ended"イベントが誤って発火することがある（既知の挙動）。
+  // 本当に曲が終わったのかを、currentTimeがdurationのごく近く(1秒以内)にあるかで確認し、
+  // 途中で誤発火した場合は次の曲に進めず、同じ曲の同じ位置から再生を再開する。
+  const dur = audio.duration;
+  const ct = audio.currentTime;
+  const reallyEnded = !dur || !isFinite(dur) || (dur - ct) < 1;
+
+  if (!reallyEnded) {
+    console.warn(`Spurious 'ended' event detected at ${ct.toFixed(1)}s / ${dur.toFixed(1)}s — resuming playback instead of advancing.`);
+    audio.play().catch(err => console.warn("Resume after spurious ended failed:", err));
+    updatePlayButtonState();
+    return;
+  }
+
   updatePlayButtonState();
 
   if (repeatMode === "one") {
-    // 1曲リピート：同じ曲を繰り返す
+    // 1曲リピート：同じ曲を繰り返す（現在の曲自体がOFFになっていても、
+    // 既に選んで再生していた曲なのでそのままリピートする）
     audio.currentTime = 0;
     audio.play();
     updatePlayButtonState();
     return;
   }
 
-  const hasNext = currentPlaylistIndex >= 0 && currentPlaylistIndex < playlist.length - 1;
-
-  if (hasNext) {
-    // 通常・全体リピートいずれの場合も、次の曲があればそのまま進む
-    playTrackAt(currentPlaylistIndex + 1);
-    return;
+  // 通常再生・全体リピートいずれの場合も、OFFの曲は自動的にスキップして次のON曲を探す。
+  // repeatMode==="all"の時だけ、末尾まで来たら先頭に戻ってループを続ける(wrapAround)。
+  const wrapAround = repeatMode === "all";
+  const nextIndex = findEnabledTrackIndex(currentPlaylistIndex, 1, wrapAround);
+  if (nextIndex !== -1) {
+    playTrackAt(nextIndex);
+  } else {
+    // 次のON曲が見つからない場合（残り全部OFF、またはoffモードで末尾に到達）はそのまま停止するため、
+    // 再生中の監視も一緒に止める（onpauseは発火しないため、ここで明示的に止める必要がある）。
+    stopAudioContextWatch();
   }
-
-  if (repeatMode === "all" && playlist.length > 0) {
-    // プレイリスト最後まで来た：全体リピートなら先頭の曲に戻ってループを続ける
-    playTrackAt(0);
-  }
-  // repeatMode === "off" かつ次の曲がない場合はそのまま停止する
 };
 
 document.getElementById("playToggle").onclick = togglePlay;
@@ -2147,11 +2224,11 @@ window.onload = async () => {
 // addFilesToPlaylistと違い、復元時は自動再生しない（ユーザー操作なしのplay()はブラウザにブロックされ得るうえ、
 // 意図せず音が鳴るのを避けるため）。また復元した曲を再度IndexedDBに書き戻す必要はない。
 async function restorePlaylistFromStorage() {
-  const savedFiles = await loadAllPlaylistTracks();
-  if (savedFiles.length === 0) return;
+  const savedTracks = await loadAllPlaylistTracks();
+  if (savedTracks.length === 0) return;
 
-  savedFiles.forEach(file => {
-    playlist.push({ file, name: file.name });
+  savedTracks.forEach(({ file, enabled }) => {
+    playlist.push({ file, name: file.name, enabled });
   });
   renderPlaylist();
 

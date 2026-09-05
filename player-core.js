@@ -68,7 +68,7 @@ function openPlaylistDB() {
 
 // 曲を1件、実体(Blob)ごと保存する。同名ファイルは上書きする。
 // savedAtを明示的に指定しない場合は現在時刻（＝新規追加として最後尾）になる。
-async function savePlaylistTrack(file, savedAt) {
+async function savePlaylistTrack(file, savedAt, enabled) {
   try {
     const db = await openPlaylistDB();
     await new Promise((resolve, reject) => {
@@ -77,7 +77,8 @@ async function savePlaylistTrack(file, savedAt) {
         name: file.name,
         type: file.type,
         blob: file,
-        savedAt: typeof savedAt === "number" ? savedAt : Date.now()
+        savedAt: typeof savedAt === "number" ? savedAt : Date.now(),
+        enabled: enabled !== false
       });
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -102,7 +103,7 @@ async function deletePlaylistTrack(name) {
   }
 }
 
-// 保存されている全曲を読み込む。File相当のオブジェクト（Blobにname/typeを持たせたもの）の配列を返す。
+// 保存されている全曲を読み込む。{ file: File, enabled: boolean } の配列を返す。
 async function loadAllPlaylistTracks() {
   try {
     const db = await openPlaylistDB();
@@ -114,7 +115,10 @@ async function loadAllPlaylistTracks() {
     });
     // savedAt昇順（保存された順）に並べ、BlobをFile相当のオブジェクトに復元する
     records.sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
-    return records.map(r => new File([r.blob], r.name, { type: r.type || r.blob.type }));
+    return records.map(r => ({
+      file: new File([r.blob], r.name, { type: r.type || r.blob.type }),
+      enabled: r.enabled !== false
+    }));
   } catch (err) {
     console.warn("loadAllPlaylistTracks failed:", err);
     return [];
@@ -124,9 +128,10 @@ async function loadAllPlaylistTracks() {
 // 現在のplaylist配列の並び順を、IndexedDB側のsavedAtにも反映する
 // （ドラッグ並び替え後、次回起動時にも並び替えた順序が復元されるようにするため）。
 // savedAtに単純増加の連番を振り直すことで、既存のsavedAt昇順ソートと矛盾なく順序を保てる。
+// 各トラックのON/OFF状態(enabled)も同時に保存する。
 async function persistPlaylistOrder() {
   const base = Date.now();
-  await Promise.all(playlist.map((track, i) => savePlaylistTrack(track.file, base + i)));
+  await Promise.all(playlist.map((track, i) => savePlaylistTrack(track.file, base + i, track.enabled)));
 }
 
 // 波形解析用
