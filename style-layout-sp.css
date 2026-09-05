@@ -290,8 +290,7 @@
     width: 100%;
   }
 
-  #colorToggleBtn,
-  #analyzerToggleBtn {
+  #colorToggleBtn {
     width: 100%;
     justify-content: flex-start;
   }

@@ -243,8 +243,7 @@ body {
   position: relative;
 }
 
-#colorToggleBtn,
-#analyzerToggleBtn {
+#colorToggleBtn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -263,20 +262,17 @@ body {
   transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
 }
 
-#colorToggleBtn:active,
-#analyzerToggleBtn:active {
+#colorToggleBtn:active {
   transform: scale(0.96);
 }
 
-#colorToggleBtn:hover,
-#analyzerToggleBtn:hover {
+#colorToggleBtn:hover {
   background: #1c1c24;
   border-color: var(--accent-primary);
   color: var(--accent-primary);
 }
 
-#colorToggleBtn svg,
-#analyzerToggleBtn svg {
+#colorToggleBtn svg {
   width: 16px;
   height: 16px;
   fill: currentColor;
@@ -284,16 +280,6 @@ body {
 }
 
 #colorToggleBtn.active {
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
-  background: var(--accent-glow);
-}
-
-#analyzerToggleBtn {
-  color: #6b6b7b;
-}
-
-#analyzerToggleBtn.active {
   color: var(--accent-primary);
   border-color: var(--accent-primary);
   background: var(--accent-glow);
@@ -593,25 +579,21 @@ body {
   color: #f0f0f3;
 }
 
-/* タブパネルは選択中のもの以外を隠す */
+/* タブパネルは選択中のもの以外を隠す。タブの直下は上側の角丸をなくして一体化させる。 */
 .mobile-tab-panel {
   display: none;
   width: 100%;
   box-sizing: border-box;
-}
-
-.mobile-tab-panel.mobile-tab-active {
-  display: block;
-  width: 100%;
-}
-
-/* タブの直下は上側の角丸をなくして一体化させる */
-.mobile-tab-panel {
   background: #16161b;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-top: none;
   border-radius: 0 0 16px 16px;
   padding: 10px 20px 20px;
+}
+
+.mobile-tab-panel.mobile-tab-active {
+  display: block;
+  width: 100%;
 }
 
 /* タブ自体に「Markers」「Playlist」の名前が出ているため、
@@ -697,7 +679,6 @@ body {
   flex-shrink: 0;
 }
 
-.bigbtn, 
 .loopbtn {
   flex: 1;
   padding: 12px 0 10px;
@@ -717,7 +698,6 @@ body {
   gap: 4px;
 }
 
-.bigbtn svg,
 .loopbtn svg {
   width: 24px;
   height: 24px;
@@ -735,7 +715,6 @@ body {
   line-height: 1;
 }
 
-.bigbtn:hover, 
 .loopbtn:hover {
   background: #252530;
   border-color: rgba(255, 255, 255, 0.2);
@@ -743,7 +722,6 @@ body {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
-.bigbtn:active, 
 .loopbtn:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -866,7 +844,10 @@ body {
   display: inline-flex;
   align-items: baseline;
   gap: 0;
+  width: 100%;
+  text-align: center;
 }
+
 
 #timeDisplay .time-val {
   font-size: 38px;
@@ -924,11 +905,6 @@ body {
    TIME行だけがadjust-controls-rowを持たないtime-controls-rowなので、これで一意に特定できる。 */
 .time-controls-row:not(.adjust-controls-row) {
   justify-content: center;
-}
-
-#timeDisplay {
-  width: 100%;
-  text-align: center;
 }
 
 .time-controls-buttons {
@@ -1764,23 +1740,6 @@ body {
   background: #3a3a48;
 }
 
-.file-upload-wrapper {
-  position: relative;
-  overflow: hidden;
-  display: inline-block;
-  width: 100%;
-}
-
-.file-upload-wrapper input[type="file"] {
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-}
-
 .file-upload-btn {
   display: flex;
   align-items: center;
@@ -1809,7 +1768,7 @@ body {
   flex-shrink: 0;
 }
 
-.file-upload-wrapper:hover .file-upload-btn {
+.file-upload-btn:hover {
   background: linear-gradient(135deg, var(--accent-hover-1), var(--accent-hover-2));
   box-shadow: 0 8px 25px var(--accent-glow);
   transform: translateY(-2px);
@@ -1821,18 +1780,6 @@ body, .vbar-line, .pinItem, .vbar, button {
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
-}
-
-#bgAnalyzer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.12;
-  transition: opacity 0.3s ease;
 }
 
 #dropOverlay {

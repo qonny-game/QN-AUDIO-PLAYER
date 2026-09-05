@@ -1170,6 +1170,9 @@ renderKeyDisplay();
 function updateKeyControlAvailability() {
   const keyToggleBtn = document.getElementById("keyToggleBtn");
   const badge = keyToggleBtn ? keyToggleBtn.querySelector(".key-disabled-badge") : null;
+  const speedToggleBtn = document.getElementById("speedToggleBtn");
+  const speedRangeEl = document.getElementById("speedRange");
+  const speedResetBtnEl = document.getElementById("speedResetBtn");
 
   if (pitchShiftAvailable) {
     [keyToggleBtn, keyResetBtn, keyUpBtn, keyDownBtn].forEach(el => {
@@ -1180,6 +1183,14 @@ function updateKeyControlAvailability() {
       keyToggleBtn.title = "Key";
     }
     if (badge) badge.remove();
+
+    [speedToggleBtn, speedRangeEl, speedResetBtnEl].forEach(el => {
+      if (el) el.disabled = false;
+    });
+    if (speedToggleBtn) {
+      speedToggleBtn.classList.remove("key-disabled");
+      speedToggleBtn.title = "Speed";
+    }
   } else {
     [keyToggleBtn, keyResetBtn, keyUpBtn, keyDownBtn].forEach(el => {
       if (el) el.disabled = true;
@@ -1187,6 +1198,16 @@ function updateKeyControlAvailability() {
     if (keyToggleBtn) {
       keyToggleBtn.classList.add("key-disabled");
       keyToggleBtn.title = "Key change is unavailable in this browser (AudioWorklet not supported)";
+    }
+
+    // Speedもキー変更と同じ位相ボコーダーを経由するため、AudioWorklet非対応環境では
+    // 音質の悪いplaybackRateベースの簡易フォールバックは提供せず、Speed自体を無効化する。
+    [speedToggleBtn, speedRangeEl, speedResetBtnEl].forEach(el => {
+      if (el) el.disabled = true;
+    });
+    if (speedToggleBtn) {
+      speedToggleBtn.classList.add("key-disabled");
+      speedToggleBtn.title = "Speed change is unavailable in this browser (AudioWorklet not supported)";
     }
   }
 }
@@ -1469,20 +1490,24 @@ function updateBars() {
     if (fillEl) fillEl.style.width = p[i - 1] + "%";
   }
 
-  const activePins = pins.filter(p => p.enabled).map(p => p.t);
-  if (loopEnabled && !isSeeking && !isJumping && !audio.paused && activePins.length >= 2) {
-    for (let i = 0; i < activePins.length - 1; i++) {
-      const start = activePins[i];
-      const end = activePins[i+1];
+  // ループがOFFの間はこの配列生成自体が無駄になるため、loopEnabledの判定を先に行う。
+  // （updateBarsは毎フレーム=最大60回/秒呼ばれるため、ここでの配列生成コストが積み重なりやすい）
+  if (loopEnabled && !isSeeking && !isJumping && !audio.paused) {
+    const activePins = pins.filter(p => p.enabled).map(p => p.t);
+    if (activePins.length >= 2) {
+      for (let i = 0; i < activePins.length - 1; i++) {
+        const start = activePins[i];
+        const end = activePins[i+1];
 
-      if (prevTime < end && ct >= end) {
-        audio.currentTime = start;
-        isJumping = true;
-        renderSegments({ start, end });
-        setTimeout(() => {
-          isJumping = false;
-        }, 200);
-        break;
+        if (prevTime < end && ct >= end) {
+          audio.currentTime = start;
+          isJumping = true;
+          renderSegments({ start, end });
+          setTimeout(() => {
+            isJumping = false;
+          }, 200);
+          break;
+        }
       }
     }
   }
@@ -1623,7 +1648,8 @@ if (allRepeatToggleBtn) {
 
 document.getElementById("addPinBtn").onclick = addCurrentPin;
 
-// SP幅限定の+MARKER/SELECT FILEインラインボタンは player-ui-sp.js に移動済み
+// タブ内の+MARKER/ADD FILEインラインボタン（addPinBtnInline, selectFileBtnInline）は
+// player-ui-sp.js で処理している
 
 
 
@@ -2414,70 +2440,4 @@ if (exportRunBtn) {
       exportRunBtn.disabled = false;
     }
   };
-}
-
-// 背景の周波数アナライザー描画
-const bgCanvas = document.getElementById("bgAnalyzer");
-let analyzerEnabled = localStorage.getItem("mp3player_analyzer") !== "off";
-
-const analyzerToggleBtn = document.getElementById("analyzerToggleBtn");
-function applyAnalyzerToggleUI() {
-  if (!analyzerToggleBtn) return;
-  if (analyzerEnabled) {
-    analyzerToggleBtn.classList.add("active");
-  } else {
-    analyzerToggleBtn.classList.remove("active");
-  }
-  if (bgCanvas) bgCanvas.style.opacity = analyzerEnabled ? "" : "0";
-}
-applyAnalyzerToggleUI();
-
-if (analyzerToggleBtn) {
-  analyzerToggleBtn.onclick = () => {
-    analyzerEnabled = !analyzerEnabled;
-    localStorage.setItem("mp3player_analyzer", analyzerEnabled ? "on" : "off");
-    applyAnalyzerToggleUI();
-  };
-}
-
-if (bgCanvas) {
-  const bgCtx = bgCanvas.getContext("2d");
-
-  function resizeBgCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    bgCanvas.width = window.innerWidth * dpr;
-    bgCanvas.height = window.innerHeight * dpr;
-  }
-  resizeBgCanvas();
-  window.addEventListener("resize", resizeBgCanvas);
-
-  function drawBgAnalyzer() {
-    requestAnimationFrame(drawBgAnalyzer);
-
-    const w = bgCanvas.width;
-    const h = bgCanvas.height;
-    bgCtx.clearRect(0, 0, w, h);
-
-    if (!analyzerEnabled || !analyserNode || audio.paused) return;
-
-    const bufferLength = analyserNode.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    analyserNode.getByteFrequencyData(dataArray);
-
-    const accentColor = getComputedStyle(document.body).getPropertyValue("--accent-primary").trim() || "#3b82f6";
-
-    const barCount = bufferLength;
-    const barWidth = w / barCount;
-    const gap = barWidth * 0.25;
-
-    bgCtx.fillStyle = accentColor;
-    for (let i = 0; i < barCount; i++) {
-      const value = dataArray[i] / 255;
-      const barHeight = value * h * 0.9;
-      const x = i * barWidth;
-      const y = h - barHeight;
-      bgCtx.fillRect(x, y, barWidth - gap, barHeight);
-    }
-  }
-  drawBgAnalyzer();
 }

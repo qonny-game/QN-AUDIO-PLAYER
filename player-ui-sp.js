@@ -7,8 +7,8 @@
 // 注意：ここに含まれるのは「対象要素自体がSP限定（CSSで常に非表示のPC相当が
 // 存在しない）」など、関数を割らずにそのまま移動できたものだけ。
 // isMobileLayout()で分岐しながらPC/SP両方の処理を1つの関数で担っているもの
-// （renderPins, applyMobileTabLayout, createDualSlotMoveController等）は、
-// 関数自体を書き直す必要があるため、今回は player-ui-shared.js に残したまま。
+// （renderPins等）は、関数自体を書き直す必要があるため、今回は
+// player-ui-shared.js に残したまま。
 // ============================================================
 
 // スマホ用ハンバーガーメニュー（Color/Analyzer/EQをまとめて開閉）
@@ -30,14 +30,14 @@ if (headerMenuBtn && headerControlsEl) {
   });
 }
 
-// SP幅限定：MARKERSタブ内リスト最上部の+MARKERボタン。コントロールバーのaddPinBtnと全く同じ機能。
+// MARKERS/PLAYLISTタブ内リスト最上部の+MARKER/ADD FILEインラインボタン。
+// コントロールバーのaddPinBtn、Basic欄のAdd Fileボタン(#fileUploadWrapper)とそれぞれ全く同じ機能で、
+// リストを見ながら追加できるよう、あえてタブ内にも同じ機能のボタンを重複して置いている。
 const addPinBtnInline = document.getElementById("addPinBtnInline");
 if (addPinBtnInline) {
   addPinBtnInline.onclick = addCurrentPin;
 }
 
-// SP幅限定：PLAYLISTタブ内リスト最上部のSELECT FILEボタン。既存のfileInputを発火させるだけの、
-// SELECT FILE(#fileUploadWrapper)と全く同じ機能。
 const selectFileBtnInline = document.getElementById("selectFileBtnInline");
 if (selectFileBtnInline) {
   selectFileBtnInline.onclick = () => {

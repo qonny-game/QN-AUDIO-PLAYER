@@ -428,6 +428,15 @@ class PhaseVocoderProcessor extends AudioWorkletProcessor {
     // （以前は入力ビンを整数丸めでシフト先に配る「順方向」方式だったが、
     //  シフト量によっては出力ビンの1割前後が誰にも埋められず「歯抜け」になり、
     //  これが金属的・ロボットっぽいノイズの主因だったため、逆方向の補間方式に変更した。）
+    //
+    // pitchRatio<1(音程を下げる方向、Speedを上げた時の補正で発生)の場合、出力の高い方のビンほど
+    // 参照したい入力位置(dst/pitchRatio)がhalfを超えてしまう。元の音声データに存在しない
+    // より高い周波数成分は物理的に作れないため、これ自体は避けられないが、
+    // 「範囲外になった瞬間に振幅が0へ垂直に落ちる」形だと、そこだけ不自然な減衰・シャリつきとして
+    // 耳につきやすい。範囲外になったら直前の有効な値をなだらかに保持するようにし、
+    // 急激な変化を避ける（＝結果として全体の音量感・低域の存在感も自然に保たれる）。
+    let lastValidMag = 0;
+    let lastValidFreq = 0;
     const shiftedMag = new Float32Array(half + 1);
     const shiftedFreq = new Float32Array(half + 1);
     for (let dst = 0; dst <= half; dst++) {
@@ -438,12 +447,21 @@ class PhaseVocoderProcessor extends AudioWorkletProcessor {
 
       if (srcLow >= 0 && srcLow <= half) {
         const magLow = magnitude[srcLow];
-        const magHigh = srcHigh <= half ? magnitude[srcHigh] : 0;
+        const magHigh = srcHigh <= half ? magnitude[srcHigh] : magLow;
         shiftedMag[dst] = magLow * (1 - frac) + magHigh * frac;
 
         const freqLow = trueFreq[srcLow];
         const freqHigh = srcHigh <= half ? trueFreq[srcHigh] : freqLow;
         shiftedFreq[dst] = (freqLow * (1 - frac) + freqHigh * frac) * pitchRatio;
+
+        lastValidMag = shiftedMag[dst];
+        lastValidFreq = shiftedFreq[dst];
+      } else if (srcPos > half) {
+        // 参照したい入力位置が範囲を超えた（=これより上は元データに存在しない高域）場合、
+        // 直前の有効な値を減衰させながら引き継ぎ、垂直に無音落ちしないようにする。
+        lastValidMag *= 0.7;
+        shiftedMag[dst] = lastValidMag;
+        shiftedFreq[dst] = lastValidFreq;
       }
     }
 
@@ -566,9 +584,7 @@ function createPitchShiftNode(audioContext) {
 }
 
 
-// リアルタイム周波数アナライザー（背景ビジュアライザー用）
-let analyserNode = null;
-let analyserSetupDone = false;
+let audioGraphSetupDone = false;
 
 // 10バンド・グラフィックイコライザー
 const EQ_FREQS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
@@ -580,8 +596,8 @@ let pitchShiftNode = null;
 let pitchShiftAvailable = false;
 
 async function setupAudioGraph() {
-  if (analyserSetupDone) return;
-  analyserSetupDone = true;
+  if (audioGraphSetupDone) return;
+  audioGraphSetupDone = true;
 
   const ctx = getAudioCtx();
   let source;
@@ -601,20 +617,24 @@ async function setupAudioGraph() {
     return filter;
   });
 
-  analyserNode = ctx.createAnalyser();
-  analyserNode.fftSize = 256;
-  analyserNode.smoothingTimeConstant = 0.8;
-
-  // 本格ピッチシフト（位相ボコーダー、AudioWorklet）の初期化を試みる。
-  // 成功すれば source -> pitchShiftNode -> EQ -> analyser -> destination
-  // 失敗すれば     source ->                EQ -> analyser -> destination （playbackRateで速度連動キー変更にフォールバック）
-  try {
-    if (!ctx.audioWorklet) throw new Error("AudioWorklet is not supported in this browser");
-    await ensurePhaseVocoderWorklet(ctx);
-    pitchShiftNode = createPitchShiftNode(ctx);
-    pitchShiftAvailable = true;
-  } catch (err) {
-    console.warn("Pitch shift unavailable, falling back to speed-linked key change:", err);
+  // 本格ピッチシフト（位相ボコーダー、AudioWorklet）は、Key機能自体がUI上無効化されている間は
+  // 生成しない。AudioWorkletNodeは接続されている限りprocess()が音声サンプルレートに応じて
+  // 常時呼ばれ続ける仕様のため、Keyを一切使わない場合でも存在するだけで負荷・メモリ確保が続き、
+  // 特にiOS Safari(ホーム画面アプリ化時含む)で長時間再生後にページがクラッシュ/再読み込みされる
+  // 不具合の原因になっていた。#keyToggleBtnがdisabledのままなら、この初期化自体を丸ごとスキップする。
+  const keyFeatureEnabled = !!(document.getElementById("keyToggleBtn") && !document.getElementById("keyToggleBtn").disabled);
+  if (keyFeatureEnabled) {
+    try {
+      if (!ctx.audioWorklet) throw new Error("AudioWorklet is not supported in this browser");
+      await ensurePhaseVocoderWorklet(ctx);
+      pitchShiftNode = createPitchShiftNode(ctx);
+      pitchShiftAvailable = true;
+    } catch (err) {
+      console.warn("Pitch shift unavailable, falling back to speed-linked key change:", err);
+      pitchShiftAvailable = false;
+      pitchShiftNode = null;
+    }
+  } else {
     pitchShiftAvailable = false;
     pitchShiftNode = null;
   }
@@ -628,8 +648,7 @@ async function setupAudioGraph() {
     node.connect(filter);
     node = filter;
   });
-  node.connect(analyserNode);
-  analyserNode.connect(ctx.destination);
+  node.connect(ctx.destination);
 
   // 音声グラフが確定してからKey/Speedの現在値を反映する
   updatePlaybackRate();
@@ -649,7 +668,7 @@ let currentKeySemitones = 0;
 
 function updatePlaybackRate() {
   if (pitchShiftAvailable && pitchShiftNode) {
-    // 本格版：SpeedもaudioのpreservesPitchには任せず、位相ボコーダー側で完結させる。
+    // SpeedもaudioのpreservesPitchには任せず、位相ボコーダー側で完結させる。
     // 理由：iOS Safari(WebKit)は、preservesPitch=trueでplaybackRateを1.0未満(減速)にした際、
     // ネイティブのタイムストレッチ処理の品質が低く「スライスしたような」ぶつ切り音になる不具合があるため。
     // 対策として、常にpreservesPitch=falseにしてplaybackRateだけで速度を変え(音程も一緒に動く)、
@@ -667,22 +686,24 @@ function updatePlaybackRate() {
     try {
       pitchShiftNode.setTransposeSemitones(totalPitchShift);
     } catch (e) {
-      // 何らかの理由でノードが壊れていたら以降はフォールバックに切り替える
+      // 何らかの理由でノードが壊れていたら以降はSpeed/Key自体を無効化する（フォールバックはしない）
       pitchShiftAvailable = false;
+      currentSpeed = 1.0;
+      currentKeySemitones = 0;
       updateKeyControlAvailability();
-      audio.preservesPitch = false;
-      audio.mozPreservesPitch = false;
-      audio.webkitPreservesPitch = false;
-      const rate = currentSpeed * Math.pow(2, currentKeySemitones / 12);
-      audio.playbackRate = rate;
+      audio.preservesPitch = true;
+      audio.mozPreservesPitch = true;
+      audio.webkitPreservesPitch = true;
+      audio.playbackRate = 1.0;
     }
   } else {
-    // 簡易版：SpeedとKeyを合成（音程維持はオフにし、playbackRateの変化がそのまま音程にも反映されるようにする）
-    audio.preservesPitch = false;
-    audio.mozPreservesPitch = false;
-    audio.webkitPreservesPitch = false;
-    const rate = currentSpeed * Math.pow(2, currentKeySemitones / 12);
-    audio.playbackRate = rate;
+    // AudioWorklet(位相ボコーダー)が使えない環境では、Speed/Key機能自体を提供しない。
+    // playbackRateベースの簡易フォールバック（音質が悪く、iOSでの不具合の原因にもなり得た）は
+    // 撤去し、常に等速・音程そのままで再生する。
+    audio.preservesPitch = true;
+    audio.mozPreservesPitch = true;
+    audio.webkitPreservesPitch = true;
+    audio.playbackRate = 1.0;
   }
 }
 

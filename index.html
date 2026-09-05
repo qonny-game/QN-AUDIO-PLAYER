@@ -3,14 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>QN AUDIO PLAYER 1.5.1</title>
+<title>QN AUDIO PLAYER 1.5.3</title>
 <link rel="stylesheet" href="style-core.css">
 <link rel="stylesheet" href="style-core-pc.css">
 <link rel="stylesheet" href="style-layout-sp.css">
 </head>
 <body data-theme="blue">
-
-<canvas id="bgAnalyzer"></canvas>
 
 <div id="dropOverlay">DROP AUDIO FILE HERE</div>
 
@@ -18,7 +16,7 @@
   <div class="welcome-content">
     <button id="welcomeSelectBtn" class="file-upload-btn">
       <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-      <span>SELECT FILE</span>
+      <span>ADD FILE</span>
     </button>
     <p class="welcome-hint">You can also drag &amp; drop audio files anywhere on this page</p>
   </div>
@@ -26,7 +24,7 @@
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.5.1</span></h1>
+    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.5.3</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
   </div>
   <button id="headerMenuBtn" title="Menu">
@@ -64,10 +62,6 @@
         </div>
       </div>
     </div>
-    <button id="analyzerToggleBtn" class="active" title="Toggle Background Analyzer">
-      <svg viewBox="0 0 24 24"><path d="M3 3h2v18H3V3zm4 10h2v8H7v-8zm4-6h2v14h-2V7zm4 3h2v11h-2V10zm4-8h2v19h-2V2z"/></svg>
-      <span>Analyzer</span>
-    </button>
     <div class="header-btn-wrapper">
       <button id="shortcutsToggleBtn" title="Keyboard Shortcuts">
         <svg viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
