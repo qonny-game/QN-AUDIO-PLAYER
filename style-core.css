@@ -1267,6 +1267,118 @@ body {
   cursor: pointer;
 }
 
+/* Auto Speed：マーカー区間ループをN回通過するたびにSpeedを自動で増減する機能のカード。
+   既存のGlow機能と同じ「上に境界線を引いて区切る」デザインを踏襲する。 */
+.auto-speed-card {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 10px;
+}
+
+.auto-speed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auto-speed-header span {
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #c8c8d0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ON/OFFがOFFの間は、下の詳細設定は触れる必要がないため折りたたんで隠す */
+.auto-speed-settings {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auto-speed-settings.open {
+  display: flex;
+}
+
+.auto-speed-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auto-speed-row-label {
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 12px;
+  color: #8b8b9e;
+  white-space: nowrap;
+}
+
+.auto-speed-number {
+  width: 56px;
+  padding: 6px 8px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #f0f0f3;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  box-sizing: border-box;
+  /* number inputのスピナー(上下矢印)は狭いポップアップ内でタップしづらく誤操作の元になるため、
+     ブラウザ標準のものは非表示にし、フリック入力/キーボード入力に任せる。 */
+  -moz-appearance: textfield;
+}
+
+.auto-speed-number::-webkit-outer-spin-button,
+.auto-speed-number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.auto-speed-direction {
+  display: flex;
+  width: 100%;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auto-speed-dir-btn {
+  flex: 1;
+  padding: 8px 6px;
+  background: #1c1c24;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8b8b9e;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
+}
+
+.auto-speed-dir-btn:first-child {
+  border-left: none;
+}
+
+.auto-speed-dir-btn.active {
+  background: var(--accent-primary);
+  color: #fff;
+}
+
+.auto-speed-status {
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 11px;
+  color: #6b6b7b;
+  text-align: center;
+}
+
 .mini-reset-btn {
   flex-shrink: 0;
   width: 18px;

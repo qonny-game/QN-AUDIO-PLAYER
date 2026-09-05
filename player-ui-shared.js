@@ -1124,6 +1124,125 @@ if (speedResetBtn) {
   };
 }
 
+// ============================================================
+// Auto Speed：マーカー区間ループ(LOOP ON時)をN回通過するたびに、Speedをy%だけ自動で増減する。
+// ギター等の楽器練習で「同じフレーズを何度か通しで弾けるようになったら、少しずつテンポを上げる」
+// という操作を自動化するための機能。ループが1周する瞬間(updateBars内)からnotifyLoopCompleted()を
+// 呼んでもらうことでカウントし、既存のsetSpeed()をそのまま使ってSpeedへ反映する。
+// ============================================================
+const autoSpeedToggleBtn = document.getElementById("autoSpeedToggleBtn");
+const autoSpeedSettings = document.getElementById("autoSpeedSettings");
+const autoSpeedEveryNInput = document.getElementById("autoSpeedEveryN");
+const autoSpeedStepPercentInput = document.getElementById("autoSpeedStepPercent");
+const autoSpeedLimitInput = document.getElementById("autoSpeedLimit");
+const autoSpeedStatusEl = document.getElementById("autoSpeedStatus");
+const autoSpeedDirBtns = document.querySelectorAll(".auto-speed-dir-btn");
+
+let autoSpeedEnabled = false;
+let autoSpeedDirection = "up"; // "up" または "down"
+let autoSpeedLoopCount = 0;
+
+function getAutoSpeedEveryN() {
+  const n = parseInt(autoSpeedEveryNInput.value, 10);
+  return Number.isFinite(n) && n >= 1 ? n : 5;
+}
+
+function getAutoSpeedStepPercent() {
+  const p = parseFloat(autoSpeedStepPercentInput.value);
+  return Number.isFinite(p) && p > 0 ? p : 5;
+}
+
+function getAutoSpeedLimitRatio() {
+  const p = parseFloat(autoSpeedLimitInput.value);
+  const clamped = Number.isFinite(p) ? Math.max(50, Math.min(150, p)) : 150;
+  return clamped / 100;
+}
+
+function updateAutoSpeedStatus() {
+  if (!autoSpeedStatusEl) return;
+  const everyN = getAutoSpeedEveryN();
+  if (!autoSpeedEnabled) {
+    autoSpeedStatusEl.textContent = `Loop progress: 0 / ${everyN}`;
+    return;
+  }
+  const limitRatio = getAutoSpeedLimitRatio();
+  const reachedLimit = autoSpeedDirection === "up"
+    ? currentSpeed >= limitRatio - 0.001
+    : currentSpeed <= limitRatio + 0.001;
+  if (reachedLimit) {
+    autoSpeedStatusEl.textContent = `Limit reached (${(limitRatio * 100).toFixed(0)}%) — looping`;
+  } else {
+    autoSpeedStatusEl.textContent = `Loop progress: ${autoSpeedLoopCount} / ${everyN}`;
+  }
+}
+
+function setAutoSpeedEnabled(enabled) {
+  autoSpeedEnabled = enabled;
+  autoSpeedLoopCount = 0;
+  if (autoSpeedToggleBtn) autoSpeedToggleBtn.setAttribute("aria-checked", String(enabled));
+  if (autoSpeedSettings) autoSpeedSettings.classList.toggle("open", enabled);
+  updateAutoSpeedStatus();
+}
+
+if (autoSpeedToggleBtn) {
+  autoSpeedToggleBtn.onclick = () => {
+    hapticTap();
+    setAutoSpeedEnabled(!autoSpeedEnabled);
+  };
+}
+
+autoSpeedDirBtns.forEach(btn => {
+  btn.onclick = () => {
+    hapticTap();
+    autoSpeedDirection = btn.getAttribute("data-dir");
+    autoSpeedDirBtns.forEach(b => b.classList.toggle("active", b === btn));
+    updateAutoSpeedStatus();
+  };
+});
+
+[autoSpeedEveryNInput, autoSpeedStepPercentInput, autoSpeedLimitInput].forEach(input => {
+  if (!input) return;
+  input.addEventListener("change", () => {
+    autoSpeedLoopCount = 0;
+    updateAutoSpeedStatus();
+  });
+});
+
+// マーカー区間ループが1周した瞬間に呼ばれる。updateBars内のループ折り返し処理から呼ぶ。
+function notifyLoopCompleted() {
+  if (!autoSpeedEnabled) return;
+
+  const limitRatio = getAutoSpeedLimitRatio();
+  const alreadyAtLimit = autoSpeedDirection === "up"
+    ? currentSpeed >= limitRatio - 0.001
+    : currentSpeed <= limitRatio + 0.001;
+  // 既に上限/下限に達している場合は、それ以上カウントを進める必要がない
+  // （ループは継続するが、Speedはこれ以上動かさない）
+  if (alreadyAtLimit) {
+    updateAutoSpeedStatus();
+    return;
+  }
+
+  autoSpeedLoopCount++;
+  const everyN = getAutoSpeedEveryN();
+  if (autoSpeedLoopCount >= everyN) {
+    autoSpeedLoopCount = 0;
+    const stepRatio = getAutoSpeedStepPercent() / 100;
+    const delta = autoSpeedDirection === "up" ? stepRatio : -stepRatio;
+    let nextSpeed = currentSpeed + delta;
+    // 上限/下限を超えないようにクランプする（setSpeed自体もSPEED_MIN/MAXでクランプするが、
+    // Auto Speed独自のLimit設定がSPEED_MIN/MAXの範囲内であることは保証されないため、ここでも行う）
+    nextSpeed = autoSpeedDirection === "up"
+      ? Math.min(nextSpeed, limitRatio)
+      : Math.max(nextSpeed, limitRatio);
+    setSpeed(nextSpeed);
+    hapticSuccess();
+  }
+  updateAutoSpeedStatus();
+}
+
+updateAutoSpeedStatus();
+
 const keyDisplay = document.getElementById("keyDisplay");
 const keyStepperFill = document.getElementById("keyStepperFill");
 const KEY_MIN = -12;
@@ -1503,6 +1622,7 @@ function updateBars() {
           audio.currentTime = start;
           isJumping = true;
           renderSegments({ start, end });
+          notifyLoopCompleted();
           setTimeout(() => {
             isJumping = false;
           }, 200);
