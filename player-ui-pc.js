@@ -53,18 +53,6 @@ document.addEventListener("drop", e => {
   }
 });
 
-const volumeInput = document.getElementById("volume");
-if (volumeInput) {
-  volumeInput.value = audio.volume;
-  volumeInput.oninput = e => {
-    const val = parseFloat(e.target.value);
-    audio.volume = val;
-    if (volumeDisplay) volumeDisplay.textContent = val.toFixed(2);
-    updateAvToggleValue("volToggleValue", Math.round(val * 100) + "%");
-    localStorage.setItem("mp3player_volume", val);
-  };
-}
-
 function startDragPin(index) {
   return function(e) {
     e.stopPropagation();

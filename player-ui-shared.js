@@ -140,30 +140,38 @@ if (savedVolume !== null) {
 }
 
 const volumeDisplay = document.getElementById("volumeDisplay");
-if (volumeDisplay) {
-  volumeDisplay.textContent = audio.volume.toFixed(2);
-}
+const controlVolumeDisplay = document.getElementById("controlVolumeDisplay");
+if (volumeDisplay) volumeDisplay.textContent = audio.volume.toFixed(2);
+if (controlVolumeDisplay) controlVolumeDisplay.textContent = audio.volume.toFixed(2);
 
-// VOL/SPEED/KEYボタン内に現在値を表示する共通ヘルパー
-// Basic欄のVOL/SPEED/KEY表示(id)と、CONTROLタブ内の対応する表示(id)をペアで持っておく。
-// updateAvToggleValueは呼び出し側を増やさず、常に両方を同時に更新する。
-const CONTROL_LIST_VALUE_ID_MAP = {
-  volToggleValue: "controlListVolValue",
-  speedToggleValue: "controlListSpeedValue",
-  keyToggleValue: "controlListKeyValue"
-};
-
+// VOL/SPEED/KEYボタン内に現在値を表示する共通ヘルパー（Basic欄側のトグルボタンの値表示のみ）
 function updateAvToggleValue(id, text) {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
-  const mirrorId = CONTROL_LIST_VALUE_ID_MAP[id];
-  if (mirrorId) {
-    const mirrorEl = document.getElementById(mirrorId);
-    if (mirrorEl) mirrorEl.textContent = text;
-  }
 }
 
 updateAvToggleValue("volToggleValue", Math.round(audio.volume * 100) + "%");
+
+// Volumeスライダー：Basic欄(#volume)とCONTROLタブ(#controlVolume)、両方の入力要素を
+// 同じ値に同期させる。どちらを動かしても、audio.volumeへの反映と、もう片方への値のミラーを行う。
+function applyVolumeChange(val) {
+  audio.volume = val;
+  if (volumeDisplay) volumeDisplay.textContent = val.toFixed(2);
+  if (controlVolumeDisplay) controlVolumeDisplay.textContent = val.toFixed(2);
+  updateAvToggleValue("volToggleValue", Math.round(val * 100) + "%");
+  localStorage.setItem("mp3player_volume", val);
+}
+
+[document.getElementById("volume"), document.getElementById("controlVolume")].forEach(input => {
+  if (!input) return;
+  input.value = audio.volume;
+  input.oninput = e => {
+    const otherInput = input.id === "volume" ? document.getElementById("controlVolume") : document.getElementById("volume");
+    const val = parseFloat(e.target.value);
+    if (otherInput) otherInput.value = val;
+    applyVolumeChange(val);
+  };
+});
 
 // レインボー／同系色フェードテーマ：常時色を変化させてアクセントカラーを更新する
 let rainbowAnimId = null;
@@ -1114,15 +1122,24 @@ document.addEventListener("keydown", e => {
 
 const speedRange = document.getElementById("speedRange");
 const speedDisplay = document.getElementById("speedDisplay");
+const controlSpeedRange = document.getElementById("controlSpeedRange");
+const controlSpeedDisplay = document.getElementById("controlSpeedDisplay");
 const SPEED_MIN = 0.5;
 const SPEED_MAX = 1.5;
 updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
 
+// Speedの表示・スライダー値を、Basic欄・CONTROLタブ両方に反映する共通ヘルパー
+function syncSpeedDisplays() {
+  if (speedRange) speedRange.value = currentSpeed;
+  if (speedDisplay) speedDisplay.textContent = currentSpeed.toFixed(2);
+  if (controlSpeedRange) controlSpeedRange.value = currentSpeed;
+  if (controlSpeedDisplay) controlSpeedDisplay.textContent = currentSpeed.toFixed(2);
+  updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
+}
+
 function setSpeed(value) {
   currentSpeed = Math.round(Math.max(SPEED_MIN, Math.min(SPEED_MAX, value)) * 100) / 100;
-  speedRange.value = currentSpeed;
-  speedDisplay.textContent = currentSpeed.toFixed(2);
-  updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
+  syncSpeedDisplays();
   updatePlaybackRate();
 }
 
@@ -1132,110 +1149,122 @@ let lastSpeedTickValue = currentSpeed;
 // ドラッグ中は表示テキストだけ即座に更新し、実際の音声エンジンへの反映(updatePlaybackRate)は
 // 操作が一段落してから(最後のinputイベントから90ms後)にまとめて1回だけ行う。
 let speedApplyDebounceTimer = null;
-speedRange.oninput = e => {
+function handleSpeedRangeInput(e) {
   currentSpeed = parseFloat(e.target.value);
   if (currentSpeed !== lastSpeedTickValue) {
     hapticTick();
     lastSpeedTickValue = currentSpeed;
   }
-  speedDisplay.textContent = currentSpeed.toFixed(2);
-  updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
+  syncSpeedDisplays();
 
   clearTimeout(speedApplyDebounceTimer);
   speedApplyDebounceTimer = setTimeout(() => {
     updatePlaybackRate();
   }, 90);
-};
-
-const speedResetBtn = document.getElementById("speedResetBtn");
-if (speedResetBtn) {
-  speedResetBtn.onclick = () => {
-    currentSpeed = 1.0;
-    speedRange.value = "1.0";
-    speedDisplay.textContent = "1.00";
-    updateAvToggleValue("speedToggleValue", "1.00x");
-    updatePlaybackRate();
-  };
 }
+if (speedRange) speedRange.oninput = handleSpeedRangeInput;
+if (controlSpeedRange) controlSpeedRange.oninput = handleSpeedRangeInput;
+
+function resetSpeed() {
+  currentSpeed = 1.0;
+  syncSpeedDisplays();
+  updatePlaybackRate();
+}
+const speedResetBtn = document.getElementById("speedResetBtn");
+if (speedResetBtn) speedResetBtn.onclick = resetSpeed;
+const controlSpeedResetBtn = document.getElementById("controlSpeedResetBtn");
+if (controlSpeedResetBtn) controlSpeedResetBtn.onclick = resetSpeed;
 
 // ============================================================
 // Auto Speed：マーカー区間ループ(LOOP ON時)をN回通過するたびに、Speedをy%だけ自動で増減する。
 // ギター等の楽器練習で「同じフレーズを何度か通しで弾けるようになったら、少しずつテンポを上げる」
 // という操作を自動化するための機能。ループが1周する瞬間(updateBars内)からnotifyLoopCompleted()を
 // 呼んでもらうことでカウントし、既存のsetSpeed()をそのまま使ってSpeedへ反映する。
+// Basic欄・CONTROLタブ両方に同じUIがあるため、常にペアで値・状態を同期させる。
 // ============================================================
-const autoSpeedToggleBtn = document.getElementById("autoSpeedToggleBtn");
-const autoSpeedSettings = document.getElementById("autoSpeedSettings");
-const autoSpeedEveryNInput = document.getElementById("autoSpeedEveryN");
-const autoSpeedStepPercentInput = document.getElementById("autoSpeedStepPercent");
-const autoSpeedLimitInput = document.getElementById("autoSpeedLimit");
-const autoSpeedStatusEl = document.getElementById("autoSpeedStatus");
+const autoSpeedToggleBtns = [document.getElementById("autoSpeedToggleBtn"), document.getElementById("controlAutoSpeedToggleBtn")].filter(Boolean);
+const autoSpeedSettingsEls = [document.getElementById("autoSpeedSettings"), document.getElementById("controlAutoSpeedSettings")].filter(Boolean);
+const autoSpeedCardEls = [document.getElementById("controlAutoSpeedCard")].filter(Boolean); // OFF時に暗くする対象。Basic欄側は元々折りたたみなので対象外。
+const autoSpeedEveryNInputs = [document.getElementById("autoSpeedEveryN"), document.getElementById("controlAutoSpeedEveryN")].filter(Boolean);
+const autoSpeedStepPercentInputs = [document.getElementById("autoSpeedStepPercent"), document.getElementById("controlAutoSpeedStepPercent")].filter(Boolean);
+const autoSpeedLimitInputs = [document.getElementById("autoSpeedLimit"), document.getElementById("controlAutoSpeedLimit")].filter(Boolean);
+const autoSpeedStatusEls = [document.getElementById("autoSpeedStatus"), document.getElementById("controlAutoSpeedStatus")].filter(Boolean);
 const autoSpeedDirBtns = document.querySelectorAll(".auto-speed-dir-btn");
 
 let autoSpeedEnabled = false;
 let autoSpeedDirection = "up"; // "up" または "down"
 let autoSpeedLoopCount = 0;
 
+// 数値入力はBasic欄・CONTROLタブどちらから読んでも同じ値のはずなので、最初に見つかった方から読む
 function getAutoSpeedEveryN() {
-  const n = parseInt(autoSpeedEveryNInput.value, 10);
+  const n = parseInt(autoSpeedEveryNInputs[0].value, 10);
   return Number.isFinite(n) && n >= 1 ? n : 5;
 }
 
 function getAutoSpeedStepPercent() {
-  const p = parseFloat(autoSpeedStepPercentInput.value);
+  const p = parseFloat(autoSpeedStepPercentInputs[0].value);
   return Number.isFinite(p) && p > 0 ? p : 5;
 }
 
 function getAutoSpeedLimitRatio() {
-  const p = parseFloat(autoSpeedLimitInput.value);
+  const p = parseFloat(autoSpeedLimitInputs[0].value);
   const clamped = Number.isFinite(p) ? Math.max(50, Math.min(150, p)) : 150;
   return clamped / 100;
 }
 
 function updateAutoSpeedStatus() {
-  if (!autoSpeedStatusEl) return;
+  if (autoSpeedStatusEls.length === 0) return;
   const everyN = getAutoSpeedEveryN();
+  let text;
   if (!autoSpeedEnabled) {
-    autoSpeedStatusEl.textContent = `Loop progress: 0 / ${everyN}`;
-    return;
-  }
-  const limitRatio = getAutoSpeedLimitRatio();
-  const reachedLimit = autoSpeedDirection === "up"
-    ? currentSpeed >= limitRatio - 0.001
-    : currentSpeed <= limitRatio + 0.001;
-  if (reachedLimit) {
-    autoSpeedStatusEl.textContent = `Limit reached (${(limitRatio * 100).toFixed(0)}%) — looping`;
+    text = `Loop progress: 0 / ${everyN}`;
   } else {
-    autoSpeedStatusEl.textContent = `Loop progress: ${autoSpeedLoopCount} / ${everyN}`;
+    const limitRatio = getAutoSpeedLimitRatio();
+    const reachedLimit = autoSpeedDirection === "up"
+      ? currentSpeed >= limitRatio - 0.001
+      : currentSpeed <= limitRatio + 0.001;
+    text = reachedLimit
+      ? `Limit reached (${(limitRatio * 100).toFixed(0)}%) — looping`
+      : `Loop progress: ${autoSpeedLoopCount} / ${everyN}`;
   }
+  autoSpeedStatusEls.forEach(el => { el.textContent = text; });
 }
 
 function setAutoSpeedEnabled(enabled) {
   autoSpeedEnabled = enabled;
   autoSpeedLoopCount = 0;
-  if (autoSpeedToggleBtn) autoSpeedToggleBtn.setAttribute("aria-checked", String(enabled));
-  if (autoSpeedSettings) autoSpeedSettings.classList.toggle("open", enabled);
+  autoSpeedToggleBtns.forEach(btn => btn.setAttribute("aria-checked", String(enabled)));
+  autoSpeedSettingsEls.forEach(el => el.classList.toggle("open", enabled));
+  // CONTROLタブのAuto Speedカードは常時展開表示のため、開閉ではなくopacity等で
+  // ON/OFFを表現する（ご要望：ONにするまでは暗くしておく）。
+  autoSpeedCardEls.forEach(el => el.classList.toggle("auto-speed-active", enabled));
   updateAutoSpeedStatus();
 }
 
-if (autoSpeedToggleBtn) {
-  autoSpeedToggleBtn.onclick = () => {
+autoSpeedToggleBtns.forEach(btn => {
+  btn.onclick = () => {
     hapticTap();
     setAutoSpeedEnabled(!autoSpeedEnabled);
   };
-}
+});
 
 autoSpeedDirBtns.forEach(btn => {
   btn.onclick = () => {
     hapticTap();
     autoSpeedDirection = btn.getAttribute("data-dir");
-    autoSpeedDirBtns.forEach(b => b.classList.toggle("active", b === btn));
+    // Basic欄・CONTROLタブ、両方の方向ボタン群を同じ状態に揃える
+    autoSpeedDirBtns.forEach(b => b.classList.toggle("active", b.getAttribute("data-dir") === autoSpeedDirection));
     updateAutoSpeedStatus();
   };
 });
 
-[autoSpeedEveryNInput, autoSpeedStepPercentInput, autoSpeedLimitInput].forEach(input => {
-  if (!input) return;
+[...autoSpeedEveryNInputs, ...autoSpeedStepPercentInputs, ...autoSpeedLimitInputs].forEach(input => {
+  input.addEventListener("input", () => {
+    // Basic欄・CONTROLタブどちらを編集しても、もう片方の数値入力にも同じ値を反映する
+    const pairArrays = [autoSpeedEveryNInputs, autoSpeedStepPercentInputs, autoSpeedLimitInputs];
+    const pair = pairArrays.find(arr => arr.includes(input));
+    if (pair) pair.forEach(el => { if (el !== input) el.value = input.value; });
+  });
   input.addEventListener("change", () => {
     autoSpeedLoopCount = 0;
     updateAutoSpeedStatus();
@@ -1279,20 +1308,28 @@ updateAutoSpeedStatus();
 
 const keyDisplay = document.getElementById("keyDisplay");
 const keyStepperFill = document.getElementById("keyStepperFill");
+const controlKeyDisplay = document.getElementById("controlKeyDisplay");
+const controlKeyStepperFill = document.getElementById("controlKeyStepperFill");
 const KEY_MIN = -12;
 const KEY_MAX = 12;
 
 function renderKeyDisplay() {
-  if (keyDisplay) {
-    keyDisplay.textContent = (currentKeySemitones > 0 ? "+" : "") + currentKeySemitones;
-  }
+  const text = (currentKeySemitones > 0 ? "+" : "") + currentKeySemitones;
+  const pct = (Math.abs(currentKeySemitones) / KEY_MAX) * 50;
+  const left = currentKeySemitones >= 0 ? "50%" : (50 - pct) + "%";
+
+  if (keyDisplay) keyDisplay.textContent = text;
   if (keyStepperFill) {
     // 中央(0)を起点に、正なら右へ、負なら左へ伸びるバー
-    const pct = (Math.abs(currentKeySemitones) / KEY_MAX) * 50;
     keyStepperFill.style.width = pct + "%";
-    keyStepperFill.style.left = currentKeySemitones >= 0 ? "50%" : (50 - pct) + "%";
+    keyStepperFill.style.left = left;
   }
-  updateAvToggleValue("keyToggleValue", (currentKeySemitones > 0 ? "+" : "") + currentKeySemitones);
+  if (controlKeyDisplay) controlKeyDisplay.textContent = text;
+  if (controlKeyStepperFill) {
+    controlKeyStepperFill.style.width = pct + "%";
+    controlKeyStepperFill.style.left = left;
+  }
+  updateAvToggleValue("keyToggleValue", text);
 }
 
 function setKeySemitones(value) {
@@ -1315,6 +1352,14 @@ if (keyDownBtn) keyDownBtn.onclick = () => setKeySemitones(currentKeySemitones -
 
 const keyResetBtn = document.getElementById("keyResetBtn");
 if (keyResetBtn) keyResetBtn.onclick = () => setKeySemitones(0);
+
+const controlKeyUpBtn = document.getElementById("controlKeyUpBtn");
+const controlKeyDownBtn = document.getElementById("controlKeyDownBtn");
+if (controlKeyUpBtn) controlKeyUpBtn.onclick = () => setKeySemitones(currentKeySemitones + 1);
+if (controlKeyDownBtn) controlKeyDownBtn.onclick = () => setKeySemitones(currentKeySemitones - 1);
+
+const controlKeyResetBtn = document.getElementById("controlKeyResetBtn");
+if (controlKeyResetBtn) controlKeyResetBtn.onclick = () => setKeySemitones(0);
 
 renderKeyDisplay();
 
@@ -2314,6 +2359,28 @@ function updateSidebarToggleActiveState() {
 
 sidebarToggleBtns.forEach(btn => {
   btn.onclick = () => {
+    const action = btn.getAttribute("data-action");
+    // EQ/Export/Add Fileは、サイドバーを開くのではなく、それぞれ本来のモーダル/
+    // ファイル選択ダイアログをそのまま開く（Basic欄の対応ボタンをクリックしたことにする）。
+    if (action === "eq") {
+      hapticTap();
+      const eqBtn = document.getElementById("eqToggleBtn");
+      if (eqBtn) eqBtn.click();
+      return;
+    }
+    if (action === "export") {
+      hapticTap();
+      const exportBtn = document.getElementById("exportToggleBtn");
+      if (exportBtn) exportBtn.click();
+      return;
+    }
+    if (action === "addfile") {
+      hapticTap();
+      const fileInputEl = document.getElementById("fileInput");
+      if (fileInputEl) fileInputEl.click();
+      return;
+    }
+
     const tabName = btn.getAttribute("data-tab");
     // 既に同じタブでサイドバーが開いている状態でもう一度押した場合は閉じる（トグル動作）
     if (sidebarSection && sidebarSection.classList.contains("open") && currentMobileTab === tabName) {
