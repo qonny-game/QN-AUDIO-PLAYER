@@ -1124,16 +1124,18 @@ const speedRange = document.getElementById("speedRange");
 const speedDisplay = document.getElementById("speedDisplay");
 const controlSpeedRange = document.getElementById("controlSpeedRange");
 const controlSpeedDisplay = document.getElementById("controlSpeedDisplay");
+const spStatusSpeedValue = document.getElementById("spStatusSpeedValue");
 const SPEED_MIN = 0.5;
 const SPEED_MAX = 1.5;
 updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
 
-// Speedの表示・スライダー値を、Basic欄・CONTROLタブ両方に反映する共通ヘルパー
+// Speedの表示・スライダー値を、Basic欄・CONTROLタブ・SP専用ステータス表示、全てに反映する
 function syncSpeedDisplays() {
   if (speedRange) speedRange.value = currentSpeed;
   if (speedDisplay) speedDisplay.textContent = currentSpeed.toFixed(2);
   if (controlSpeedRange) controlSpeedRange.value = currentSpeed;
   if (controlSpeedDisplay) controlSpeedDisplay.textContent = currentSpeed.toFixed(2);
+  if (spStatusSpeedValue) spStatusSpeedValue.textContent = currentSpeed.toFixed(2) + "x";
   updateAvToggleValue("speedToggleValue", currentSpeed.toFixed(2) + "x");
 }
 
@@ -1212,8 +1214,10 @@ function getAutoSpeedLimitRatio() {
   return clamped / 100;
 }
 
+const spStatusAutoSpeedValue = document.getElementById("spStatusAutoSpeedValue");
+const spStatusAutoSpeedLimit = document.getElementById("spStatusAutoSpeedLimit");
+
 function updateAutoSpeedStatus() {
-  if (autoSpeedStatusEls.length === 0) return;
   const everyN = getAutoSpeedEveryN();
   let text;
   if (!autoSpeedEnabled) {
@@ -1228,6 +1232,22 @@ function updateAutoSpeedStatus() {
       : `Loop progress: ${autoSpeedLoopCount} / ${everyN}`;
   }
   autoSpeedStatusEls.forEach(el => { el.textContent = text; });
+
+  // SP専用ステータス表示：「5/5 +5%」のように、次の調整までの周回数とステップ幅を1行で見せる。
+  // OFFの間は、CONTROLタブを開けば設定できることが分かる程度の簡潔な表示にする。
+  if (spStatusAutoSpeedValue) {
+    if (!autoSpeedEnabled) {
+      spStatusAutoSpeedValue.textContent = "OFF";
+    } else {
+      const stepPercent = getAutoSpeedStepPercent();
+      const sign = autoSpeedDirection === "up" ? "+" : "-";
+      spStatusAutoSpeedValue.textContent = `${autoSpeedLoopCount}/${everyN} ${sign}${stepPercent}%`;
+    }
+  }
+  if (spStatusAutoSpeedLimit) {
+    const limitRatio = getAutoSpeedLimitRatio();
+    spStatusAutoSpeedLimit.textContent = autoSpeedEnabled ? `limit ${limitRatio.toFixed(2)}x` : "";
+  }
 }
 
 function setAutoSpeedEnabled(enabled) {
@@ -1329,6 +1349,8 @@ function renderKeyDisplay() {
     controlKeyStepperFill.style.width = pct + "%";
     controlKeyStepperFill.style.left = left;
   }
+  const spStatusKeyValue = document.getElementById("spStatusKeyValue");
+  if (spStatusKeyValue) spStatusKeyValue.textContent = text;
   updateAvToggleValue("keyToggleValue", text);
 }
 
@@ -2392,6 +2414,14 @@ sidebarToggleBtns.forEach(btn => {
 });
 
 if (sidebarOverlay) sidebarOverlay.onclick = closeSidebar;
+
+// SP専用ステータス表示（Speed/Auto Speed/Key）は、どれをタップしてもCONTROLタブを開く。
+document.querySelectorAll(".sp-status-item").forEach(item => {
+  item.onclick = () => {
+    hapticTap();
+    openSidebar("control");
+  };
+});
 
 // Play/Repeat/前後曲送りの三分割ボタンは、PC/SP完全に同じレイアウト（topControls内に常時表示）に
 // 統一されたため、以前あった「PC幅⇔SP幅で#playbackButtonsGroupを移動する」ロジックは不要になり、

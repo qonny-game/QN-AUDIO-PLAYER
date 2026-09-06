@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>QN AUDIO PLAYER 1.7.1</title>
+<title>QN AUDIO PLAYER 1.8.0</title>
 <link rel="stylesheet" href="style-core.css">
 <link rel="stylesheet" href="style-core-pc.css">
 <link rel="stylesheet" href="style-layout-sp.css">
@@ -24,7 +24,7 @@
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.7.1</span></h1>
+    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.8.0</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
   </div>
   <button id="headerMenuBtn" title="Menu">
@@ -217,9 +217,9 @@
          （#volToggleBtn自体はPC/SP共通のDOM構造としてここに置いたまま、表示だけ出し分ける）。 -->
     <div class="time-controls-row">
       <div id="timeDisplay">
-        <span id="currentTimeVal" class="time-val">00:00.00</span>
+        <span id="currentTimeVal" class="time-val">00:00.0</span>
         <span class="time-sep">/</span>
-        <span id="durationVal" class="time-dur">00:00.00</span>
+        <span id="durationVal" class="time-dur">00:00.0</span>
       </div>
     </div>
 
@@ -354,6 +354,26 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- SP幅専用：Basic欄はVOL/EQ/Export/AddFileを持たず、SPEED・AUTO SPEED・KEYの
+         現在値を「表示」するだけの行にする（ボタンではなく情報表示の見た目にする）。
+         CONTROLタブ内の並び順(Speed→Auto Speed→Key)と揃えている。
+         どれをタップしてもCONTROLタブが開く。PC幅ではCSS側で非表示にする。 -->
+    <div class="sp-status-panel" id="spStatusPanel">
+      <button class="sp-status-item" id="spStatusSpeed" title="Speed">
+        <span class="sp-status-item-label">Speed</span>
+        <span class="sp-status-item-value" id="spStatusSpeedValue">1.00x</span>
+      </button>
+      <button class="sp-status-item" id="spStatusAutoSpeed" title="Auto Speed">
+        <span class="sp-status-item-label">Auto Speed</span>
+        <span class="sp-status-item-value" id="spStatusAutoSpeedValue">5/5 +5%</span>
+        <span class="sp-status-item-sub" id="spStatusAutoSpeedLimit">limit 1.00x</span>
+      </button>
+      <button class="sp-status-item" id="spStatusKey" title="Key">
+        <span class="sp-status-item-label">Key</span>
+        <span class="sp-status-item-value" id="spStatusKeyValue">0</span>
+      </button>
     </div>
   </div>
 

@@ -748,10 +748,10 @@ function getSegments(dur) {
 }
 
 function formatTime(seconds) {
-  if (isNaN(seconds) || seconds < 0) return "00:00.00";
+  if (isNaN(seconds) || seconds < 0) return "00:00.0";
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  const sText = s.toFixed(2).padStart(5, '0');
+  const sText = s.toFixed(1).padStart(4, '0');
   return `${String(m).padStart(2, '0')}:${sText}`;
 }
 

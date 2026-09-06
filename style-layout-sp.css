@@ -210,10 +210,85 @@
     color: #fff;
   }
 
+  /* Control/Markers/Playlist（サイドバーが横からスライドインする系）と、
+     EQ/Export/Add File（モーダル/ファイル選択がその場で開く系）は、挙動が異なるため
+     視覚的にもグループを分ける。最初のdata-action持ちボタン(EQ)に間隔と独立した
+     角丸を持たせることで、1枚のカプセルが上下2つに分かれて見えるようにする。 */
+  .sidebar-toggle-btn[data-action="eq"] {
+    margin-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top-left-radius: 12px;
+  }
+
+  .sidebar-toggle-btn[data-tab="playlist"] {
+    border-bottom-left-radius: 12px;
+  }
+
   /* 再生ボタン行がfixedで浮いて場所を取らないため、
      シークバー・TIME間の見た目の間隔はgapのみで決まる。詰める。 */
   .player-section {
     gap: 4px;
+  }
+
+  /* SP幅ではPC用Basic欄(VOL/SPEED/KEY/EQ/Export/AddFile、ボタン形式)は使わず、
+     代わりにSPEED/KEY/AUTO SPEEDの現在値だけを見せる#spStatusPanelに置き換える。
+     EQ/Export/Add Fileは右の吸着タブに一本化されているため、SP幅ではBasic欄から完全に消える。 */
+  .basic-panel-box {
+    display: none;
+  }
+
+  #spStatusPanel {
+    display: flex;
+  }
+
+  .sp-status-panel {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* SPEED/KEYは同じ幅、AUTO SPEEDは情報量が多いため少し広めに取る */
+  .sp-status-item {
+    flex: 1;
+    background: #1c1c24;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    /* あくまで「今の設定はこうなっている」という表示であることを伝えたいため、
+     ボタンらしい立体感（影・ホバーの変化等）は付けず、cursor: pointerで
+     タップできることだけ示す控えめな見た目にする。 */
+    cursor: pointer;
+  }
+
+  #spStatusAutoSpeed {
+    flex: 1.4;
+  }
+
+  .sp-status-item-label {
+    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #8b8b9e;
+  }
+
+  .sp-status-item-value {
+    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f0f0f3;
+  }
+
+  .sp-status-item-sub {
+    font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+    font-size: 10px;
+    color: #6b6b7b;
   }
 
   /* ヘッダー：ロゴ＋バージョンとファイル名で2行に収め、Color/Analyzer/EQはハンバーガーメニューに格納 */

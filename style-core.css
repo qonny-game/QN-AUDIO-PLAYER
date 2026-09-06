@@ -904,6 +904,12 @@ body {
   border: none;
 }
 
+/* SP幅専用のSPEED/KEY/AUTO SPEED表示パネル。PC幅ではBasic欄(.basic-panel-box)側の
+   VOL/SPEED/KEY/EQ/Export/AddFileをそのまま使うため、こちらはデフォルトで非表示にする。 */
+#spStatusPanel {
+  display: none;
+}
+
 /* VOL/SPEED/KEY行とEQ/Export/AddFile行の間で、上下のボーダーが重なって太い線に
    見えてしまうのを防ぐため、2行目(EQ/Export/AddFile)側のボタンの上ボーダーを消す。 */
 .basic-panel-box > .adjust-controls-row:nth-child(2) .av-toggle-btn {
