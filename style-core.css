@@ -791,7 +791,7 @@ body {
 /* 三分割ボタン（前へ/中央操作/次へ）。前後の曲送り、前後のマーカー移動の両方で使う汎用デザイン。
    中央(tripleNavBtn-center)だけ少し広めに取り、主操作（再生/マーカー追加）であることを強調する。 */
 .tripleNavBtn {
-  flex: 2;
+  flex: 3;
   display: flex;
   align-items: stretch;
   background: #1c1c24;
