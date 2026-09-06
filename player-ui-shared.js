@@ -145,9 +145,22 @@ if (volumeDisplay) {
 }
 
 // VOL/SPEED/KEYボタン内に現在値を表示する共通ヘルパー
+// Basic欄のVOL/SPEED/KEY表示(id)と、CONTROLタブ内の対応する表示(id)をペアで持っておく。
+// updateAvToggleValueは呼び出し側を増やさず、常に両方を同時に更新する。
+const CONTROL_LIST_VALUE_ID_MAP = {
+  volToggleValue: "controlListVolValue",
+  speedToggleValue: "controlListSpeedValue",
+  keyToggleValue: "controlListKeyValue"
+};
+
 function updateAvToggleValue(id, text) {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
+  const mirrorId = CONTROL_LIST_VALUE_ID_MAP[id];
+  if (mirrorId) {
+    const mirrorEl = document.getElementById(mirrorId);
+    if (mirrorEl) mirrorEl.textContent = text;
+  }
 }
 
 updateAvToggleValue("volToggleValue", Math.round(audio.volume * 100) + "%");
@@ -1573,6 +1586,14 @@ function setupAvPopup(toggleBtnId, popupId) {
     if (toggleBtn.disabled) return;
     hapticTap();
 
+    // SpeedまたはKeyのポップアップを実際に開いた（＝操作しようとした）瞬間に、
+    // 初めてWeb Audio API（位相ボコーダー）へ接続する。EQボタンと同じ考え方で、
+    // 実際に使われるまでは<audio>要素をWeb Audio APIに繋がない設計にすることで、
+    // EQ・Speed・Keyのどれも使わない通常再生ではSafari固有の不具合を避けられる。
+    if (toggleBtnId === "speedToggleBtn" || toggleBtnId === "keyToggleBtn") {
+      setupAudioGraph().catch(err => console.warn("setupAudioGraph failed:", err));
+    }
+
     const willOpen = !popup.classList.contains("open");
     // VOL/SPEED/KEYは排他：開く前に他の全ポップアップを閉じる
     avPopupInstances.forEach(other => {
@@ -1595,6 +1616,25 @@ function setupAvPopup(toggleBtnId, popupId) {
 setupAvPopup("volToggleBtn", "volPopup");
 setupAvPopup("speedToggleBtn", "speedPopup");
 setupAvPopup("keyToggleBtn", "keyPopup");
+
+// CONTROLタブの各行（Vol/Speed/Key）は、それぞれ対応するBasic欄のトグルボタンを
+// そのままクリックしたことにする。これにより、ポップアップの開閉・排他制御・
+// オンデマンドのWeb Audio API接続(setupAvPopup側の処理)を重複実装せずに済む。
+const CONTROL_LIST_ITEM_TARGET_MAP = {
+  controlListVol: "volToggleBtn",
+  controlListSpeed: "speedToggleBtn",
+  controlListKey: "keyToggleBtn"
+};
+Object.entries(CONTROL_LIST_ITEM_TARGET_MAP).forEach(([listItemId, targetBtnId]) => {
+  const listItem = document.getElementById(listItemId);
+  const targetBtn = document.getElementById(targetBtnId);
+  if (listItem && targetBtn) {
+    listItem.onclick = (e) => {
+      e.stopPropagation();
+      targetBtn.click();
+    };
+  }
+});
 
 
 

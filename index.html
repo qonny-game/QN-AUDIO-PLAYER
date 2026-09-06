@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>QN AUDIO PLAYER 1.6.2</title>
+<title>QN AUDIO PLAYER 1.7.0</title>
 <link rel="stylesheet" href="style-core.css">
 <link rel="stylesheet" href="style-core-pc.css">
 <link rel="stylesheet" href="style-layout-sp.css">
@@ -24,7 +24,7 @@
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.6.2</span></h1>
+    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.7.0</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
   </div>
   <button id="headerMenuBtn" title="Menu">
@@ -299,7 +299,7 @@
         </div>
 
         <div class="header-btn-wrapper">
-          <button id="keyToggleBtn" class="av-toggle-btn key-disabled" title="Key change is temporarily disabled while we improve its sound quality" disabled>
+          <button id="keyToggleBtn" class="av-toggle-btn" title="Key">
             <svg viewBox="0 0 24 24"><path d="M7 14c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm14.71-2.37l-1.34-1.34c-.2-.2-.51-.2-.71 0L9 16.96V19h2.04l10.66-10.66c.2-.2.2-.51.01-.71z"/></svg>
             <span class="av-toggle-btn-text">
               <span class="av-toggle-btn-value" id="keyToggleValue">0</span>
@@ -311,14 +311,14 @@
             <div class="control-card key-control-card">
               <label>
                 Key <span id="keyDisplay" style="color:#fff;">0</span> st
-                <button class="mini-reset-btn" id="keyResetBtn" title="Reset key to 0" disabled>↺</button>
+                <button class="mini-reset-btn" id="keyResetBtn" title="Reset key to 0">↺</button>
               </label>
               <div class="key-stepper">
-                <button id="keyDownBtn" class="key-step-btn" title="Key down 1 semitone" disabled>−</button>
+                <button id="keyDownBtn" class="key-step-btn" title="Key down 1 semitone">−</button>
                 <div class="key-stepper-bar">
                   <div class="key-stepper-fill" id="keyStepperFill"></div>
                 </div>
-                <button id="keyUpBtn" class="key-step-btn" title="Key up 1 semitone" disabled>+</button>
+                <button id="keyUpBtn" class="key-step-btn" title="Key up 1 semitone">+</button>
               </div>
             </div>
           </div>
@@ -360,6 +360,7 @@
   <!-- SP幅限定：サイドバー(Markers/Playlist)を開閉する画面右端の縦長吸着ボタン。
        PC幅では常時表示のサイドバーがあるため不要（CSS側で非表示にする）。 -->
   <div class="sidebar-toggle-tabs" id="sidebarToggleTabs">
+    <button class="sidebar-toggle-btn" id="sidebarToggleControl" data-tab="control">Control</button>
     <button class="sidebar-toggle-btn" id="sidebarToggleMarkers" data-tab="markers">Markers</button>
     <button class="sidebar-toggle-btn" id="sidebarTogglePlaylist" data-tab="playlist">Playlist</button>
   </div>
@@ -368,10 +369,37 @@
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="sidebar-section" id="sidebarSection">
-    <!-- Markers / Playlist の切り替えタブ（旧Basicタブは撤去、この2つだけになった） -->
+    <!-- Control / Markers / Playlist の切り替えタブ（旧Basicタブは撤去、Controlは新設） -->
     <div class="mobile-tabs" id="mobileTabs">
+      <button class="mobile-tab-btn" data-tab="control">Control</button>
       <button class="mobile-tab-btn active" data-tab="markers">Markers</button>
       <button class="mobile-tab-btn" data-tab="playlist">Playlist</button>
+    </div>
+
+    <!-- Controlタブ：VOL/SPEED/KEYを、Markers/Playlistと同じリスト風の見た目で並べる。
+         各行のボタン自体はBasic欄のav-toggle-btnと同じIDをそのまま使い回すのではなく、
+         同じ値を表示する専用の行として実装し、クリックで対応するav-popupを開く。 -->
+    <div class="mobile-tab-panel" data-tab-panel="control">
+      <div class="markers-heading-row">
+        <h3>Control</h3>
+      </div>
+      <div class="control-list">
+        <button class="control-list-item" id="controlListVol" title="Volume">
+          <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          <span class="control-list-item-label">Vol</span>
+          <span class="control-list-item-value" id="controlListVolValue">80%</span>
+        </button>
+        <button class="control-list-item" id="controlListSpeed" title="Speed">
+          <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          <span class="control-list-item-label">Speed</span>
+          <span class="control-list-item-value" id="controlListSpeedValue">1.0x</span>
+        </button>
+        <button class="control-list-item" id="controlListKey" title="Key">
+          <svg viewBox="0 0 24 24"><path d="M7 14c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm14.71-2.37l-1.34-1.34c-.2-.2-.51-.2-.71 0L9 16.96V19h2.04l10.66-10.66c.2-.2.2-.51.01-.71z"/></svg>
+          <span class="control-list-item-label">Key</span>
+          <span class="control-list-item-value" id="controlListKeyValue">0</span>
+        </button>
+      </div>
     </div>
 
     <div class="mobile-tab-panel" data-tab-panel="markers">

@@ -617,24 +617,18 @@ async function setupAudioGraph() {
     return filter;
   });
 
-  // 本格ピッチシフト（位相ボコーダー、AudioWorklet）は、Key機能自体がUI上無効化されている間は
-  // 生成しない。AudioWorkletNodeは接続されている限りprocess()が音声サンプルレートに応じて
-  // 常時呼ばれ続ける仕様のため、Keyを一切使わない場合でも存在するだけで負荷・メモリ確保が続き、
-  // 特にiOS Safari(ホーム画面アプリ化時含む)で長時間再生後にページがクラッシュ/再読み込みされる
-  // 不具合の原因になっていた。#keyToggleBtnがdisabledのままなら、この初期化自体を丸ごとスキップする。
-  const keyFeatureEnabled = !!(document.getElementById("keyToggleBtn") && !document.getElementById("keyToggleBtn").disabled);
-  if (keyFeatureEnabled) {
-    try {
-      if (!ctx.audioWorklet) throw new Error("AudioWorklet is not supported in this browser");
-      await ensurePhaseVocoderWorklet(ctx);
-      pitchShiftNode = createPitchShiftNode(ctx);
-      pitchShiftAvailable = true;
-    } catch (err) {
-      console.warn("Pitch shift unavailable, falling back to speed-linked key change:", err);
-      pitchShiftAvailable = false;
-      pitchShiftNode = null;
-    }
-  } else {
+  // 本格ピッチシフト（位相ボコーダー、AudioWorklet）の初期化を試みる。
+  // setupAudioGraph自体、EQボタンまたはSPEED/KEY操作のいずれかが実際に行われた
+  // タイミングで初めて呼ばれる設計になっているため、呼ばれた時点で常に接続を試みてよい
+  // （呼ばれるまでは<audio>要素がWeb Audio APIに一切接続されないため、EQ・Speed・Keyの
+  // どれも使わない通常再生では、Safari固有の不具合を避けられる）。
+  try {
+    if (!ctx.audioWorklet) throw new Error("AudioWorklet is not supported in this browser");
+    await ensurePhaseVocoderWorklet(ctx);
+    pitchShiftNode = createPitchShiftNode(ctx);
+    pitchShiftAvailable = true;
+  } catch (err) {
+    console.warn("Pitch shift unavailable, falling back to speed-linked key change:", err);
     pitchShiftAvailable = false;
     pitchShiftNode = null;
   }

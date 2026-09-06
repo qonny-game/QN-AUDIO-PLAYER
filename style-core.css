@@ -637,6 +637,60 @@ body {
   flex-shrink: 0;
 }
 
+/* CONTROLタブ：VOL/SPEED/KEYを、MARKERS/PLAYLISTのリスト項目(.pinItem等)と統一感のある
+   見た目で並べる。各行はBasic欄の対応するトグルボタンをそのままクリックしたことにする
+   だけの薄いラッパーで、実際の値の保持・ポップアップ表示は既存の仕組みをそのまま使う。 */
+.control-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  color: #f0f0f3;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.control-list-item:hover {
+  background: #252530;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.control-list-item svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  flex-shrink: 0;
+  color: #8b8b9e;
+}
+
+.control-list-item-label {
+  flex: 1;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #8b8b9e;
+}
+
+.control-list-item-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f0f0f3;
+}
+
 .markers-heading-row {
   display: flex;
   align-items: center;

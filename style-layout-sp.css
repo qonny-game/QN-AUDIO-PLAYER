@@ -78,7 +78,11 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 16px 16px calc(90px + 16px);
+    /* 右側は、常時表示にした吸着タブ(.sidebar-toggle-tabs、幅約46px)と重ならないよう、
+       その分の余白を確保する。開いている間も吸着タブがサイドバーの内容の裏に隠れず
+       常に押せる状態を保つため。 */
+    padding: 16px 46px 16px 16px;
+    padding-bottom: calc(90px + 16px);
     box-sizing: border-box;
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
     transition: right var(--dur-open, 260ms) var(--ease-pop, ease-out);
@@ -171,7 +175,9 @@
     top: 50%;
     right: 0;
     transform: translateY(-50%);
-    z-index: 380;
+    /* サイドバー(.sidebar-section, z-index: 400)が開いている間も吸着タブ自体は
+       隠れず常に見えているようにしたいため、それより高いz-indexにする。 */
+    z-index: 410;
     display: flex;
     flex-direction: column;
     border-radius: 12px 0 0 12px;
