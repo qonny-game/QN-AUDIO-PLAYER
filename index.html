@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>QN AUDIO PLAYER 1.8.0</title>
+<title>QN AUDIO PLAYER 1.8.1</title>
 <link rel="stylesheet" href="style-core.css">
 <link rel="stylesheet" href="style-core-pc.css">
 <link rel="stylesheet" href="style-layout-sp.css">
@@ -24,7 +24,7 @@
 
 <div id="appHeader">
   <div id="appHeaderText">
-    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.8.0</span></h1>
+    <h1 id="appLogo">QN AUDIO PLAYER <span id="appVersion">v1.8.1</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
   </div>
   <button id="headerMenuBtn" title="Menu">
@@ -418,39 +418,40 @@
             <button class="mini-reset-btn" id="controlSpeedResetBtn" title="Reset speed to 1.00x">↺</button>
           </label>
           <input type="range" id="controlSpeedRange" min="0.5" max="1.5" step="0.01" value="1.0">
-        </div>
 
-        <!-- Auto Speedは常に表示するが、OFFの間は暗く（低opacityに）して操作対象でないことを示す。 -->
-        <div class="control-card auto-speed-card" id="controlAutoSpeedCard">
-          <label class="auto-speed-header">
-            <span>Auto Speed</span>
-            <button class="glow-switch" id="controlAutoSpeedToggleBtn" role="switch" aria-checked="false" title="Automatically adjust speed every N loops">
-              <span class="glow-switch-knob"></span>
-            </button>
-          </label>
-          <div class="auto-speed-settings open" id="controlAutoSpeedSettings">
-            <div class="auto-speed-row">
-              <span class="auto-speed-row-label">Every</span>
-              <input type="number" id="controlAutoSpeedEveryN" class="auto-speed-number" min="1" max="99" step="1" value="5">
-              <span class="auto-speed-row-label">loops</span>
-            </div>
-            <div class="auto-speed-row">
-              <div class="auto-speed-direction" id="controlAutoSpeedDirection">
-                <button type="button" class="auto-speed-dir-btn active" data-dir="up">Speed Up</button>
-                <button type="button" class="auto-speed-dir-btn" data-dir="down">Speed Down</button>
+          <!-- Auto Speedは常に表示するが、OFFの間は暗く（低opacityに）して操作対象でないことを示す。
+               Speedと同じ枠内に収め、1つの機能としてまとまって見えるようにする。 -->
+          <div class="auto-speed-card" id="controlAutoSpeedCard">
+            <label class="auto-speed-header">
+              <span>Auto Speed</span>
+              <button class="glow-switch" id="controlAutoSpeedToggleBtn" role="switch" aria-checked="false" title="Automatically adjust speed every N loops">
+                <span class="glow-switch-knob"></span>
+              </button>
+            </label>
+            <div class="auto-speed-settings open" id="controlAutoSpeedSettings">
+              <div class="auto-speed-row">
+                <span class="auto-speed-row-label">Every</span>
+                <input type="number" id="controlAutoSpeedEveryN" class="auto-speed-number" min="1" max="99" step="1" value="5">
+                <span class="auto-speed-row-label">loops</span>
               </div>
+              <div class="auto-speed-row">
+                <div class="auto-speed-direction" id="controlAutoSpeedDirection">
+                  <button type="button" class="auto-speed-dir-btn active" data-dir="up">Speed Up</button>
+                  <button type="button" class="auto-speed-dir-btn" data-dir="down">Speed Down</button>
+                </div>
+              </div>
+              <div class="auto-speed-row">
+                <span class="auto-speed-row-label">by</span>
+                <input type="number" id="controlAutoSpeedStepPercent" class="auto-speed-number" min="1" max="50" step="1" value="5">
+                <span class="auto-speed-row-label">%</span>
+              </div>
+              <div class="auto-speed-row">
+                <span class="auto-speed-row-label">Limit</span>
+                <input type="number" id="controlAutoSpeedLimit" class="auto-speed-number" min="50" max="150" step="1" value="150">
+                <span class="auto-speed-row-label">%</span>
+              </div>
+              <div class="auto-speed-status" id="controlAutoSpeedStatus">Loop progress: 0 / 5</div>
             </div>
-            <div class="auto-speed-row">
-              <span class="auto-speed-row-label">by</span>
-              <input type="number" id="controlAutoSpeedStepPercent" class="auto-speed-number" min="1" max="50" step="1" value="5">
-              <span class="auto-speed-row-label">%</span>
-            </div>
-            <div class="auto-speed-row">
-              <span class="auto-speed-row-label">Limit</span>
-              <input type="number" id="controlAutoSpeedLimit" class="auto-speed-number" min="50" max="150" step="1" value="150">
-              <span class="auto-speed-row-label">%</span>
-            </div>
-            <div class="auto-speed-status" id="controlAutoSpeedStatus">Loop progress: 0 / 5</div>
           </div>
         </div>
 
@@ -674,6 +675,7 @@
 
     <div class="export-modal-footer">
       <div id="exportStatus" class="export-status"></div>
+      <button id="exportCancelBtn" class="export-cancel-btn" title="Close">Cancel</button>
       <button id="exportRunBtn" class="export-run-btn">Export</button>
     </div>
   </div>

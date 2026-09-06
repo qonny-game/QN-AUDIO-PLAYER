@@ -1269,6 +1269,7 @@ body {
   align-items: stretch;
   gap: 6px;
   min-width: 180px;
+  box-sizing: border-box;
 }
 
 .control-card label {
@@ -2395,6 +2396,35 @@ body.dragover #dropOverlay {
   opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+/* Cancel：EXPORTボタンの左に置く、控えめなキャンセルボタン。×ボタンと全く同じ機能
+   （閉じるだけ）だが、フッター内にも同等の操作があった方が分かりやすいというご要望のため追加。
+   実行ボタン(EXPORT)とは対照的に、目立たない枠線のみのデザインにする。 */
+.export-cancel-btn {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  background: transparent;
+  color: #8b8b9e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
+}
+
+.export-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f0f0f3;
+}
+
+.export-cancel-btn:active {
+  transform: scale(0.97);
 }
 
 

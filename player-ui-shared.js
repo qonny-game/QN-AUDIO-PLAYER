@@ -1152,6 +1152,12 @@ let lastSpeedTickValue = currentSpeed;
 // 操作が一段落してから(最後のinputイベントから90ms後)にまとめて1回だけ行う。
 let speedApplyDebounceTimer = null;
 function handleSpeedRangeInput(e) {
+  // Basic欄のポップアップ経由(setupAvPopup)ならボタンを開いた時点で接続されるが、
+  // CONTROLタブのスライダーはポップアップの開閉を経由せず直接操作できてしまうため、
+  // ここでも同様に、実際に操作された瞬間にWeb Audio API接続を試みる必要がある
+  // （EQ/Speed/Keyのどれも操作しなければ接続されない、という設計自体は維持する）。
+  setupAudioGraph().catch(err => console.warn("setupAudioGraph failed:", err));
+
   currentSpeed = parseFloat(e.target.value);
   if (currentSpeed !== lastSpeedTickValue) {
     hapticTick();
@@ -1355,6 +1361,11 @@ function renderKeyDisplay() {
 }
 
 function setKeySemitones(value) {
+  // Basic欄のポップアップ経由(setupAvPopup)ならボタンを開いた時点で接続されるが、
+  // CONTROLタブのステッパーボタンはポップアップの開閉を経由せず直接操作できてしまうため、
+  // ここでも同様に、実際に操作された瞬間にWeb Audio API接続を試みる必要がある。
+  setupAudioGraph().catch(err => console.warn("setupAudioGraph failed:", err));
+
   const clamped = Math.max(KEY_MIN, Math.min(KEY_MAX, value));
   if (clamped !== currentKeySemitones) {
     hapticTick();
@@ -2637,6 +2648,10 @@ if (exportToggleBtn) {
 }
 if (exportModalCloseBtn) {
   exportModalCloseBtn.onclick = () => closeExportModal();
+}
+const exportCancelBtn = document.getElementById("exportCancelBtn");
+if (exportCancelBtn) {
+  exportCancelBtn.onclick = () => closeExportModal();
 }
 if (exportModalOverlay) {
   // オーバーレイの背景部分（モーダル本体の外側）をクリックしたら閉じる
