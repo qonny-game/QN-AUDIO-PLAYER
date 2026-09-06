@@ -698,18 +698,39 @@ function setupPlaylistDragReorder(box) {
   });
 }
 
+// 直前にaudio.srcへ設定したオブジェクトURL。曲を切り替える際に解放するために保持しておく。
+// URL.createObjectURL()で作ったURLは、revokeObjectURL()で明示的に解放しない限り、
+// そのファイルのデータがページを閉じるまでメモリ上に residentし続ける。
+// 曲を切り替えるたびに解放を忘れると「曲数 × ファイルサイズ」分のメモリが積み上がり、
+// 特にモバイル環境（iOS SafariのPWA化時など）で長時間利用した際にメモリ不足による
+// ページのクラッシュ/強制再読み込みを引き起こす。
+let currentObjectUrl = null;
+
 function loadFile(file) {
   if (!file) return;
   
   setAppTitle(file.name);
   hideWelcomeOverlay();
 
+  // 前の曲のオブジェクトURLをここで解放する。audio.srcを新しいURLに差し替えた後だと
+  // 再生中のデータを引き剥がすことになるため、差し替えの直前に解放しておく。
+  if (currentObjectUrl) {
+    URL.revokeObjectURL(currentObjectUrl);
+    currentObjectUrl = null;
+  }
+
   const url = URL.createObjectURL(file);
+  currentObjectUrl = url;
   audio.src = url;
   audio.load();
   updatePlaybackRate();
 
-  setupAudioGraph().catch(err => console.warn("setupAudioGraph failed:", err));
+  // setupAudioGraph()（Web Audio APIへの接続、EQ/位相ボコーダー用）は、ここでは呼ばない。
+  // 曲の読み込み時に毎回呼んでいたが、これによりEQを一切使わない場合でも常時
+  // <audio>要素がWeb Audio APIのグラフに接続された状態になり、iOS Safari
+  // （Chromeでは同じ端末・同じPWA化でも再現しないため、Safari固有の問題と判明している）で
+  // 長時間再生後にページがクラッシュ/強制再読み込みされる不具合の原因になっていた。
+  // 今はEQボタンが実際に押された瞬間（setupAudioGraphOnDemand、下記）にのみ接続する。
 
   // 波形解析（非同期・別トークンで前回分を無効化）
   waveformPeaks = null;
@@ -1465,6 +1486,9 @@ const eqModalCloseBtn = document.getElementById("eqModalCloseBtn");
 
 function openEqModal() {
   hapticTap();
+  // EQ機能が実際に使われる瞬間（このモーダルを開いた時）に、初めてWeb Audio APIへ接続する。
+  // 一度接続すればaudioGraphSetupDoneフラグにより以降は再接続されない。
+  setupAudioGraph().catch(err => console.warn("setupAudioGraph failed:", err));
   if (eqModalOverlay) eqModalOverlay.classList.add("open");
 }
 
@@ -1574,43 +1598,66 @@ setupAvPopup("keyToggleBtn", "keyPopup");
 
 
 
+// updateBarsは再生中、毎フレーム(最大60回/秒)呼ばれ続けるため、その中で使う配列・DOM参照は
+// 毎回生成/検索せず使い回す。小さなオブジェクトでも長時間の蓄積はガベージコレクションの
+// 頻度を押し上げ続け、モバイル環境（特にiOS SafariのPWA化時）でのメモリ圧迫要因になり得るため。
+//
+// さらに、時刻表示・シークバー（.vbar-fill）の見た目更新は人の目には10回/秒程度でも
+// 十分滑らかに見えるため、UPDATE_BARS_VISUAL_INTERVAL_MS間隔に間引く。
+// 一方でマーカー区間ループの折り返し判定はタイミングの正確さが重要なため、これは間引かず
+// 毎フレーム行う（見た目の更新頻度とループ精度を分離することで、両方を両立させている）。
+const updateBarsFillEls = [1, 2, 3, 4, 5, 6].map(i => document.getElementById(`fill${i}`));
+const updateBarsCurrentValEl = document.getElementById("currentTimeVal");
+const updateBarsDurationValEl = document.getElementById("durationVal");
+const updateBarsP = [0, 0, 0, 0, 0, 0];
+const updateBarsThresholds = [0, 0, 0, 0, 0, 0, 0];
+const UPDATE_BARS_VISUAL_INTERVAL_MS = 100; // 10回/秒程度
+let lastVisualUpdateTime = 0;
+
 function updateBars() {
   requestAnimationFrame(updateBars);
   if (!audio.duration) return;
 
   const dur = audio.duration;
   const ct = audio.currentTime;
+  const now = performance.now();
 
-  const currentValEl = document.getElementById("currentTimeVal");
-  const durationValEl = document.getElementById("durationVal");
-  if (currentValEl && durationValEl) {
-    currentValEl.textContent = formatTime(ct);
-    durationValEl.textContent = formatTime(dur);
-  }
+  if (now - lastVisualUpdateTime >= UPDATE_BARS_VISUAL_INTERVAL_MS) {
+    lastVisualUpdateTime = now;
 
-  const { s1, s2, s3, s4, s5 } = getSegments(dur);
+    if (updateBarsCurrentValEl && updateBarsDurationValEl) {
+      updateBarsCurrentValEl.textContent = formatTime(ct);
+      updateBarsDurationValEl.textContent = formatTime(dur);
+    }
 
-  let p = [0, 0, 0, 0, 0, 0];
-  let thresholds = [0, s1, s2, s3, s4, s5, dur];
+    const step = dur / 6;
+    updateBarsThresholds[0] = 0;
+    updateBarsThresholds[1] = step;
+    updateBarsThresholds[2] = step * 2;
+    updateBarsThresholds[3] = step * 3;
+    updateBarsThresholds[4] = step * 4;
+    updateBarsThresholds[5] = step * 5;
+    updateBarsThresholds[6] = dur;
 
-  for (let i = 0; i < 6; i++) {
-    if (ct >= thresholds[i + 1]) {
-      p[i] = 100;
-    } else if (ct > thresholds[i]) {
-      p[i] = ((ct - thresholds[i]) / (thresholds[i + 1] - thresholds[i])) * 100;
-      break;
-    } else {
-      p[i] = 0;
+    for (let i = 0; i < 6; i++) {
+      if (ct >= updateBarsThresholds[i + 1]) {
+        updateBarsP[i] = 100;
+      } else if (ct > updateBarsThresholds[i]) {
+        updateBarsP[i] = ((ct - updateBarsThresholds[i]) / (updateBarsThresholds[i + 1] - updateBarsThresholds[i])) * 100;
+        break;
+      } else {
+        updateBarsP[i] = 0;
+      }
+    }
+
+    for (let i = 0; i < 6; i++) {
+      if (updateBarsFillEls[i]) updateBarsFillEls[i].style.width = updateBarsP[i] + "%";
     }
   }
 
-  for (let i = 1; i <= 6; i++) {
-    const fillEl = document.getElementById(`fill${i}`);
-    if (fillEl) fillEl.style.width = p[i - 1] + "%";
-  }
-
-  // ループがOFFの間はこの配列生成自体が無駄になるため、loopEnabledの判定を先に行う。
-  // （updateBarsは毎フレーム=最大60回/秒呼ばれるため、ここでの配列生成コストが積み重なりやすい）
+  // マーカー区間ループの折り返し判定はタイミングの正確さが重要なため、見た目更新の間引きとは
+  // 独立して毎フレーム行う。ループがOFFの間はこの配列生成自体が無駄になるため、
+  // loopEnabledの判定を先に行う。
   if (loopEnabled && !isSeeking && !isJumping && !audio.paused) {
     const activePins = pins.filter(p => p.enabled).map(p => p.t);
     if (activePins.length >= 2) {
