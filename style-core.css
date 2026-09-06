@@ -191,6 +191,10 @@ body {
   text-transform: uppercase;
 }
 
+#appLogoQN {
+  color: var(--accent-primary);
+}
+
 #appVersion {
   font-size: 12px;
   font-weight: 500;

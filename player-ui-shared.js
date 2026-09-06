@@ -836,8 +836,8 @@ function updateMediaSessionMetadata(name) {
   if (!("mediaSession" in navigator)) return;
   try {
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: name || "QN AUDIO PLAYER",
-      artist: "QNAUDIO"
+      title: name || "QNPLAYER",
+      artist: "QNPLAYER"
     });
   } catch (e) {
     // MediaMetadata非対応環境などは無視する
