@@ -80,9 +80,12 @@
     overflow: hidden;
     /* 右側は、常時表示にした吸着タブ(.sidebar-toggle-tabs、幅約46px)と重ならないよう、
        その分の余白を確保する。開いている間も吸着タブがサイドバーの内容の裏に隠れず
-       常に押せる状態を保つため。 */
+       常に押せる状態を保つため。
+       下方向のpaddingは持たせない：.sidebar-section自体はoverflow: hiddenで
+       スクロールしない外枠のため、ここにpadding-bottomを入れても実際のスクロール領域
+       （内側の.mobile-tab-panel）には反映されない。topControls分の余白は
+       syncTopControlsSpacerHeight()がJSで.mobile-tab-panel側に動的に設定する。 */
     padding: 16px 46px 16px 16px;
-    padding-bottom: calc(90px + 16px);
     box-sizing: border-box;
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
     transition: right var(--dur-open, 260ms) var(--ease-pop, ease-out);
