@@ -2481,9 +2481,16 @@ function syncTopControlsSpacerHeight() {
   const sidebarSection = document.querySelector(".sidebar-section");
   const mobileTabPanels = document.querySelectorAll(".mobile-tab-panel");
   if (!topControls || !spacer) return;
+
+  const h = topControls.getBoundingClientRect().height;
+
+  // PC/SP共通：topControlsは常時画面下部にposition: fixedで固定されているため、
+  // ページ本体（body）の最下部にその高さ分の余白を必ず確保する。
+  // これがないと、PC幅でサイドバーの中身（マーカーやプレイリスト）が増えて
+  // ページ全体がスクロールした際、一番下の項目がtopControlsの裏に隠れてしまう。
+  spacer.style.height = h + "px";
+
   if (isMobileLayout()) {
-    const h = topControls.getBoundingClientRect().height;
-    spacer.style.height = h + "px";
     // SP幅ではbody自体はスクロールしない(overflow: hidden)ため、bodyへのpadding-bottomは意味を持たない。
     // 実際にスクロールするのは.sidebar-section内側の.mobile-tab-panel（タブの中身）なので、
     // そちら自身にtopControlsの高さ分の余白を確保し、スクロール最下部のコンテンツが
@@ -2496,13 +2503,14 @@ function syncTopControlsSpacerHeight() {
     if (sidebarSection) sidebarSection.style.paddingBottom = "";
     document.body.style.paddingBottom = "";
   } else {
-    spacer.style.height = "0px";
+    // PC幅ではページ本体(body)自体がスクロールするため、上のspacer(bodyの最後尾の余白)だけで十分。
+    // mobile-tab-panel側には余白を入れない（入れるとタブ内に不要な空白ができてしまう）。
     document.body.style.paddingBottom = "";
     if (sidebarSection) sidebarSection.style.paddingBottom = "";
     mobileTabPanels.forEach(panel => {
       panel.style.paddingBottom = "";
     });
-  } 
+  }
 }
 syncTopControlsSpacerHeight();
 window.addEventListener("resize", syncTopControlsSpacerHeight);
