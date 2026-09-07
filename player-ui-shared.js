@@ -2502,7 +2502,7 @@ function syncTopControlsSpacerHeight() {
     mobileTabPanels.forEach(panel => {
       panel.style.paddingBottom = "";
     });
-  }
+  } 
 }
 syncTopControlsSpacerHeight();
 window.addEventListener("resize", syncTopControlsSpacerHeight);
