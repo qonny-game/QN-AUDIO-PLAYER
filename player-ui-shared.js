@@ -2479,19 +2479,29 @@ function syncTopControlsSpacerHeight() {
   const topControls = document.getElementById("topControls");
   const spacer = document.getElementById("topControlsSpacer");
   const sidebarSection = document.querySelector(".sidebar-section");
+  const mobileTabPanels = document.querySelectorAll(".mobile-tab-panel");
   if (!topControls || !spacer) return;
   if (isMobileLayout()) {
     const h = topControls.getBoundingClientRect().height;
     spacer.style.height = h + "px";
     // SP幅ではbody自体はスクロールしない(overflow: hidden)ため、bodyへのpadding-bottomは意味を持たない。
-    // 実際にスクロールするのは.sidebar-section（タブ+中身）なので、そちらにtopControlsの高さ分の
-    // 余白を確保し、スクロール最下部のコンテンツがtopControls(画面下部固定)の裏に隠れないようにする。
-    if (sidebarSection) sidebarSection.style.paddingBottom = (h + 8) + "px";
+    // 実際にスクロールするのは.sidebar-section内側の.mobile-tab-panel（タブの中身）なので、
+    // そちら自身にtopControlsの高さ分の余白を確保し、スクロール最下部のコンテンツが
+    // topControls(画面下部固定)の裏に隠れないようにする。
+    // （.sidebar-section自体はoverflow: hiddenでスクロールしない外枠のため、
+    //   そちらにpadding-bottomを入れても実際のスクロール領域には反映されない）
+    mobileTabPanels.forEach(panel => {
+      panel.style.paddingBottom = (h + 8) + "px";
+    });
+    if (sidebarSection) sidebarSection.style.paddingBottom = "";
     document.body.style.paddingBottom = "";
   } else {
     spacer.style.height = "0px";
     document.body.style.paddingBottom = "";
     if (sidebarSection) sidebarSection.style.paddingBottom = "";
+    mobileTabPanels.forEach(panel => {
+      panel.style.paddingBottom = "";
+    });
   }
 }
 syncTopControlsSpacerHeight();
