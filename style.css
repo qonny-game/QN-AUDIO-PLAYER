@@ -1,0 +1,845 @@
+/* ============================================================
+   style.css — QNTEMPO
+   QNAUDIO（style-core.css）のデザイントークン・コンポーネントを
+   そのまま踏襲。スマホ専用単一レイアウトのため、PC/SP分割はしない。
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --accent-primary: #3b82f6;
+  --accent-secondary: #1d4ed8;
+  --accent-glow: rgba(59, 130, 246, 0.35);
+  --accent-hover-1: #2563eb;
+  --accent-hover-2: #1e40af;
+  --font-display: 'Outfit';
+  --font-body: 'Plus Jakarta Sans';
+
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+  --ease-glide: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-dismiss: cubic-bezier(0.4, 0, 1, 1);
+
+  --dur-hover: 130ms;
+  --dur-press: 100ms;
+  --dur-open: 240ms;
+  --dur-dismiss: 200ms;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html {
+  touch-action: pan-x pan-y;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  height: 100dvh;
+  overflow: hidden;
+  background: #0d0d0f;
+  color: #f0f0f3;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  padding: 24px 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  user-select: none;
+}
+
+/* ---------- Header ---------- */
+/* QNAUDIO PLAYER（PC版 style-core.css）のヘッダーと完全一致させている。
+   QNTEMPOはスマホ専用アプリだが、ヘッダーの見た目・余白・サイズはPLAYERの
+   PC実装値をそのまま踏襲する方針のため、SP向けの縮小は行わない。 */
+#appHeader {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  position: relative;
+  z-index: 200;
+  flex-shrink: 0;
+}
+
+#appHeaderText {
+  min-width: 0;
+}
+
+#appLogo {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0 0 4px;
+  color: #f0f0f3;
+  text-transform: uppercase;
+}
+
+#appLogoQN {
+  color: var(--accent-primary);
+}
+
+#appVersion {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: #6b6b7b;
+  text-transform: none;
+  vertical-align: middle;
+}
+
+#headerControls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-btn-wrapper { position: relative; }
+
+#presetBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  color: #f0f0f3;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+#presetBtn:active { transform: scale(0.96); }
+#presetBtn:hover {
+  background: #1c1c24;
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+#presetBtn svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+#presetBtn.active {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  background: var(--accent-glow);
+}
+
+/* ---------- Pulse stage — the heart of the app ---------- */
+.stage-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.stage-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.stage-meta-label {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #55555f;
+}
+
+.stage-meta-value {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #f0f0f3;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.stage-meta-total {
+  font-size: 13px;
+  font-weight: 600;
+  color: #55555f;
+  margin-left: 3px;
+}
+
+/* 拍数プルダウン（タップでポップアップ）。BEATヘッダー行の中にインラインで置く。 */
+.meta-inline-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 8px 5px 10px;
+  border-radius: 8px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c8c8d0;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.meta-inline-btn:active { transform: scale(0.95); }
+.meta-inline-btn .chevron { width: 14px; height: 14px; fill: currentColor; opacity: 0.6; }
+
+/* ALL 16 / ALL 3 トグル：全行を一括で分割変更する */
+.meta-div-toggle {
+  display: flex;
+  margin-left: auto;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.meta-div-btn {
+  padding: 6px 9px;
+  background: #1c1c24;
+  color: #6b6b7b;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border: none;
+}
+.meta-div-btn:active { transform: scale(0.95); }
+.meta-div-btn.selected { background: var(--accent-primary); color: #fff; }
+
+/* ---------- Step sequencer: table layout ---------- */
+/* 各行(段)＝[音色ボタン(ペア、A/B表示・タップで音色+分割をまとめて設定)] +
+   [拍ごとのパターン本体]。1行あたり最大4拍分を表示し、5拍目以降は次の行に
+   折り返す（1-4拍で1段、5-8拍で1段）。外枠パネルは持たず、画面幅いっぱいに
+   広げる。間隔はマス間1px・拍間3px・段間3px。 */
+.beats-seq {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0 16px;
+  touch-action: none;
+}
+
+.seq-row-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.seq-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+/* 左端の音色ボタン。3行とも同じ幅に揃える。 */
+.layer-sound-btn {
+  flex-shrink: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap);
+}
+.layer-sound-btn:active { transform: scale(0.94); }
+.layer-sound-btn .sound-dot-pair {
+  display: flex;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.layer-sound-btn .sound-dot-pair i {
+  flex: 1;
+  display: block;
+}
+
+/* 本体：1行分（最大4拍）のセルが横一列に並び、余白なく均等に画面幅いっぱいへ
+   広がる。拍の境目は3pxの隙間で区切る（マス間の1pxより少し広く、拍の区切りが
+   分かりやすいようにする）。 */
+.seq-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 3px;
+  background: transparent;
+}
+
+.seq-beat-cell {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+/* ステップ本体：段のマス数（3 or 4）に関わらず、1拍分の幅は常に同じになるよう
+   grid-template-columnsをJS側で動的に指定する（LCM(3,4)=12を基準単位とし、
+   3マスの行は1マス=4単位、4マスの行は1マス=3単位で描く）。これにより行ごとに
+   マス数が違っても、拍の境目は必ず揃う。マス間は1pxの隙間で区切る（背景色で
+   ボタンとボタンの間に細い線が見える）。 */
+.layer-steps {
+  display: grid;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+}
+.layer-step {
+  width: 100%;
+  height: 44px;
+  min-width: 0;
+  border-radius: 0;
+  background: #26262f;
+  border: none;
+  cursor: pointer;
+  touch-action: none;
+  transition: background 0.1s var(--ease-snap);
+}
+.layer-step.on {
+  background: var(--snd-color, var(--accent-primary));
+}
+
+/* 再生中、今鳴っているステップのマスだけ強く光らせる（アプリの主役の瞬間） */
+.layer-step.playing {
+  box-shadow: inset 0 0 0 2px #fff, 0 0 14px rgba(255,255,255,0.7);
+}
+
+/* 今再生中の拍のセルを軽くハイライトする */
+.seq-beat-cell.active { background: rgba(59, 130, 246, 0.1); }
+
+.stage-hint {
+  text-align: center;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 11px;
+  color: #55555f;
+  margin-top: 4px;
+  letter-spacing: 0.1px;
+}
+.stage-hint-dim { color: #33333c; }
+
+/* ---------- Time / BPM display ---------- */
+.time-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#bpmDisplay {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+#bpmDisplay .bpm-val {
+  font-size: 56px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  line-height: 1;
+}
+
+#bpmDisplay .bpm-unit {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #8b8b9e;
+}
+
+.tempo-name-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+#tempoName {
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-style: italic;
+  font-size: 14px;
+  color: #8b8b9e;
+}
+
+/* ---------- BPM stepper + slider ---------- */
+.bpm-panel-box {
+  margin-top: 14px;
+  flex-shrink: 0;
+}
+
+.bpm-stepper-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.step-btn {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f0f0f3;
+  font-size: 24px;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+.step-btn:active { transform: scale(0.94); background: var(--accent-glow); border-color: var(--accent-primary); color: var(--accent-primary); }
+
+.bpm-preset-grid {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.bpm-preset-btn {
+  padding: 10px 2px;
+  text-align: center;
+  border-radius: 10px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8b8b9e;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+.bpm-preset-btn:active { transform: scale(0.94); }
+.bpm-preset-btn.selected {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* ---------- Popups (Time Sig picker / Subdivision picker) ---------- */
+.av-popup {
+  display: none;
+  position: fixed;
+  left: 20px;
+  right: 20px;
+  bottom: 0;
+  z-index: 350;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity var(--dur-open) var(--ease-dismiss), transform var(--dur-open) var(--ease-dismiss);
+}
+.av-popup.open {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity var(--dur-open) var(--ease-pop), transform var(--dur-open) var(--ease-pop);
+}
+
+.av-popup-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 340;
+  background: rgba(5, 5, 7, 0);
+  transition: background var(--dur-open) var(--ease-dismiss);
+}
+.av-popup-backdrop.open {
+  display: block;
+  background: rgba(5, 5, 7, 0.6);
+  transition: background var(--dur-open) var(--ease-pop);
+}
+
+.popup-title {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #6b6b7b;
+  margin: 0 0 14px;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.choice-cell {
+  padding: 13px 4px;
+  text-align: center;
+  border-radius: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c8c8d0;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
+}
+.choice-cell.selected {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* ---------- 音色ピッカー（段ごと） ---------- */
+.sound-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.sound-choice-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 4px 12px;
+  border-radius: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap);
+}
+.sound-choice-cell .sc-dot-pair {
+  display: flex;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.sound-choice-cell .sc-dot-pair i {
+  flex: 1;
+  display: block;
+}
+.sound-choice-cell .sc-label {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b8b9e;
+  text-align: center;
+  line-height: 1.2;
+}
+.sound-choice-cell.selected {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+}
+.sound-choice-cell.selected .sc-label { color: var(--accent-primary); }
+
+.popup-subtitle {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #6b6b7b;
+  margin: 14px 0 8px;
+}
+
+/* 音色ピッカー内の分割選択（16分/8分3連）。この行全体に適用される。 */
+.div-choice-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.div-choice-cell {
+  padding: 13px 4px;
+  text-align: center;
+  border-radius: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c8c8d0;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap);
+}
+.div-choice-cell.selected {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* ---------- プリセット保存・呼び出しポップアップ ---------- */
+.preset-save-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.preset-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f0f0f3;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 14px;
+}
+.preset-name-input::placeholder { color: #55555f; }
+.preset-name-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+.preset-save-btn {
+  flex-shrink: 0;
+  padding: 0 18px;
+  border-radius: 12px;
+  background: var(--accent-primary);
+  border: none;
+  color: #fff;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.preset-save-btn:active { transform: scale(0.96); }
+
+.preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 38vh;
+  overflow-y: auto;
+}
+.preset-empty {
+  text-align: center;
+  padding: 20px 0;
+  color: #55555f;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 13px;
+}
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.preset-row-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0f0f3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.preset-row-meta {
+  flex-shrink: 0;
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 10px;
+  color: #55555f;
+}
+.preset-row-delete {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #55555f;
+  cursor: pointer;
+  font-size: 16px;
+}
+.preset-row-delete:active { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+/* 組み込みプリセット（8 Beat, Shuffle Beat）：常に先頭・削除不可なことが分かるよう、
+   アクセントカラーの縁取りとBUILT-INバッジで通常のプリセットと区別する。 */
+.preset-row-builtin {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.06);
+  margin-bottom: 4px;
+}
+.preset-row-badge {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--accent-glow);
+  color: var(--accent-primary);
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.popup-close-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  color: #fff;
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 20px var(--accent-glow);
+  transition: transform var(--dur-press) var(--ease-snap);
+}
+.popup-close-btn:active { transform: scale(0.97); }
+
+/* ---------- TAP tempo readout ---------- */
+.tap-readout-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+.tap-readout {
+  font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+  font-size: 11px;
+  color: #6b6b7b;
+}
+.tap-readout b {
+  color: var(--accent-primary);
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-weight: 700;
+}
+
+/* ---------- Bottom fixed transport (mirrors QNAUDIO top-controls) ---------- */
+.top-controls-spacer { flex-shrink: 0; }
+
+.top-controls {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(13, 13, 15, 0.92);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.top-controls-row { display: flex; gap: 8px; align-items: center; }
+
+.loopbtn {
+  flex: 1;
+  padding: 12px 0 10px;
+  font-size: 20px;
+  text-align: center;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  cursor: pointer;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap), box-shadow var(--dur-press) var(--ease-snap);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.loopbtn svg { width: 22px; height: 22px; fill: currentColor; }
+.loopbtn:active { transform: translateY(0) scale(0.96); box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.loopbtn.active { color: var(--accent-primary); border-color: var(--accent-primary); background: var(--accent-glow); }
+
+.top-controls-btn-label {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: inherit;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+.tripleNavBtn {
+  flex: 3;
+  display: flex;
+  align-items: stretch;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.tripleNavBtn-third {
+  flex: 1;
+  padding: 12px 0 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+.tripleNavBtn-center { flex: 1.3; color: var(--accent-primary); }
+.tripleNavBtn-third:active { transform: scale(0.94); background: #2a2a35; }
+.tripleNavBtn-third svg { width: 22px; height: 22px; fill: currentColor; }
+.tripleNavBtn-left { border-radius: 14px 0 0 14px; }
+.tripleNavBtn-right { border-radius: 0 14px 14px 0; }
+.tripleNavBtn-divider { width: 1px; background: rgba(255, 255, 255, 0.1); flex-shrink: 0; }
+
+#playToggle {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border: none;
+  box-shadow: 0 6px 20px var(--accent-glow);
+  color: #fff;
+}
+#playToggle.playing {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+}
+
+/* ---------- Accent-editing hint pulse on long-press ---------- */
+.beat-dot.editing {
+  animation: editingPulse 0.4s var(--ease-pop);
+}
+@keyframes editingPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}

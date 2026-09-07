@@ -302,16 +302,10 @@
   }
 
   #appLogo {
-    font-size: 18px;
-    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 2px;
-  }
-
-  #appVersion {
-    font-size: 10px;
   }
 
   #appTitle {
@@ -373,6 +367,16 @@
 
   #headerControls .header-btn-wrapper {
     width: 100%;
+  }
+
+  #qnNavGroup {
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .qn-nav-btn {
+    flex: 1;
   }
 
   #colorToggleBtn {

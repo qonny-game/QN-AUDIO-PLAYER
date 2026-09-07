@@ -2760,3 +2760,23 @@ if (exportRunBtn) {
     }
   };
 }
+
+// ============================================================
+// QNシリーズ ヘッダーナビゲーション
+// ヘッダー右上（SP幅ではハンバーガーメニュー内）に並ぶPLAYER/TUNER/TEMPOアイコン。
+// 現在開いているアプリ自身へのリンクだけ非活性化する（他の2つは常にクリック可能）。
+// このHTML/CSS/JS一式は3アプリ共通で使い回す想定のため、
+// 「今どのアプリか」はここで1箇所だけ定義する。
+// ============================================================
+(function () {
+  const CURRENT_QN_APP = "player"; // player / tuner / tempo のいずれか。アプリごとにここだけ変更する
+
+  document.querySelectorAll(".qn-nav-btn").forEach(btn => {
+    if (btn.dataset.qnApp === CURRENT_QN_APP) {
+      btn.classList.add("current");
+      btn.removeAttribute("href");
+      btn.setAttribute("aria-disabled", "true");
+      btn.addEventListener("click", e => e.preventDefault());
+    }
+  });
+})();

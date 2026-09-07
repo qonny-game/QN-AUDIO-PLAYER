@@ -247,6 +247,61 @@ body {
   position: relative;
 }
 
+#qnNavGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qn-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: #16161b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  color: #f0f0f3;
+  text-decoration: none;
+  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
+}
+
+.qn-nav-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.qn-nav-btn span {
+  display: none;
+}
+
+.qn-nav-btn:hover {
+  background: #1c1c24;
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.qn-nav-btn:active {
+  transform: scale(0.96);
+}
+
+/* 現在開いているアプリ自身：アイコンは残すが押せない・目立たせない */
+.qn-nav-btn.current {
+  cursor: default;
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  background: var(--accent-glow);
+}
+
+.qn-nav-btn.current:hover {
+  transform: none;
+}
+
 #colorToggleBtn {
   flex-shrink: 0;
   display: flex;
