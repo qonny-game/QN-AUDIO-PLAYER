@@ -196,7 +196,7 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-right: none;
     color: #8b8b9e;
-    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-family: var(--font-display, 'Instrument Sans'), sans-serif;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 1px;
@@ -274,7 +274,7 @@
   }
 
   .sp-status-item-label {
-    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-family: var(--font-display, 'Instrument Sans'), sans-serif;
     font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -284,7 +284,7 @@
   }
 
   .sp-status-item-value {
-    font-family: var(--font-display, 'Outfit'), sans-serif;
+    font-family: var(--font-display, 'Instrument Sans'), sans-serif;
     font-size: 15px;
     font-weight: 700;
     color: #f0f0f3;
@@ -292,7 +292,7 @@
   }
 
   .sp-status-item-sub {
-    font-family: var(--font-body, 'Plus Jakarta Sans'), sans-serif;
+    font-family: var(--font-body, 'Instrument Sans'), sans-serif;
     font-size: 9px;
     color: #6b6b7b;
     line-height: 1;
