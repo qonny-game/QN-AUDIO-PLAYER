@@ -11,28 +11,8 @@
 // のため問題ないが、読み込み順序を変えないこと。
 // ============================================================
 
-// Keyboard Shortcutsポップアップの開閉（ヘッダーDグループ）
-const shortcutsToggleBtn = document.getElementById("shortcutsToggleBtn");
-const shortcutsPopup = document.getElementById("shortcutsPopup");
-if (shortcutsToggleBtn && shortcutsPopup) {
-  shortcutsToggleBtn.onclick = (e) => {
-    e.stopPropagation();
-    hapticTap();
-    const willOpen = !shortcutsPopup.classList.contains("open");
-    shortcutsPopup.classList.toggle("open", willOpen);
-    shortcutsToggleBtn.classList.toggle("active", willOpen);
-    if (willOpen) keepPopupInViewport(shortcutsToggleBtn, shortcutsPopup);
-  };
-
-  shortcutsPopup.onclick = (e) => {
-    e.stopPropagation();
-  };
-
-  document.addEventListener("click", () => {
-    shortcutsPopup.classList.remove("open");
-    shortcutsToggleBtn.classList.remove("active");
-  });
-}
+// Keyboard Shortcutsは統合ハンバーガーメニュー(#qnMenuPopup)の1セクションとして
+// 常時表示するだけの静的テーブルになったため、専用の開閉ロジックは不要（player-ui-shared.js側に統合済み）
 
 document.addEventListener("dragover", e => {
   e.preventDefault();

@@ -170,15 +170,15 @@ body {
   width: 100%;
   max-width: 1400px;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+  align-items: center;
+  gap: 14px;
   position: relative;
   z-index: 200;
 }
 
 #appHeaderText {
   min-width: 0;
+  flex: 1;
 }
 
 #appLogo {
@@ -240,143 +240,164 @@ body {
   to { transform: translateX(-50%); }
 }
 
-/* #headerMenuBtn, #headerControls のPC幅デフォルトスタイルは
-   style-core-pc.css へ移動済み（SP幅では別スタイルに完全上書きされるため） */
+/* #qnMenuBtn, .qn-menu-popup の中身は統合ハンバーガーメニュー用（ロゴ左）。
+   旧: #headerMenuBtn / #headerControls / #colorToggleBtn / .color-popup /
+   #shortcutsToggleBtn / .shortcuts-popup / #qnNavGroup の各アイコン群は撤去し、
+   すべて1つのハンバーガーメニュー内に統合した。 */
 
 .header-btn-wrapper {
   position: relative;
 }
 
-#qnNavGroup {
+#qnMenuBtn {
+  background: #18181b;
+  border: 1px solid #27272a;
+  color: #f0f0f3;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+#qnMenuBtn:hover, #qnMenuBtn.active {
+  background: #27272a;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+#qnMenuBtn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.qn-menu-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 300px;
+  background: #121215;
+  border: 1px solid #27272a;
+  border-radius: 14px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.qn-menu-popup.open {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.qn-menu-popup.open-upward {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translateY(8px);
+}
+
+.qn-menu-popup.open-upward.open {
+  transform: translateY(0);
+}
+
+.qn-menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 14px;
+}
+
+.qn-menu-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.qn-menu-section-label {
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #6b6b7b;
 }
 
 .qn-nav-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  background: #16161b;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #1c1c24;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   color: #f0f0f3;
   text-decoration: none;
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
   transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
 }
 
 .qn-nav-btn svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-  flex-shrink: 0;
-}
-
-.qn-nav-btn span {
-  display: none;
-}
-
-.qn-nav-btn:hover {
-  background: #1c1c24;
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-}
-
-.qn-nav-btn:active {
-  transform: scale(0.96);
-}
-
-/* 現在開いているアプリ自身：アイコンは残すが押せない・目立たせない */
-.qn-nav-btn.current {
-  cursor: default;
-  color: var(--accent-primary);
-  border-color: var(--accent-primary);
-  background: var(--accent-glow);
-}
-
-.qn-nav-btn.current:hover {
-  transform: none;
-}
-
-#colorToggleBtn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: #16161b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  cursor: pointer;
-  color: #f0f0f3;
-  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
-}
-
-#colorToggleBtn:active {
-  transform: scale(0.96);
-}
-
-#colorToggleBtn:hover {
-  background: #1c1c24;
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-}
-
-#colorToggleBtn svg {
   width: 16px;
   height: 16px;
   fill: currentColor;
   flex-shrink: 0;
 }
 
-#colorToggleBtn.active {
-  color: var(--accent-primary);
+.qn-nav-btn:hover {
+  background: #27272a;
   border-color: var(--accent-primary);
-  background: var(--accent-glow);
+  color: var(--accent-hover-1);
 }
 
-.color-popup {
-  display: none;
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  z-index: 350;
-  background: #16161b;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-  width: 260px;
-  opacity: 0;
-  transform: translateY(-6px) scale(0.96);
-  transition: opacity var(--dur-open) var(--ease-dismiss), transform var(--dur-open) var(--ease-dismiss);
+.qn-nav-btn.current {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #ffffff;
+  pointer-events: none;
 }
 
-.color-popup.open {
-  display: block;
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  transition: opacity var(--dur-open) var(--ease-pop), transform var(--dur-open) var(--ease-pop);
-}
-
-/* .shortcuts-popup関連は style-core-pc.css へ移動済み */
-
-.color-popup .theme-swatches {
+.theme-swatches {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.color-popup .theme-swatch {
+.theme-swatch {
   width: 28px;
   height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: transform var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-open) var(--ease-pop);
+}
+
+.theme-swatch:hover {
+  transform: scale(1.1);
+  border-color: #fff;
+}
+
+.theme-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+  transition: transform var(--dur-open) var(--ease-pop), border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-open) var(--ease-pop);
 }
 
 .glow-toggle-row {
@@ -431,6 +452,51 @@ body {
 
 .glow-switch[aria-checked="true"] .glow-switch-knob {
   transform: translateX(18px);
+}
+
+/* Keyboard Shortcutsテーブル（統合メニュー内、PC/SP共通で表示） */
+.shortcut-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.shortcut-table {
+  flex: 1;
+  min-width: 200px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.shortcut-table th, .shortcut-table td {
+  padding: 7px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.shortcut-table th {
+  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
+  color: #8b8b9e;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.shortcut-table td {
+  color: #f0f0f3;
+}
+
+.shortcut-table kbd {
+  background: #252530;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--accent-primary);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
 }
 
 .eq-hint {
@@ -1176,8 +1242,7 @@ body {
 
 /* ボタンが画面下部にあり、下に開くと画面外へはみ出す場合はJS側で判定してこのクラスを付け、
    ポップアップをボタンの上に開き直す（画面内に必ず収める） */
-.av-popup.open-upward,
-.color-popup.open-upward {
+.av-popup.open-upward {
   top: auto;
   bottom: calc(100% + 10px);
 }

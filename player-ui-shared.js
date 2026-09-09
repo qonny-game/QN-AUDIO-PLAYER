@@ -360,42 +360,43 @@ if (glowToggleBtn) {
   };
 }
 
-// スマホ用ハンバーガーメニュー（Color/Analyzer/EQをまとめて開閉）は player-ui-sp.js に移動済み
-
-// カラーピッカーのポップアップ開閉
-const colorToggleBtn = document.getElementById("colorToggleBtn");
-const colorPopup = document.getElementById("colorPopup");
-if (colorToggleBtn && colorPopup) {
-  colorToggleBtn.onclick = (e) => {
+// 統合ハンバーガーメニュー（QN Series / Color Theme / Keyboard Shortcuts）の開閉
+const qnMenuBtn = document.getElementById("qnMenuBtn");
+const qnMenuPopup = document.getElementById("qnMenuPopup");
+if (qnMenuBtn && qnMenuPopup) {
+  qnMenuBtn.onclick = (e) => {
     e.stopPropagation();
     hapticTap();
-    const willOpen = !colorPopup.classList.contains("open");
-    colorPopup.classList.toggle("open", willOpen);
-    colorToggleBtn.classList.toggle("active", willOpen);
-    if (willOpen) keepPopupInViewport(colorToggleBtn, colorPopup);
+    const willOpen = !qnMenuPopup.classList.contains("open");
+    qnMenuPopup.classList.toggle("open", willOpen);
+    qnMenuBtn.classList.toggle("active", willOpen);
+    if (willOpen) keepPopupInViewport(qnMenuBtn, qnMenuPopup);
   };
 
-  colorPopup.onclick = (e) => {
+  qnMenuPopup.onclick = (e) => {
     e.stopPropagation();
   };
 
   document.addEventListener("click", () => {
-    colorPopup.classList.remove("open");
-    colorToggleBtn.classList.remove("active");
+    qnMenuPopup.classList.remove("open");
+    qnMenuBtn.classList.remove("active");
   });
 
-  // スウォッチを選んだらポップアップを閉じる
-  document.querySelectorAll(".theme-swatch").forEach(swatch => {
-    swatch.addEventListener("click", () => {
-      colorPopup.classList.remove("open");
-      colorToggleBtn.classList.remove("active");
-      if (headerControlsEl) headerControlsEl.classList.remove("open");
-      if (headerMenuBtn) headerMenuBtn.classList.remove("active");
-    });
-  });
+  // スウォッチを選んだらメニュー自体は閉じない（Colorセクション内で連続選択できるようにする）
 }
 
-// Keyboard Shortcutsポップアップの開閉処理は player-ui-pc.js に移動済み
+// QNシリーズ他アプリへのリンクのうち、現在開いているアプリ自身（QNPLAYER）だけ非活性化する
+(function () {
+  const CURRENT_QN_APP = "player";
+  document.querySelectorAll(".qn-nav-btn").forEach(btn => {
+    if (btn.dataset.qnApp === CURRENT_QN_APP) {
+      btn.classList.add("current");
+      btn.removeAttribute("href");
+      btn.setAttribute("aria-disabled", "true");
+      btn.addEventListener("click", e => e.preventDefault());
+    }
+  });
+})();
 
 document.getElementById("fileInput").onchange = e => addFilesToPlaylist(Array.from(e.target.files));
 
@@ -2338,7 +2339,7 @@ function startPinMemoEdit(itemDiv, infoSpan, pinObj, index) {
   input.addEventListener("click", e => e.stopPropagation());
 }
 
-// Keyboard Shortcuts はヘッダーのポップアップ(shortcutsToggleBtn/shortcutsPopup)に統合済み
+// Keyboard Shortcuts は統合ハンバーガーメニュー(#qnMenuPopup)内の1セクションとして常時表示
 
 // スマホ専用タブ切り替え（Time&Vol / Speed&Key / Markers / Playlist）
 // Markers/Playlistのタブ切り替え。PC/SP完全に同じレイアウトに統一されたため、
@@ -2778,23 +2779,3 @@ if (exportRunBtn) {
     }
   };
 }
-
-// ============================================================
-// QNシリーズ ヘッダーナビゲーション
-// ヘッダー右上（SP幅ではハンバーガーメニュー内）に並ぶPLAYER/TUNER/TEMPOアイコン。
-// 現在開いているアプリ自身へのリンクだけ非活性化する（他の2つは常にクリック可能）。
-// このHTML/CSS/JS一式は3アプリ共通で使い回す想定のため、
-// 「今どのアプリか」はここで1箇所だけ定義する。
-// ============================================================
-(function () {
-  const CURRENT_QN_APP = "player"; // player / tuner / tempo のいずれか。アプリごとにここだけ変更する
-
-  document.querySelectorAll(".qn-nav-btn").forEach(btn => {
-    if (btn.dataset.qnApp === CURRENT_QN_APP) {
-      btn.classList.add("current");
-      btn.removeAttribute("href");
-      btn.setAttribute("aria-disabled", "true");
-      btn.addEventListener("click", e => e.preventDefault());
-    }
-  });
-})();

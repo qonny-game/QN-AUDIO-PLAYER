@@ -319,86 +319,11 @@
     text-overflow: ellipsis;
   }
 
-  #headerMenuBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    background: #16161b;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    color: #f0f0f3;
-    cursor: pointer;
-  }
-
-  #headerMenuBtn svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-  }
-
-  #headerMenuBtn.active {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-    background: var(--accent-glow);
-  }
-
-  /* Color/Analyzer/EQをハンバーガーの下にドロップダウンで格納 */
-  #headerControls {
-    display: none;
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    z-index: 250;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    background: #16161b;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 12px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-    width: 220px;
-  }
-
-  #headerControls.open {
-    display: flex;
-  }
-
-  #headerControls .header-btn-wrapper {
-    width: 100%;
-  }
-
-  #qnNavGroup {
-    padding-bottom: 8px;
-    margin-bottom: 4px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .qn-nav-btn {
-    flex: 1;
-  }
-
-  #colorToggleBtn {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  /* SP幅ではKeyboard Shortcutsをヘッダーメニューから完全に撤去する（ボタン・中身とも非表示） */
-  #shortcutsToggleBtn,
-  .shortcuts-popup {
-    display: none;
-  }
-
-  /* ドロップダウン内のポップアップ(Color)は右揃えではなく、メニューの下にそのまま広がるようにする */
-  .color-popup {
-    position: static;
-    width: 100%;
-    box-shadow: none;
-    margin-top: 8px;
+  /* 統合ハンバーガーメニュー(#qnMenuBtn, .qn-menu-popup)はPC/SP共通のstyle-core.css側で
+     定義済み。SP幅では画面右端からはみ出さないよう、幅だけここで調整する。 */
+  .qn-menu-popup {
+    width: calc(100vw - 56px);
+    max-width: 320px;
   }
 
   .control-card {

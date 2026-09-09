@@ -11,25 +11,6 @@
 // player-ui-shared.js に残したまま。
 // ============================================================
 
-// スマホ用ハンバーガーメニュー（Color/Analyzer/EQをまとめて開閉）
-const headerMenuBtn = document.getElementById("headerMenuBtn");
-const headerControlsEl = document.getElementById("headerControls");
-if (headerMenuBtn && headerControlsEl) {
-  headerMenuBtn.onclick = (e) => {
-    e.stopPropagation();
-    hapticTap();
-    headerControlsEl.classList.toggle("open");
-    headerMenuBtn.classList.toggle("active", headerControlsEl.classList.contains("open"));
-  };
-  headerControlsEl.onclick = (e) => {
-    e.stopPropagation();
-  };
-  document.addEventListener("click", () => {
-    headerControlsEl.classList.remove("open");
-    headerMenuBtn.classList.remove("active");
-  });
-}
-
 // MARKERS/PLAYLISTタブ内リスト最上部の+MARKER/ADD FILEインラインボタン。
 // コントロールバーのaddPinBtn、Basic欄のAdd Fileボタン(#fileUploadWrapper)とそれぞれ全く同じ機能で、
 // リストを見ながら追加できるよう、あえてタブ内にも同じ機能のボタンを重複して置いている。
