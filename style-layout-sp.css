@@ -319,12 +319,9 @@
     text-overflow: ellipsis;
   }
 
-  /* 統合ハンバーガーメニュー(#qnMenuBtn, .qn-menu-popup)はPC/SP共通のstyle-core.css側で
-     定義済み。SP幅では画面右端からはみ出さないよう、幅だけここで調整する。 */
-  .qn-menu-popup {
-    width: calc(100vw - 56px);
-    max-width: 320px;
-  }
+  /* ハンバーガーメニュー（QN Series/Color Theme/Keyboard Shortcuts）は
+     qn-menu.html/css/js が #qnMenuMount に注入する共通コンポーネント。
+     SP幅での見た目調整もqn-menu.css側が担うため、このアプリ側では上書きしない。 */
 
   .control-card {
     min-width: 0;

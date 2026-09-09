@@ -11,8 +11,8 @@
 // のため問題ないが、読み込み順序を変えないこと。
 // ============================================================
 
-// Keyboard Shortcutsは統合ハンバーガーメニュー(#qnMenuPopup)の1セクションとして
-// 常時表示するだけの静的テーブルになったため、専用の開閉ロジックは不要（player-ui-shared.js側に統合済み）
+// Keyboard Shortcutsは qn-menu.js が window.QN_SHORTCUTS（index.html側で定義）を読んで
+// 自動生成する共通コンポーネントの1セクションになったため、このアプリ側に専用ロジックは無い
 
 document.addEventListener("dragover", e => {
   e.preventDefault();

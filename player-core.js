@@ -11,7 +11,7 @@ let audio = new Audio();
 let pins = [];
 let loopEnabled = false;
 
-// マーカーの色付けに使うカラーパレット。テーマカラー(RANDOM_THEME_POOL、player-ui-shared.js)と
+// マーカーの色付けに使うカラーパレット。テーマカラー（qn-menu.js側で管理）と
 // 同じ配色・同じ--accent-primaryの値を流用する。テーマを切り替えてもマーカーの色自体は
 // 変わらないよう、名前と色コードをここに固定で持つ（テーマ変更時のCSS変数切替とは独立させる）。
 const MARKER_COLOR_PALETTE = {

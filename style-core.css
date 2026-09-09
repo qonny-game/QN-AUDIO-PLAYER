@@ -43,7 +43,7 @@ html {
   touch-action: pan-x pan-y;
 }
 
-[data-theme="blue"] {
+[data-qn-theme="blue"] {
   --accent-primary: #3b82f6;
   --accent-secondary: #1d4ed8;
   --accent-glow: rgba(59, 130, 246, 0.35);
@@ -51,7 +51,7 @@ html {
   --accent-hover-2: #1e40af;
 }
 
-[data-theme="emerald"] {
+[data-qn-theme="emerald"] {
   --accent-primary: #10b981;
   --accent-secondary: #047857;
   --accent-glow: rgba(16, 185, 129, 0.35);
@@ -59,7 +59,7 @@ html {
   --accent-hover-2: #065f46;
 }
 
-[data-theme="purple"] {
+[data-qn-theme="purple"] {
   --accent-primary: #8b5cf6;
   --accent-secondary: #6d28d9;
   --accent-glow: rgba(139, 92, 246, 0.35);
@@ -67,7 +67,7 @@ html {
   --accent-hover-2: #5b21b6;
 }
 
-[data-theme="rose"] {
+[data-qn-theme="rose"] {
   --accent-primary: #f43f5e;
   --accent-secondary: #be123c;
   --accent-glow: rgba(244, 63, 94, 0.35);
@@ -75,7 +75,7 @@ html {
   --accent-hover-2: #9f1239;
 }
 
-[data-theme="amber"] {
+[data-qn-theme="amber"] {
   --accent-primary: #f59e0b;
   --accent-secondary: #b45309;
   --accent-glow: rgba(245, 158, 11, 0.35);
@@ -83,7 +83,7 @@ html {
   --accent-hover-2: #92400e;
 }
 
-[data-theme="cyan"] {
+[data-qn-theme="cyan"] {
   --accent-primary: #06b6d4;
   --accent-secondary: #0e7490;
   --accent-glow: rgba(6, 182, 212, 0.35);
@@ -91,7 +91,7 @@ html {
   --accent-hover-2: #155e75;
 }
 
-[data-theme="indigo"] {
+[data-qn-theme="indigo"] {
   --accent-primary: #6366f1;
   --accent-secondary: #4338ca;
   --accent-glow: rgba(99, 102, 241, 0.35);
@@ -99,7 +99,7 @@ html {
   --accent-hover-2: #3730a3;
 }
 
-[data-theme="pink"] {
+[data-qn-theme="pink"] {
   --accent-primary: #ec4899;
   --accent-secondary: #be185d;
   --accent-glow: rgba(236, 72, 153, 0.35);
@@ -107,7 +107,7 @@ html {
   --accent-hover-2: #9d174d;
 }
 
-[data-theme="lime"] {
+[data-qn-theme="lime"] {
   --accent-primary: #84cc16;
   --accent-secondary: #4d7c0f;
   --accent-glow: rgba(132, 204, 22, 0.35);
@@ -115,7 +115,7 @@ html {
   --accent-hover-2: #3f6212;
 }
 
-[data-theme="orange"] {
+[data-qn-theme="orange"] {
   --accent-primary: #f97316;
   --accent-secondary: #c2410c;
   --accent-glow: rgba(249, 115, 22, 0.35);
@@ -123,7 +123,7 @@ html {
   --accent-hover-2: #9a3412;
 }
 
-[data-theme="teal"] {
+[data-qn-theme="teal"] {
   --accent-primary: #14b8a6;
   --accent-secondary: #0f766e;
   --accent-glow: rgba(20, 184, 166, 0.35);
@@ -131,7 +131,7 @@ html {
   --accent-hover-2: #115e59;
 }
 
-[data-theme="violet"] {
+[data-qn-theme="violet"] {
   --accent-primary: #a855f7;
   --accent-secondary: #7e22ce;
   --accent-glow: rgba(168, 85, 247, 0.35);
@@ -139,7 +139,7 @@ html {
   --accent-hover-2: #6b21a8;
 }
 
-[data-theme="red"] {
+[data-qn-theme="red"] {
   --accent-primary: #ef4444;
   --accent-secondary: #b91c1c;
   --accent-glow: rgba(239, 68, 68, 0.35);
@@ -147,7 +147,7 @@ html {
   --accent-hover-2: #991b1b;
 }
 
-[data-theme="sky"] {
+[data-qn-theme="sky"] {
   --accent-primary: #0ea5e9;
   --accent-secondary: #0369a1;
   --accent-glow: rgba(14, 165, 233, 0.35);
@@ -238,265 +238,6 @@ body {
 @keyframes appTitleMarquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
-}
-
-/* #qnMenuBtn, .qn-menu-popup の中身は統合ハンバーガーメニュー用（ロゴ左）。
-   旧: #headerMenuBtn / #headerControls / #colorToggleBtn / .color-popup /
-   #shortcutsToggleBtn / .shortcuts-popup / #qnNavGroup の各アイコン群は撤去し、
-   すべて1つのハンバーガーメニュー内に統合した。 */
-
-.header-btn-wrapper {
-  position: relative;
-}
-
-#qnMenuBtn {
-  background: #18181b;
-  border: 1px solid #27272a;
-  color: #f0f0f3;
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-#qnMenuBtn:hover, #qnMenuBtn.active {
-  background: #27272a;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 12px var(--accent-glow);
-}
-
-#qnMenuBtn svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
-.qn-menu-popup {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 300px;
-  background: #121215;
-  border: 1px solid #27272a;
-  border-radius: 14px;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
-  padding: 16px;
-  display: none;
-  flex-direction: column;
-  gap: 16px;
-  z-index: 1000;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.qn-menu-popup.open {
-  display: flex;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.qn-menu-popup.open-upward {
-  top: auto;
-  bottom: calc(100% + 8px);
-  transform: translateY(8px);
-}
-
-.qn-menu-popup.open-upward.open {
-  transform: translateY(0);
-}
-
-.qn-menu-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-bottom: 1px solid #27272a;
-  padding-bottom: 14px;
-}
-
-.qn-menu-section:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.qn-menu-section-label {
-  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: #6b6b7b;
-}
-
-.qn-nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  background: #1c1c24;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  cursor: pointer;
-  color: #f0f0f3;
-  text-decoration: none;
-  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  transition: background var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), color var(--dur-hover) var(--ease-snap), transform var(--dur-press) var(--ease-snap);
-}
-
-.qn-nav-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-  flex-shrink: 0;
-}
-
-.qn-nav-btn:hover {
-  background: #27272a;
-  border-color: var(--accent-primary);
-  color: var(--accent-hover-1);
-}
-
-.qn-nav-btn.current {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  color: #ffffff;
-  pointer-events: none;
-}
-
-.theme-swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.theme-swatch {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  transition: transform var(--dur-hover) var(--ease-snap), border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-open) var(--ease-pop);
-}
-
-.theme-swatch:hover {
-  transform: scale(1.1);
-  border-color: #fff;
-}
-
-.theme-swatch.active {
-  border-color: #fff;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
-  transform: scale(1.05);
-  transition: transform var(--dur-open) var(--ease-pop), border-color var(--dur-hover) var(--ease-snap), box-shadow var(--dur-open) var(--ease-pop);
-}
-
-.glow-toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glow-toggle-label {
-  font-family: var(--font-body, 'Instrument Sans'), sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: #c8c8d0;
-}
-
-.glow-switch {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  border-radius: 11px;
-  background: #2a2a35;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-  padding: 0;
-  flex-shrink: 0;
-  transition: background 0.2s ease;
-}
-
-.glow-switch[aria-checked="true"] {
-  background: var(--accent-primary);
-  animation: glow-switch-pulse 3s ease-in-out infinite;
-}
-
-@keyframes glow-switch-pulse {
-  0%, 100% { box-shadow: 0 0 4px var(--accent-glow); }
-  50% { box-shadow: 0 0 12px var(--accent-glow); }
-}
-
-.glow-switch-knob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #f0f0f3;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glow-switch[aria-checked="true"] .glow-switch-knob {
-  transform: translateX(18px);
-}
-
-/* Keyboard Shortcutsテーブル（統合メニュー内、PC/SP共通で表示） */
-.shortcut-grid {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.shortcut-table {
-  flex: 1;
-  min-width: 200px;
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.shortcut-table th, .shortcut-table td {
-  padding: 7px 8px;
-  text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.shortcut-table th {
-  font-family: var(--font-display, 'Instrument Sans'), sans-serif;
-  color: #8b8b9e;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  font-size: 11px;
-}
-
-.shortcut-table td {
-  color: #f0f0f3;
-}
-
-.shortcut-table kbd {
-  background: #252530;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-family: monospace;
-  font-size: 11px;
-  color: var(--accent-primary);
-  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
 }
 
 .eq-hint {

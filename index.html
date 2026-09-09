@@ -11,8 +11,26 @@
 <link rel="stylesheet" href="style-core.css">
 <link rel="stylesheet" href="style-core-pc.css">
 <link rel="stylesheet" href="style-layout-sp.css">
+<script>
+  window.QN_CURRENT_APP = "player";
+  window.QN_SHORTCUTS = [
+    { key: "Space", action: "Play / Pause" },
+    { key: "P / M", action: "Add Marker" },
+    { key: "L", action: "Toggle Loop" },
+    { key: "R", action: "Toggle All Repeat" },
+    { key: "1 - 9", action: "Jump to Marker" },
+    { key: "Ctrl + 1 - 9", action: "Toggle Marker ON/OFF" },
+    { key: "→", action: "Next Marker" },
+    { key: "←", action: "Prev Marker (0.5s rule)" },
+    { key: "↑", action: "First Marker" },
+    { key: "↓", action: "Last Marker" },
+    { key: "Ctrl + → / ←", action: "Speed +1% / -1%" },
+    { key: "Ctrl + ↑ / ↓", action: "Key +1 / -1 semitone" },
+    { key: "Ctrl + R", action: "Reset Speed & Key" }
+  ];
+</script>
 </head>
-<body data-theme="blue">
+<body>
 
 <div id="dropOverlay">DROP AUDIO FILE HERE</div>
 
@@ -27,147 +45,7 @@
 </div>
 
 <div id="appHeader">
-  <div class="header-btn-wrapper">
-    <button id="qnMenuBtn" title="QN Series Menu">
-      <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-    </button>
-    <div class="qn-menu-popup" id="qnMenuPopup">
-
-      <!-- SECTION 1: QN Series App Navigation -->
-      <div class="qn-menu-section">
-        <span class="qn-menu-section-label">QN Series</span>
-        <a class="qn-nav-btn" data-qn-app="player" href="https://qonny-game.github.io/QN-PLAYER/" title="QNPLAYER" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
-          <span>QNPLAYER</span>
-        </a>
-        <a class="qn-nav-btn" data-qn-app="pitch" href="https://qonny-game.github.io/QN-PITCH/" title="QNPITCH" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M12 3a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4zm7 9a7 7 0 0 1-14 0H3a9 9 0 0 0 8 8.94V22h2v-1.06A9 9 0 0 0 21 12h-2z"/></svg>
-          <span>QNPITCH</span>
-        </a>
-        <a class="qn-nav-btn" data-qn-app="phrase" href="https://qonny-game.github.io/QN-PHRASE" title="QNPHRASE" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M9 3v10.55A4 4 0 1 0 11 17V7h4v3h2V3H9zM8 15.5A2.5 2.5 0 1 1 8 15.5z"/></svg>
-          <span>QNPHRASE</span>
-        </a>
-        <a class="qn-nav-btn" data-qn-app="tempo" href="https://qonny-game.github.io/QN-TEMPO/" title="QNTEMPO" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M9 2v2h6V2h2v2.06c1.14.2 2 1.2 2 2.4 0 .77-.35 1.46-.9 1.92L20 20H4l1.9-11.62A2.5 2.5 0 0 1 5 6.46c0-1.2.86-2.2 2-2.4V2h2zm2.6 6.5-1.9 9.9h2.6l1.6-8.4-2.3-1.5z"/></svg>
-          <span>QNTEMPO</span>
-        </a>
-        <a class="qn-nav-btn" data-qn-app="tuner" href="https://qonny-game.github.io/QN-TUNER/" title="QNTUNER" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M9 3v6.28A3.5 3.5 0 1 0 11 12.7V7h4V3H9zm7 8h-2v10h2V11zm-8 0H6v10h2V11z"/></svg>
-          <span>QNTUNER</span>
-        </a>
-      </div>
-
-      <!-- SECTION 2: Color Theme -->
-      <div class="qn-menu-section">
-        <span class="qn-menu-section-label">Color Theme</span>
-        <div class="theme-swatches">
-          <div class="theme-swatch swatch-red" data-theme="red" title="Red"></div>
-          <div class="theme-swatch swatch-orange" data-theme="orange" title="Orange"></div>
-          <div class="theme-swatch swatch-amber" data-theme="amber" title="Amber Gold"></div>
-          <div class="theme-swatch swatch-lime" data-theme="lime" title="Lime"></div>
-          <div class="theme-swatch swatch-emerald" data-theme="emerald" title="Emerald Green"></div>
-          <div class="theme-swatch swatch-teal" data-theme="teal" title="Teal"></div>
-          <div class="theme-swatch swatch-cyan" data-theme="cyan" title="Cyan"></div>
-          <div class="theme-swatch swatch-sky" data-theme="sky" title="Sky Blue"></div>
-          <div class="theme-swatch swatch-blue active" data-theme="blue" title="Blue (Default)"></div>
-          <div class="theme-swatch swatch-indigo" data-theme="indigo" title="Indigo"></div>
-          <div class="theme-swatch swatch-purple" data-theme="purple" title="Electric Purple"></div>
-          <div class="theme-swatch swatch-violet" data-theme="violet" title="Violet"></div>
-          <div class="theme-swatch swatch-pink" data-theme="pink" title="Pink"></div>
-          <div class="theme-swatch swatch-rose" data-theme="rose" title="Rose Red"></div>
-          <div class="theme-swatch swatch-rainbow" data-theme="rainbow" title="Rainbow (Animated)"></div>
-        </div>
-        <div class="glow-toggle-row">
-          <span class="glow-toggle-label">Glow current color</span>
-          <button id="glowToggleBtn" class="glow-switch" role="switch" aria-checked="false" title="Fade the current color in and out">
-            <span class="glow-switch-knob"></span>
-          </button>
-        </div>
-      </div>
-
-      <!-- SECTION 3: Keyboard Shortcuts (QNPLAYER固有の内容) -->
-      <div class="qn-menu-section">
-        <span class="qn-menu-section-label">Keyboard Shortcuts</span>
-        <div class="shortcut-grid">
-          <table class="shortcut-table">
-            <thead>
-              <tr>
-                <th>Key</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><kbd>Space</kbd></td>
-                <td>Play / Pause</td>
-              </tr>
-              <tr>
-                <td><kbd>P</kbd> / <kbd>M</kbd></td>
-                <td>Add Marker</td>
-              </tr>
-              <tr>
-                <td><kbd>L</kbd></td>
-                <td>Toggle Loop</td>
-              </tr>
-              <tr>
-                <td><kbd>R</kbd></td>
-                <td>Toggle All Repeat</td>
-              </tr>
-              <tr>
-                <td><kbd>1</kbd> - <kbd>9</kbd></td>
-                <td>Jump to Marker</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl</kbd> + <kbd>1</kbd> - <kbd>9</kbd></td>
-                <td>Toggle Marker ON/OFF</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <table class="shortcut-table">
-            <thead>
-              <tr>
-                <th>Key</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><kbd>→</kbd></td>
-                <td>Next Marker</td>
-              </tr>
-              <tr>
-                <td><kbd>←</kbd></td>
-                <td>Prev Marker (0.5s rule)</td>
-              </tr>
-              <tr>
-                <td><kbd>↑</kbd></td>
-                <td>First Marker</td>
-              </tr>
-              <tr>
-                <td><kbd>↓</kbd></td>
-                <td>Last Marker</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl</kbd> + <kbd>→</kbd> / <kbd>←</kbd></td>
-                <td>Speed +1% / -1%</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd></td>
-                <td>Key +1 / -1 semitone</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl</kbd> + <kbd>R</kbd></td>
-                <td>Reset Speed &amp; Key</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-  </div>
+  <div id="qnMenuMount"></div>
   <div id="appHeaderText">
     <h1 id="appLogo"><span id="appLogoQN">QN</span>PLAYER <span id="appVersion">v1.8.5</span></h1>
     <p id="appTitle"><span id="appTitleInner"><span id="appTitleText">No file loaded</span></span></p>
@@ -716,5 +594,6 @@
 <script src="player-ui-shared.js"></script>
 <script src="player-ui-sp.js"></script>
 <script src="player-ui-pc.js"></script>
+<script src="qn-menu.js"></script>
 </body>
 </html>

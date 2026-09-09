@@ -24,9 +24,9 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Keyboard Shortcuts, #headerMenuBtn, #headerControls は
-   統合ハンバーガーメニュー（#qnMenuBtn, .qn-menu-popup）に置き換えたため撤去。
-   関連CSSは style-core.css（PC/SP共通）側に統合済み。 */
+/* ハンバーガーメニュー（QNシリーズ共通、Color Theme, Keyboard Shortcuts含む）は
+   qn-menu.html/css/js を fetch して #qnMenuMount に注入する方式に移行済み。
+   このアプリ側のCSS/HTML/JSには関連コードを持たない。 */
 
 /* サイドバー(Markers/Playlist)を開閉する吸着ボタン・オーバーレイはSP幅限定の機能。
    PC幅では常時表示のサイドバーがあるため完全に非表示にする。 */
