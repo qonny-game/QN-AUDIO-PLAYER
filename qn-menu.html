@@ -1,0 +1,90 @@
+<!-- ============================================================
+     qn-menu.html
+     QNシリーズ共通ハンバーガーメニュー（QN-PLAYER配布・fetchで読み込む）
+
+     置き場所: https://qonny-game.github.io/QN-PLAYER/qn-menu.html
+     このファイル単体はページに直接読み込まない。qn-menu.js が fetch して、
+     ホスト側の <div id="qnMenuMount"></div> の中に innerHTML として注入する。
+
+     Section 3（Keyboard Shortcuts）は、ホスト側が window.QN_SHORTCUTS を
+     定義していない場合、qn-menu.js が data-qn-section="shortcuts" の
+     ブロックごと非表示にする。
+     ============================================================ -->
+<div class="qn-menu-wrapper">
+  <button id="qnMenuBtn" title="QN Series Menu">
+    <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+  </button>
+
+  <div class="qn-menu-popup" id="qnMenuPopup">
+
+    <!-- SECTION 1: App Navigation Links -->
+    <div class="qn-menu-section" data-qn-section="nav">
+      <span class="qn-menu-section-label">QN Series</span>
+      <a class="qn-nav-btn" data-qn-app="player" href="https://qonny-game.github.io/QN-PLAYER/" title="QNPLAYER" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+        <span>QNPLAYER</span>
+      </a>
+      <a class="qn-nav-btn" data-qn-app="pitch" href="https://qonny-game.github.io/QN-PITCH/" title="QNPITCH" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M12 3a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4zm7 9a7 7 0 0 1-14 0H3a9 9 0 0 0 8 8.94V22h2v-1.06A9 9 0 0 0 21 12h-2z"/></svg>
+        <span>QNPITCH</span>
+      </a>
+      <a class="qn-nav-btn" data-qn-app="phrase" href="https://qonny-game.github.io/QN-PHRASE" title="QNPHRASE" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M9 3v10.55A4 4 0 1 0 11 17V7h4v3h2V3H9zM8 15.5A2.5 2.5 0 1 1 8 15.5z"/></svg>
+        <span>QNPHRASE</span>
+      </a>
+      <a class="qn-nav-btn" data-qn-app="tempo" href="https://qonny-game.github.io/QN-TEMPO/" title="QNTEMPO" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M9 2v2h6V2h2v2.06c1.14.2 2 1.2 2 2.4 0 .77-.35 1.46-.9 1.92L20 20H4l1.9-11.62A2.5 2.5 0 0 1 5 6.46c0-1.2.86-2.2 2-2.4V2h2zm2.6 6.5-1.9 9.9h2.6l1.6-8.4-2.3-1.5z"/></svg>
+        <span>QNTEMPO</span>
+      </a>
+      <a class="qn-nav-btn" data-qn-app="tuner" href="https://qonny-game.github.io/QN-TUNER/" title="QNTUNER" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M9 3v6.28A3.5 3.5 0 1 0 11 12.7V7h4V3H9zm7 8h-2v10h2V11zm-8 0H6v10h2V11z"/></svg>
+        <span>QNTUNER</span>
+      </a>
+    </div>
+
+    <!-- SECTION 2: Color Theme Selector & Glow Switch -->
+    <div class="qn-menu-section" data-qn-section="theme">
+      <span class="qn-menu-section-label">Color Theme</span>
+      <div class="qn-theme-swatches">
+        <div class="qn-theme-swatch qn-swatch-red" data-qn-theme="red" title="Red"></div>
+        <div class="qn-theme-swatch qn-swatch-orange" data-qn-theme="orange" title="Orange"></div>
+        <div class="qn-theme-swatch qn-swatch-amber" data-qn-theme="amber" title="Amber Gold"></div>
+        <div class="qn-theme-swatch qn-swatch-lime" data-qn-theme="lime" title="Lime"></div>
+        <div class="qn-theme-swatch qn-swatch-emerald" data-qn-theme="emerald" title="Emerald Green"></div>
+        <div class="qn-theme-swatch qn-swatch-teal" data-qn-theme="teal" title="Teal"></div>
+        <div class="qn-theme-swatch qn-swatch-cyan" data-qn-theme="cyan" title="Cyan"></div>
+        <div class="qn-theme-swatch qn-swatch-sky" data-qn-theme="sky" title="Sky Blue"></div>
+        <div class="qn-theme-swatch qn-swatch-blue" data-qn-theme="blue" title="Blue (Default)"></div>
+        <div class="qn-theme-swatch qn-swatch-indigo" data-qn-theme="indigo" title="Indigo"></div>
+        <div class="qn-theme-swatch qn-swatch-purple" data-qn-theme="purple" title="Electric Purple"></div>
+        <div class="qn-theme-swatch qn-swatch-violet" data-qn-theme="violet" title="Violet"></div>
+        <div class="qn-theme-swatch qn-swatch-pink" data-qn-theme="pink" title="Pink"></div>
+        <div class="qn-theme-swatch qn-swatch-rose" data-qn-theme="rose" title="Rose Red"></div>
+        <div class="qn-theme-swatch qn-swatch-rainbow" data-qn-theme="rainbow" title="Rainbow (Animated)"></div>
+        <div class="qn-theme-swatch qn-swatch-pink-red" data-qn-theme="pink-red" title="Pink - Red"></div>
+        <div class="qn-theme-swatch qn-swatch-cyan-blue" data-qn-theme="cyan-blue" title="Cyan - Blue"></div>
+        <div class="qn-theme-swatch qn-swatch-emerald-cyan" data-qn-theme="emerald-cyan" title="Emerald - Cyan"></div>
+      </div>
+      <div class="qn-glow-toggle-row">
+        <span class="qn-glow-toggle-label">Glow current color</span>
+        <button id="qnGlowToggleBtn" class="qn-glow-switch" role="switch" aria-checked="false" title="Fade the current color in and out">
+          <span class="qn-glow-switch-knob"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SECTION 3: Keyboard Shortcuts Table (hidden if window.QN_SHORTCUTS is not defined) -->
+    <div class="qn-menu-section" data-qn-section="shortcuts" id="qnShortcutsSection">
+      <span class="qn-menu-section-label">Keyboard Shortcuts</span>
+      <table class="qn-shortcut-table" id="qnShortcutsTable">
+        <thead>
+          <tr><th>Key</th><th>Action</th></tr>
+        </thead>
+        <tbody id="qnShortcutsTbody">
+          <!-- qn-menu.js が window.QN_SHORTCUTS の内容でここを組み立てる -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

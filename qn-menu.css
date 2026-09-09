@@ -1,0 +1,397 @@
+/* ============================================================
+   qn-menu.css
+   QNシリーズ共通ハンバーガーメニュー（QN-PLAYER配布・fetchで読み込む）
+
+   置き場所: https://qonny-game.github.io/QN-PLAYER/qn-menu.css
+   各アプリはこのファイルをコピーせず、qn-menu.js が fetch して
+   <style> タグとして注入する。更新はこのファイル1箇所で全アプリに反映される。
+
+   前提: 各アプリの :root には既に --accent-primary 等のCSS変数が
+   定義されている（QNAUDIOデザインシステム）。このメニューはテーマ切替時、
+   その変数を body の inline style で上書きすることで見た目を変える。
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
+
+/* ---------- Color themes ---------- */
+/* テーマ名ごとの配色。qn-menu.js が data-theme 属性を body に付けて切り替える。
+   各アプリ本体の :root 定義とは独立しており、テーマ選択時のみこちらが優先される。 */
+[data-qn-theme="blue"] {
+  --accent-primary: #3b82f6;
+  --accent-secondary: #1d4ed8;
+  --accent-glow: rgba(59, 130, 246, 0.35);
+  --accent-hover-1: #2563eb;
+  --accent-hover-2: #1e40af;
+}
+[data-qn-theme="emerald"] {
+  --accent-primary: #10b981;
+  --accent-secondary: #047857;
+  --accent-glow: rgba(16, 185, 129, 0.35);
+  --accent-hover-1: #059669;
+  --accent-hover-2: #065f46;
+}
+[data-qn-theme="purple"] {
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #6d28d9;
+  --accent-glow: rgba(139, 92, 246, 0.35);
+  --accent-hover-1: #7c3aed;
+  --accent-hover-2: #5b21b6;
+}
+[data-qn-theme="rose"] {
+  --accent-primary: #f43f5e;
+  --accent-secondary: #be123c;
+  --accent-glow: rgba(244, 63, 94, 0.35);
+  --accent-hover-1: #e11d48;
+  --accent-hover-2: #9f1239;
+}
+[data-qn-theme="amber"] {
+  --accent-primary: #f59e0b;
+  --accent-secondary: #b45309;
+  --accent-glow: rgba(245, 158, 11, 0.35);
+  --accent-hover-1: #d97706;
+  --accent-hover-2: #92400e;
+}
+[data-qn-theme="cyan"] {
+  --accent-primary: #06b6d4;
+  --accent-secondary: #0e7490;
+  --accent-glow: rgba(6, 182, 212, 0.35);
+  --accent-hover-1: #0891b2;
+  --accent-hover-2: #155e75;
+}
+[data-qn-theme="indigo"] {
+  --accent-primary: #6366f1;
+  --accent-secondary: #4338ca;
+  --accent-glow: rgba(99, 102, 241, 0.35);
+  --accent-hover-1: #4f46e5;
+  --accent-hover-2: #3730a3;
+}
+[data-qn-theme="pink"] {
+  --accent-primary: #ec4899;
+  --accent-secondary: #be185d;
+  --accent-glow: rgba(236, 72, 153, 0.35);
+  --accent-hover-1: #db2777;
+  --accent-hover-2: #9d174d;
+}
+[data-qn-theme="lime"] {
+  --accent-primary: #84cc16;
+  --accent-secondary: #4d7c0f;
+  --accent-glow: rgba(132, 204, 22, 0.35);
+  --accent-hover-1: #65a30d;
+  --accent-hover-2: #3f6212;
+}
+[data-qn-theme="orange"] {
+  --accent-primary: #f97316;
+  --accent-secondary: #c2410c;
+  --accent-glow: rgba(249, 115, 22, 0.35);
+  --accent-hover-1: #ea580c;
+  --accent-hover-2: #9a3412;
+}
+[data-qn-theme="teal"] {
+  --accent-primary: #14b8a6;
+  --accent-secondary: #0f766e;
+  --accent-glow: rgba(20, 184, 166, 0.35);
+  --accent-hover-1: #0d9488;
+  --accent-hover-2: #115e59;
+}
+[data-qn-theme="violet"] {
+  --accent-primary: #a855f7;
+  --accent-secondary: #7e22ce;
+  --accent-glow: rgba(168, 85, 247, 0.35);
+  --accent-hover-1: #9333ea;
+  --accent-hover-2: #6b21a8;
+}
+[data-qn-theme="red"] {
+  --accent-primary: #ef4444;
+  --accent-secondary: #b91c1c;
+  --accent-glow: rgba(239, 68, 68, 0.35);
+  --accent-hover-1: #dc2626;
+  --accent-hover-2: #991b1b;
+}
+[data-qn-theme="sky"] {
+  --accent-primary: #0ea5e9;
+  --accent-secondary: #0369a1;
+  --accent-glow: rgba(14, 165, 233, 0.35);
+  --accent-hover-1: #0284c7;
+  --accent-hover-2: #075985;
+}
+[data-qn-theme="pink-red"] {
+  --accent-primary: #ec4899;
+  --accent-secondary: #ef4444;
+  --accent-glow: rgba(236, 72, 153, 0.35);
+  --accent-hover-1: #f43f5e;
+  --accent-hover-2: #dc2626;
+}
+[data-qn-theme="cyan-blue"] {
+  --accent-primary: #06b6d4;
+  --accent-secondary: #3b82f6;
+  --accent-glow: rgba(6, 182, 212, 0.35);
+  --accent-hover-1: #0284c7;
+  --accent-hover-2: #1d4ed8;
+}
+[data-qn-theme="emerald-cyan"] {
+  --accent-primary: #10b981;
+  --accent-secondary: #06b6d4;
+  --accent-glow: rgba(16, 185, 129, 0.35);
+  --accent-hover-1: #059669;
+  --accent-hover-2: #0891b2;
+}
+
+/* ---------- Hamburger button & popup container ---------- */
+.qn-menu-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+#qnMenuBtn {
+  background: #18181b;
+  border: 1px solid #27272a;
+  color: #f0f0f3;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 130ms cubic-bezier(0.2, 0, 0, 1), border-color 130ms cubic-bezier(0.2, 0, 0, 1), box-shadow 130ms cubic-bezier(0.2, 0, 0, 1);
+}
+#qnMenuBtn:hover,
+#qnMenuBtn.active {
+  background: #27272a;
+  border-color: var(--accent-primary, #3b82f6);
+  box-shadow: 0 0 12px var(--accent-glow, rgba(59, 130, 246, 0.35));
+}
+#qnMenuBtn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.qn-menu-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 300px;
+  background: #121215;
+  border: 1px solid #27272a;
+  border-radius: 14px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 200ms ease, transform 200ms ease;
+  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.qn-menu-popup.open {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+.qn-menu-popup.open-upward {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translateY(8px);
+}
+.qn-menu-popup.open-upward.open {
+  transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .qn-menu-popup {
+    width: calc(100vw - 32px);
+    max-width: 320px;
+  }
+}
+
+/* ---------- Sections & nav links ---------- */
+.qn-menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 14px;
+}
+.qn-menu-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.qn-menu-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #6b6b7b;
+}
+
+.qn-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  color: #f0f0f3;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: background 130ms cubic-bezier(0.2, 0, 0, 1), border-color 130ms cubic-bezier(0.2, 0, 0, 1), color 130ms cubic-bezier(0.2, 0, 0, 1);
+}
+.qn-nav-btn:hover {
+  background: #27272a;
+  border-color: var(--accent-primary, #3b82f6);
+  color: var(--accent-hover-1, #2563eb);
+}
+.qn-nav-btn.current {
+  background: var(--accent-primary, #3b82f6);
+  border-color: var(--accent-primary, #3b82f6);
+  color: #ffffff;
+  pointer-events: none;
+}
+.qn-nav-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* ---------- Color swatches & glow switch ---------- */
+.qn-theme-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.qn-theme-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: transform 130ms cubic-bezier(0.2, 0, 0, 1), border-color 130ms cubic-bezier(0.2, 0, 0, 1), box-shadow 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.qn-theme-swatch:hover {
+  transform: scale(1.1);
+  border-color: #fff;
+}
+.qn-theme-swatch.active {
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 130ms cubic-bezier(0.2, 0, 0, 1), box-shadow 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.qn-swatch-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.qn-swatch-emerald { background: linear-gradient(135deg, #10b981, #047857); }
+.qn-swatch-purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.qn-swatch-rose { background: linear-gradient(135deg, #f43f5e, #be123c); }
+.qn-swatch-amber { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.qn-swatch-cyan { background: linear-gradient(135deg, #06b6d4, #0e7490); }
+.qn-swatch-indigo { background: linear-gradient(135deg, #6366f1, #4338ca); }
+.qn-swatch-pink { background: linear-gradient(135deg, #ec4899, #be185d); }
+.qn-swatch-lime { background: linear-gradient(135deg, #84cc16, #4d7c0f); }
+.qn-swatch-orange { background: linear-gradient(135deg, #f97316, #c2410c); }
+.qn-swatch-teal { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+.qn-swatch-violet { background: linear-gradient(135deg, #a855f7, #7e22ce); }
+.qn-swatch-red { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.qn-swatch-sky { background: linear-gradient(135deg, #0ea5e9, #0369a1); }
+.qn-swatch-pink-red { background: linear-gradient(135deg, #ec4899, #ef4444); }
+.qn-swatch-cyan-blue { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+.qn-swatch-emerald-cyan { background: linear-gradient(135deg, #10b981, #06b6d4); }
+
+.qn-swatch-rainbow {
+  background: conic-gradient(from 0deg, #ef4444, #f97316, #f59e0b, #84cc16, #10b981, #14b8a6, #06b6d4, #0ea5e9, #3b82f6, #6366f1, #8b5cf6, #a855f7, #ec4899, #f43f5e, #ef4444);
+  animation: qn-rainbow-spin 4s linear infinite;
+}
+@keyframes qn-rainbow-spin {
+  from { filter: hue-rotate(0deg); }
+  to { filter: hue-rotate(360deg); }
+}
+
+.qn-glow-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.qn-glow-toggle-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #c8c8d0;
+}
+
+.qn-glow-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: #2a2a35;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+.qn-glow-switch[aria-checked="true"] {
+  background: var(--accent-primary, #3b82f6);
+  animation: qn-glow-switch-pulse 3s ease-in-out infinite;
+}
+@keyframes qn-glow-switch-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--accent-glow, rgba(59, 130, 246, 0.35)); }
+  50% { box-shadow: 0 0 12px var(--accent-glow, rgba(59, 130, 246, 0.35)); }
+}
+.qn-glow-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f0f0f3;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.qn-glow-switch[aria-checked="true"] .qn-glow-switch-knob {
+  transform: translateX(18px);
+}
+
+/* ---------- Keyboard shortcuts table (Section hidden entirely when the
+   host app defines no window.QN_SHORTCUTS) ---------- */
+.qn-shortcut-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.qn-shortcut-table th,
+.qn-shortcut-table td {
+  padding: 7px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.qn-shortcut-table th {
+  color: #8b8b9e;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.qn-shortcut-table td {
+  color: #f0f0f3;
+}
+.qn-shortcut-table kbd {
+  background: #252530;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--accent-primary, #3b82f6);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+}
