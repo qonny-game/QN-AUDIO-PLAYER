@@ -289,6 +289,7 @@
     <button class="sidebar-toggle-btn" id="sidebarToggleControl" data-tab="control">Control</button>
     <button class="sidebar-toggle-btn" id="sidebarToggleMarkers" data-tab="markers">Markers</button>
     <button class="sidebar-toggle-btn" id="sidebarTogglePlaylist" data-tab="playlist">Playlist</button>
+    <button class="sidebar-toggle-btn" id="sidebarToggleText" data-tab="text">Text</button>
     <button class="sidebar-toggle-btn" id="sidebarToggleEq" data-action="eq">EQ</button>
     <button class="sidebar-toggle-btn" id="sidebarToggleExport" data-action="export">Export</button>
     <button class="sidebar-toggle-btn" id="sidebarToggleAddFile" data-action="addfile">Add File</button>
@@ -303,6 +304,7 @@
       <button class="mobile-tab-btn" data-tab="control">Control</button>
       <button class="mobile-tab-btn active" data-tab="markers">Markers</button>
       <button class="mobile-tab-btn" data-tab="playlist">Playlist</button>
+      <button class="mobile-tab-btn" data-tab="text">Text</button>
     </div>
 
     <!-- Controlタブ：VOL/SPEED(+Auto Speed)/KEYのスライダー・操作UI自体を、ポップアップに
@@ -400,6 +402,15 @@
         <span>Add File</span>
       </button>
       <div id="playlistBox"></div>
+    </div>
+
+    <!-- Textタブ：ファイル名(currentFileName)ごとに紐付けてlocalStorageへ保存する
+         自由入力メモ欄。歌詞に限らず何でも書けるようTextという汎用名にしている。 -->
+    <div class="mobile-tab-panel" data-tab-panel="text">
+      <div class="markers-heading-row">
+        <h3>Text</h3>
+      </div>
+      <textarea id="noteTextArea" class="note-textarea" placeholder="Lyrics, memo, anything…"></textarea>
     </div>
   </div>
 </div>

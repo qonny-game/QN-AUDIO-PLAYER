@@ -548,6 +548,11 @@ function loadFile(file) {
       pins = [];
     }
 
+    // Textタブのメモも曲ごとに読み込む（未保存なら空欄にする）。
+    if (noteTextAreaEl) {
+      noteTextAreaEl.value = localStorage.getItem("mp3_text_" + file.name) || "";
+    }
+
     renderPins();
     renderSegments();
     renderPinList();
@@ -2136,6 +2141,12 @@ function setMobileTab(tabName) {
     btn.classList.toggle("active", btn.getAttribute("data-tab") === tabName);
   });
   applyMobileTabLayout();
+}
+
+// Textタブ：入力のたびにファイル名キーでlocalStorageへ自動保存する（Save操作不要）。
+const noteTextAreaEl = document.getElementById("noteTextArea");
+if (noteTextAreaEl) {
+  noteTextAreaEl.addEventListener("input", saveNoteText);
 }
 
 // SP幅限定：サイドバー(Markers/Playlist)の開閉。画面右端の吸着ボタン(sidebarToggleTabs)を押すと、

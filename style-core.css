@@ -1416,6 +1416,31 @@ body {
   flex: none;
 }
 
+/* Textタブ：歌詞・メモ等を自由入力するtextarea。カード系UIと同じ配色・角丸で揃える。
+   入力のたびにsaveNoteText()（player-ui-shared.js）が発火し、ファイル名キーで
+   localStorageへ自動保存される（Saveボタンは持たない）。 */
+.note-textarea {
+  width: 100%;
+  min-height: 320px;
+  box-sizing: border-box;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: #f0f0f3;
+  font-family: var(--font-body, 'Instrument Sans'), sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.note-textarea::placeholder {
+  color: #6b6b7b;
+}
+.note-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
 .pinItem {
   display: grid;
   grid-template-columns: auto 1fr auto auto auto;

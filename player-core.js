@@ -707,6 +707,15 @@ function savePins() {
   }
 }
 
+// Textタブの自由入力メモ（歌詞・覚え書き等）をファイル名キーでlocalStorageへ保存する。
+// savePinsと同じ方針：ファイル未読み込み時は保存しない。
+function saveNoteText() {
+  if (currentFileName && currentFileName !== "No file loaded") {
+    const el = document.getElementById("noteTextArea");
+    if (el) localStorage.setItem("mp3_text_" + currentFileName, el.value);
+  }
+}
+
 function getActiveSegment(atTime) {
   const dur = audio.duration;
   const activePinObjs = pins.filter(p => p.enabled);
