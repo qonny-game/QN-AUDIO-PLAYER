@@ -169,8 +169,15 @@
 }
 
 .qn-menu-popup {
-  position: absolute;
-  top: calc(100% + 8px);
+  /* #appHeader等、ホスト側の祖先要素がposition:relativeでスタッキング
+     コンテキストを作っているケースがあり、その場合absoluteだとこの
+     z-index: 1000は祖先の外側では通用せず、サイドバー等（z-index: 400台）の
+     下に潜ってしまうことがある。fixedにしてスタッキングコンテキストの
+     階層そのものから切り離し、常に最前面に出るようにする。
+     top/leftはJS側（positionPopup）でボタンの実際の画面座標から
+     計算してインラインstyleで設定するため、ここでは初期値のみ持たせる。 */
+  position: fixed;
+  top: 0;
   left: 0;
   width: 300px;
   background: #121215;
@@ -192,9 +199,10 @@
   opacity: 1;
   transform: translateY(0);
 }
+/* open-upward（上向きに開く時）は、top/leftの具体的なpx値をJS側で
+   計算してインラインstyleに設定するため、ここでは開くアニメーションの
+   初期transformだけを上向き用に変える。位置(top/left)の指定は持たない。 */
 .qn-menu-popup.open-upward {
-  top: auto;
-  bottom: calc(100% + 8px);
   transform: translateY(8px);
 }
 .qn-menu-popup.open-upward.open {

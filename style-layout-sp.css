@@ -324,8 +324,8 @@
   }
 
   #appTitle {
-    margin: 0 0 -5px;
-    font-size: 13px;
+    margin: 0 0 5px;
+    /* font-size: 13px; */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -227,19 +227,35 @@
       });
     }
 
-    /* ---------- Viewport-aware popup positioning ---------- */
-    function keepPopupInViewport(toggleBtn, popup) {
-      popup.classList.remove('open-upward');
-      requestAnimationFrame(() => {
-        const btnRect = toggleBtn.getBoundingClientRect();
-        const popupRect = popup.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const spaceBelow = viewportHeight - btnRect.bottom;
-        const spaceAbove = btnRect.top;
-        if (spaceBelow < popupRect.height + 16 && spaceAbove > spaceBelow) {
-          popup.classList.add('open-upward');
-        }
-      });
+    /* ---------- Viewport-aware popup positioning ----------
+       .qn-menu-popupはposition: fixedのため、CSSのtop: calc(100% + 8px)的な
+       相対計算が使えない。ボタンの実際の画面座標(getBoundingClientRect)から
+       top/leftをpxで計算し、インラインstyleとして直接設定する。 */
+    function positionPopup(toggleBtn, popup) {
+      const btnRect = toggleBtn.getBoundingClientRect();
+      const popupRect = popup.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      const margin = 8;
+
+      // 上下：ボタン下に十分な空間があればその下、無ければ上向きに開く
+      const spaceBelow = viewportHeight - btnRect.bottom;
+      const spaceAbove = btnRect.top;
+      const openUpward = spaceBelow < popupRect.height + 16 && spaceAbove > spaceBelow;
+      popup.classList.toggle('open-upward', openUpward);
+
+      const top = openUpward
+        ? btnRect.top - popupRect.height - margin
+        : btnRect.bottom + margin;
+
+      // 左右：ボタンの左端に揃えるのが基本だが、画面右端からはみ出す場合は
+      // 右端に収まるよう左にずらす（左端が画面外に出ないよう0未満にはしない）。
+      let left = btnRect.left;
+      const maxLeft = viewportWidth - popupRect.width - margin;
+      left = Math.max(margin, Math.min(left, maxLeft));
+
+      popup.style.top = `${Math.max(margin, top)}px`;
+      popup.style.left = `${left}px`;
     }
 
     /* ---------- Popup open/close ---------- */
@@ -251,13 +267,24 @@
         const willOpen = !qnMenuPopup.classList.contains('open');
         qnMenuPopup.classList.toggle('open', willOpen);
         qnMenuBtn.classList.toggle('active', willOpen);
-        if (willOpen) keepPopupInViewport(qnMenuBtn, qnMenuPopup);
+        if (willOpen) {
+          // display:noneが解除された直後はまだレイアウトが確定していないため、
+          // 実際のサイズが取れるrequestAnimationFrame後に位置を計算する。
+          requestAnimationFrame(() => positionPopup(qnMenuBtn, qnMenuPopup));
+        }
       });
       qnMenuPopup.addEventListener('click', (e) => e.stopPropagation());
     }
     document.addEventListener('click', () => {
       if (qnMenuPopup) qnMenuPopup.classList.remove('open');
       if (qnMenuBtn) qnMenuBtn.classList.remove('active');
+    });
+    // fixed配置のため、ウィンドウリサイズ時に開いていれば位置を再計算する
+    // （absolute時代は親要素基準で自動追従していたが、fixedでは追従しないため）。
+    window.addEventListener('resize', () => {
+      if (qnMenuBtn && qnMenuPopup && qnMenuPopup.classList.contains('open')) {
+        positionPopup(qnMenuBtn, qnMenuPopup);
+      }
     });
 
     /* ---------- Current app highlight (reads window.QN_CURRENT_APP) ---------- */
