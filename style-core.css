@@ -177,13 +177,13 @@ body {
   align-items: center;
   gap: 14px;
   position: relative;
-  /* ハンバーガーメニュー(.qn-menu-popup, z-index: 1000)は#appHeaderの子であり、
-     #appHeaderがposition: relativeでスタッキングコンテキストを作っているため、
-     .qn-menu-popupのz-indexは#appHeaderの外側では通用しない。
-     外側にある吸着タブ(.sidebar-toggle-tabs, z-index: 410)やサイドバー
-     (.sidebar-section, z-index: 400)より確実に上に出るよう、450にしておく。
-     #dropOverlay(9999)や.export-modal-overlay(400)より上に出過ぎないよう注意。 */
-  z-index: 450;
+  /* ハンバーガーメニュー(.qn-menu-popup)はposition: fixedになっており、
+     #appHeaderのスタッキングコンテキストの外側に自力で出られるため、
+     #appHeader自体のz-indexを吸着タブ(410)やサイドバー(400)より
+     高くしておく必要はない。SP幅でサイドバーを開いた時は、ヘッダーより
+     サイドバーが手前に来る（ヘッダーが隠れる）のが意図した挙動のため、
+     それらより低い値に戻す。 */
+  z-index: 200;
 }
 
 #appLogo {
