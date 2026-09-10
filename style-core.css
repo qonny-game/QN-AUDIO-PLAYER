@@ -495,8 +495,11 @@ body {
 }
 
 /* タブ自体に「Markers」「Playlist」の名前が出ているため、
-   パネル内の見出し(タイトル・ACTIVE数/トラック数)は重複するので非表示にする */
-.mobile-tab-panel .markers-heading-row {
+   パネル内の見出し(タイトル・ACTIVE数/トラック数)は重複するので非表示にする。
+   ただしTextタブの見出し行(.markers-heading-row)は、単なるタイトル表示ではなく
+   フルスクリーンボタン(noteTextFullscreenBtn)を含む操作行のため、
+   ここでは除外して表示したままにする。 */
+.mobile-tab-panel:not([data-tab-panel="text"]) .markers-heading-row {
   display: none;
 }
 

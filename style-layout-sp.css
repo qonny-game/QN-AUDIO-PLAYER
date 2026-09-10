@@ -224,7 +224,7 @@
     color: #fff;
   }
 
-  /* Control/Markers/Playlist（サイドバーが横からスライドインする系）と、
+  /* Control/Markers/Playlist/Text（サイドバーが横からスライドインする系）と、
      EQ/Export/Add File（モーダル/ファイル選択がその場で開く系）は、挙動が異なるため
      視覚的にもグループを分ける。最初のdata-action持ちボタン(EQ)に間隔と独立した
      角丸を持たせることで、1枚のカプセルが上下2つに分かれて見えるようにする。 */
@@ -234,7 +234,10 @@
     border-top-left-radius: 12px;
   }
 
-  .sidebar-toggle-btn[data-tab="playlist"] {
+  /* 開閉グループ(Control/Markers/Playlist/Text)の下端の角丸。以前はPlaylistが
+     最下段だったためここに付けていたが、Textタブ追加により最下段がTextになったため
+     移設した。 */
+  .sidebar-toggle-btn[data-tab="text"] {
     border-bottom-left-radius: 12px;
   }
 
