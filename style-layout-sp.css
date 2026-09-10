@@ -25,7 +25,10 @@
   }
 
   body {
-    padding: 16px 28px 0;
+    /* QNPITCHと完全一致させ、SP幅でも上下左右24pxで固定する
+       （以前は16px 28px 0で、768px境界を挟んでPC幅(24px)から詰まって
+       見えていた）。 */
+    padding: 24px 24px 0;
     align-items: stretch;
   }
 
