@@ -43,6 +43,14 @@
     flex-direction: column;
     width: 100%;
     margin-top: 8px;
+    /* 右端に常時浮いている吸着タブ(.sidebar-toggle-tabs、position: fixed)は
+       通常のレイアウトの外にオーバーレイ表示されるため、放っておくと
+       シークバー等のメインコンテンツと重なってしまう。.sidebar-section
+       (開いた時のパネル)が右側に確保しているのと同じ46px分を
+       右paddingとして確保し、メインエリア全体を左に狭める。
+       box-sizing: border-boxはstyle-core.css側の.app-container定義で
+       既に設定済みのためここでは指定しない。 */
+    padding-right: 46px;
     /* PC幅ではposition: relative; z-index: 1; を持つが、これがスタッキングコンテキストを
        作ってしまい、中の.sidebar-section(position: fixed)がヘッダーより奥に沈んで
        見える原因になっていたため、SP幅ではリセットする。 */
