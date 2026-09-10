@@ -2638,7 +2638,13 @@ if (exportRunBtn) {
       fsArea.value = mainArea.value;
       overlay.classList.add("open");
       hapticTap();
-      fsArea.focus();
+      // あえてfocus()しない：フォーカスするとソフトキーボードが開いて
+      // 入力状態になってしまい、また内容によってはスクロール位置が
+      // 末尾寄りになることがあるため、開いた直後は閲覧状態（非フォーカス）
+      // かつ先頭から見えるようにする。valueの再代入直後はブラウザによって
+      // カーソル位置が末尾扱いになることがあるため、選択範囲も先頭へ戻す。
+      fsArea.setSelectionRange(0, 0);
+      fsArea.scrollTop = 0;
     };
   }
 

@@ -34,3 +34,36 @@ html {
 #sidebarOverlay {
   display: none;
 }
+
+/* 下部固定の再生コントロール(#topControls)をPC幅では横1行にまとめる。
+   このファイル自体は@mediaで囲まれておらずSP幅でも常時読み込まれるため、
+   この指定だけは明示的にmin-width(900px境界の1つ上、901px)で囲み、
+   SP幅（style-layout-sp.cssのmax-width: 900px側）に影響しないようにする。
+   HTML構造(.top-controls > .top-controls-row が2段)はSP版と完全に共通のまま、
+   flex-directionをrowにして2段を横に並べるだけで1行化する。 */
+@media screen and (min-width: 901px) {
+  .top-controls {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: nowrap;
+  }
+
+  .top-controls-row {
+    flex: 0 1 auto;
+    width: auto;
+  }
+
+  /* SP幅では横幅いっぱいに伸ばすためflex:3等の比率指定だったボタン群を、
+     PC幅の横1行では内容量に応じた幅に収める。 */
+  .tripleNavBtn {
+    flex: 0 0 auto;
+    width: 260px;
+  }
+
+  .loopbtn {
+    flex: 0 0 auto;
+    width: 52px;
+  }
+}
