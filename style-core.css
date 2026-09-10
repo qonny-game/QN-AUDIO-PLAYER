@@ -163,12 +163,16 @@ body {
   margin: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* QNPITCH等と同じく、ウィンドウ幅に関わらず常に左端からpadding固定にするため
+     stretchにする（以前のcenterだと#appHeader/.app-containerのmax-width(1400px)を
+     超えるウィンドウ幅で左右中央寄せになり、幅によって左マージンの見え方が変動していた）。 */
+  align-items: stretch;
 }
 
 #appHeader {
   width: 100%;
-  max-width: 1400px;
+  /* サイドバー(360px固定)以外のメイン領域は画面幅いっぱいに伸ばす方針のため、
+     max-widthでの頭打ちは廃止（.app-container側と合わせる）。 */
   display: flex;
   align-items: center;
   gap: 14px;
@@ -384,7 +388,8 @@ body {
   align-items: start;
   margin-top: 15px;
   width: 100%;
-  max-width: 1400px;
+  /* サイドバー(360px固定)は変えず、メイン(1fr)側だけがウィンドウ幅に応じて
+     自然に伸びるよう、max-widthでの頭打ちを廃止。 */
   box-sizing: border-box;
   position: relative;
   z-index: 1;
