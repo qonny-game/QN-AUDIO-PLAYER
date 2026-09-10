@@ -408,6 +408,26 @@ body {
   height: fit-content;
 }
 
+/* Textタブが開いている間だけ、サイドバー全体を画面の残り高さいっぱいに固定化する
+   （JS側でheightをインラインstyleとしてセットする。他タブ(Control/Markers/Playlist)は
+   従来通りheight: fit-contentのまま中身なりの高さで良いため、このクラスの時だけ上書きする）。
+   .mobile-tab-panel側もflexで伸ばし、中のtextareaが残り高さいっぱいに広がるようにする。 */
+.sidebar-section.text-tab-active {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sidebar-section.text-tab-active .mobile-tab-panel.mobile-tab-active {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-section.text-tab-active .note-textarea {
+  flex: 1;
+  min-height: 0;
+}
+
 .sidebar-section h3 {
   font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 15px;
@@ -1418,7 +1438,10 @@ body {
 
 /* Textタブ：歌詞・メモ等を自由入力するtextarea。カード系UIと同じ配色・角丸で揃える。
    入力のたびにsaveNoteText()（player-ui-shared.js）が発火し、ファイル名キーで
-   localStorageへ自動保存される（Saveボタンは持たない）。 */
+   localStorageへ自動保存される（Saveボタンは持たない）。
+   サイドバーを開いた通常状態ではmin-heightの範囲で中身なりの高さ、Textタブが
+   選択されている間（.sidebar-section.text-tab-active）はflex:1で残り高さいっぱいに広がる
+   （上の.sidebar-section.text-tab-active .note-textarea側で上書き）。 */
 .note-textarea {
   width: 100%;
   min-height: 320px;
@@ -1431,7 +1454,6 @@ body {
   font-family: var(--font-body, 'Instrument Sans'), sans-serif;
   font-size: 14px;
   line-height: 1.6;
-  resize: vertical;
 }
 .note-textarea::placeholder {
   color: #6b6b7b;
@@ -1439,6 +1461,74 @@ body {
 .note-textarea:focus {
   outline: none;
   border-color: var(--accent-primary);
+}
+
+/* Text関連の小さいアイコンボタン共通スタイル（フルスクリーン開閉・文字サイズ+/-）。
+   export-modal-closeと似た見た目だがサイズをやや小さくし、markers-heading-row内で
+   h3と並んでも違和感がないようにしている。 */
+.tab-icon-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #1c1c24;
+  color: #8b8b9e;
+  font-size: 13px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--dur-hover, 130ms) var(--ease-snap, ease), color var(--dur-hover, 130ms) var(--ease-snap, ease), border-color var(--dur-hover, 130ms) var(--ease-snap, ease), transform var(--dur-press, 100ms) var(--ease-snap, ease);
+}
+.tab-icon-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+.tab-icon-btn:hover {
+  background: #252530;
+  color: #f0f0f3;
+  border-color: var(--accent-primary);
+}
+.tab-icon-btn:active {
+  transform: scale(0.9);
+}
+
+/* Textタブのフルスクリーン表示。画面全体を覆い、中に拡大表示用のtextareaを1つ持つ。
+   本体(#noteTextArea)とは値を相互同期させ（player-ui-shared.js）、文字サイズだけ
+   フルスクリーン側で独立して変更できるようにする（本体側のfont-sizeは変えない）。 */
+.text-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: none;
+  flex-direction: column;
+  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  background: #0d0d0f;
+}
+.text-fullscreen-overlay.open {
+  display: flex;
+}
+.text-fullscreen-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.text-fullscreen-font-controls {
+  display: flex;
+  gap: 6px;
+}
+.note-textarea-fullscreen {
+  flex: 1;
+  min-height: 0;
+  font-size: 20px;
 }
 
 .pinItem {

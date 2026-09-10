@@ -409,10 +409,27 @@
     <div class="mobile-tab-panel" data-tab-panel="text">
       <div class="markers-heading-row">
         <h3>Text</h3>
+        <button id="noteTextFullscreenBtn" class="tab-icon-btn" title="Fullscreen">
+          <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        </button>
       </div>
       <textarea id="noteTextArea" class="note-textarea" placeholder="Lyrics, memo, anything…"></textarea>
     </div>
   </div>
+</div>
+
+<!-- Textタブ：フルスクリーン表示。テキストを大きく読み書きしたい時用に画面全体を覆う。
+     中のtextarea(#noteTextAreaFullscreen)はnoteTextAreaと値を相互同期させる（player-ui-shared.js）。
+     文字サイズは+/-ボタンでfont-sizeを調整し、localStorageに好みの値を保存する。 -->
+<div id="textFullscreenOverlay" class="text-fullscreen-overlay">
+  <div class="text-fullscreen-header">
+    <div class="text-fullscreen-font-controls">
+      <button id="noteTextFontDecBtn" class="tab-icon-btn" title="Decrease text size">−</button>
+      <button id="noteTextFontIncBtn" class="tab-icon-btn" title="Increase text size">＋</button>
+    </div>
+    <button id="noteTextFullscreenCloseBtn" class="tab-icon-btn" title="Close">✕</button>
+  </div>
+  <textarea id="noteTextAreaFullscreen" class="note-textarea note-textarea-fullscreen" placeholder="Lyrics, memo, anything…"></textarea>
 </div>
 
 <!-- EQ設定モーダル -->
