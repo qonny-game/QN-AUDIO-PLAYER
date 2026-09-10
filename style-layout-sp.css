@@ -298,7 +298,9 @@
     line-height: 1;
   }
 
-  /* ヘッダー：ロゴ＋バージョンとファイル名で2行に収め、Color/Analyzer/EQはハンバーガーメニューに格納 */
+  /* ヘッダー：ロゴ＋バージョンのみの1行にする（PC版と同じくロゴを左上単独配置）。
+     ファイル名(#appTitle)は.player-section側、シークバーの上に単独表示するため
+     ここでは扱わない。Color/Analyzer/EQはハンバーガーメニューに格納。 */
   #appHeader {
     flex-wrap: nowrap;
     align-items: center;
@@ -308,11 +310,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 2px;
   }
 
   #appTitle {
-    margin: 0;
+    margin: 0 0 -5px;
     font-size: 13px;
     white-space: nowrap;
     overflow: hidden;

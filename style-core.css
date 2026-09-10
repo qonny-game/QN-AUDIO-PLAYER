@@ -182,17 +182,12 @@ body {
   z-index: 450;
 }
 
-#appHeaderText {
-  min-width: 0;
-  flex: 1;
-}
-
 #appLogo {
   font-family: var(--font-display, 'Instrument Sans'), sans-serif;
   font-size: 32px;
   font-weight: 700;
   letter-spacing: 1px;
-  margin: 0 0 4px;
+  margin: 0;
   color: #f0f0f3;
   text-transform: uppercase;
 }
@@ -211,7 +206,13 @@ body {
 }
 
 #appTitle {
-  margin: 0 0 15px;
+  /* 以前は#appHeader内でappLogoの下に居て、margin-bottom: 15pxだけで
+     波形(#vbarContainer)との間隔を作っていた。.player-sectionの直下に
+     移動した今は親のgap: 20pxが#appTitleと#vbarContainerの間にも
+     自動で入るため、そのままだと20px+15px=35pxに広がってしまう。
+     見た目を変えないよう、gapとの重複分を差し引いたマイナスマージンで
+     元の15px間隔を維持する（20px gap - 5px = 15px相当）。 */
+  margin: 0 0 -5px;
   font-family: var(--font-body, 'Instrument Sans'), sans-serif;
   font-size: 20px;
   font-weight: 600;
