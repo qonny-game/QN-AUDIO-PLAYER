@@ -297,11 +297,20 @@ function removeTrackAt(index) {
   renderPlaylist();
 }
 
-function playTrackAt(index) {
+function playTrackAt(index, autoplay = true) {
   if (index < 0 || index >= playlist.length) return;
   currentPlaylistIndex = index;
   loadFile(playlist[index].file);
   renderPlaylist();
+  if (autoplay) {
+    // loadFile側のonloadedmetadataが発火してdurationやUIの準備が整うのを待ってから再生する。
+    // audio.currentSrcの変化を待つのではなく、onloadedmetadataに便乗して1回だけ再生する。
+    const playOnceReady = () => {
+      audio.removeEventListener("loadedmetadata", playOnceReady);
+      audio.play().catch(() => {});
+    };
+    audio.addEventListener("loadedmetadata", playOnceReady);
+  }
 }
 
 // 指定したインデックスより後ろ（direction=1）または前（direction=-1）で、
@@ -2373,8 +2382,9 @@ async function restorePlaylistFromStorage() {
   renderPlaylist();
 
   // 1曲目を選曲済み状態にする（タイトル表示・波形読み込みまで行うが、
-  // loadFile()自体はaudio.play()を呼ばないため自動再生はされない）。
-  playTrackAt(0);
+  // autoplay: falseにより自動再生はしない。ページを開いた直後に
+  // 意図せず音が鳴らないようにするため）。
+  playTrackAt(0, false);
 }
 
 // ============================================================

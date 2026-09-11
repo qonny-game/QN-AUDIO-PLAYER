@@ -42,6 +42,77 @@
   const THEME_STORAGE_KEY = 'qn_theme';
   const GLOW_STORAGE_KEY = 'qn_glow';
 
+  /* ---------- テーマデータ（唯一のソース） ----------
+     カラーテーマを追加・編集する時は、この配列に1件追記/変更するだけでよい。
+     hover色・グロー色・スウォッチの見た目・CSSカスタムプロパティ定義は
+     すべてここから自動生成される（qn-menu.css/qn-menu.htmlを手で編集する必要はない）。
+     表示順もこの配列の並び順のまま使われる。
+     - name: data-qn-theme属性の値（英数字とハイフンのみ）
+     - title: スウォッチのtitle属性（ホバー時のツールチップ）
+     - primary: メインカラー(HEX)。単色テーマはprimary/secondaryを同じ値にする
+     - secondary: 2色目(HEX)。単色テーマと2色テーマを区別する必要はなく、
+       同じ値ならグラデーションが単色に見えるだけで済む
+     - visible: 初期表示（Moreボタンを押す前）に見せるかどうか。省略時true。
+       QN_THEMES_INITIAL_VISIBLE_COUNT件目以降はfalseにする運用にしている。 */
+  const QN_THEMES = [
+    { name: "red", title: "Red", primary: "#ef4444", secondary: "#b91c1c" },
+    { name: "orange", title: "Orange", primary: "#f97316", secondary: "#c2410c" },
+    { name: "amber", title: "Amber Gold", primary: "#f59e0b", secondary: "#b45309" },
+    { name: "lime", title: "Lime", primary: "#84cc16", secondary: "#4d7c0f" },
+    { name: "emerald", title: "Emerald Green", primary: "#10b981", secondary: "#047857" },
+    { name: "teal", title: "Teal", primary: "#14b8a6", secondary: "#0f766e" },
+    { name: "cyan", title: "Cyan", primary: "#06b6d4", secondary: "#0e7490" },
+    { name: "sky", title: "Sky Blue", primary: "#0ea5e9", secondary: "#0369a1" },
+    { name: "blue", title: "Blue (Default)", primary: "#3b82f6", secondary: "#1d4ed8" },
+    { name: "indigo", title: "Indigo", primary: "#6366f1", secondary: "#4338ca" },
+    { name: "purple", title: "Electric Purple", primary: "#8b5cf6", secondary: "#6d28d9" },
+    { name: "violet", title: "Violet", primary: "#a855f7", secondary: "#7e22ce" },
+    { name: "pink", title: "Pink", primary: "#ec4899", secondary: "#be185d" },
+    { name: "rose", title: "Rose Red", primary: "#f43f5e", secondary: "#be123c" },
+    { name: "red-deep", title: "Red Deep", primary: "#f44848", secondary: "#550707" },
+    { name: "orange-deep", title: "Orange Deep", primary: "#ff8d3d", secondary: "#592602" },
+    { name: "amber-deep", title: "Amber Deep", primary: "#fcb640", secondary: "#583904" },
+    { name: "lime-deep", title: "Lime Deep", primary: "#aff04c", secondary: "#365309" },
+    { name: "emerald-deep", title: "Emerald Deep", primary: "#49f4bb", secondary: "#07543b" },
+    { name: "teal-deep", title: "Teal Deep", primary: "#4cf0de", secondary: "#09534b" },
+    { name: "cyan-deep", title: "Cyan Deep", primary: "#3ee2fe", secondary: "#034d59" },
+    { name: "sky-deep", title: "Sky Deep", primary: "#44c0f8", secondary: "#053d57" },
+    { name: "blue-deep", title: "Blue Deep", primary: "#4188fb", secondary: "#042458" },
+    { name: "indigo-deep", title: "Indigo Deep", primary: "#494df3", secondary: "#080954" },
+    { name: "purple-deep", title: "Purple Deep", primary: "#7b43f9", secondary: "#1e0557" },
+    { name: "violet-deep", title: "Violet Deep", primary: "#a042fb", secondary: "#2f0458" },
+    { name: "pink-deep", title: "Pink Deep", primary: "#f14b9d", secondary: "#53092d" },
+    { name: "rose-deep", title: "Rose Deep", primary: "#f94362", secondary: "#570513" },
+    { name: "crimson-cyan", title: "Crimson - Cyan", primary: "#dc2626", secondary: "#06b6d4" },
+    { name: "red-blue", title: "Red - Blue", primary: "#ef4444", secondary: "#2563eb" },
+    { name: "red-lime", title: "Red - Lime", primary: "#ef4444", secondary: "#84cc16" },
+    { name: "orange-purple", title: "Orange - Purple", primary: "#f97316", secondary: "#7c3aed" },
+    { name: "orange-sky", title: "Orange - Sky", primary: "#f97316", secondary: "#0ea5e9" },
+    { name: "amber-blue", title: "Amber - Blue", primary: "#f59e0b", secondary: "#1d4ed8" },
+    { name: "gold-violet", title: "Gold - Violet", primary: "#f59e0b", secondary: "#7c3aed" },
+    { name: "yellow-green", title: "Yellow - Green", primary: "#eab308", secondary: "#16a34a" },
+    { name: "lime-indigo", title: "Lime - Indigo", primary: "#84cc16", secondary: "#4f46e5" },
+    { name: "green-fuchsia", title: "Green - Fuchsia", primary: "#22c55e", secondary: "#e879f9" },
+    { name: "emerald-cyan", title: "Emerald - Cyan", primary: "#10b981", secondary: "#06b6d4" },
+    { name: "teal-magenta", title: "Teal - Magenta", primary: "#14b8a6", secondary: "#d946ef" },
+    { name: "cyan-navy", title: "Cyan - Navy", primary: "#22d3ee", secondary: "#1e3a8a" },
+    { name: "cyan-blue", title: "Cyan - Blue", primary: "#06b6d4", secondary: "#3b82f6" },
+    { name: "blue-amber", title: "Blue - Amber", primary: "#2563eb", secondary: "#f59e0b" },
+    { name: "indigo-orange", title: "Indigo - Orange", primary: "#4f46e5", secondary: "#f97316" },
+    { name: "violet-yellow", title: "Violet - Yellow", primary: "#8b5cf6", secondary: "#eab308" },
+    { name: "purple-blue", title: "Purple - Blue", primary: "#a855f7", secondary: "#2563eb" },
+    { name: "purple-red", title: "Purple - Red", primary: "#a855f7", secondary: "#dc2626" },
+    { name: "fuchsia-teal", title: "Fuchsia - Teal", primary: "#e879f9", secondary: "#0d9488" },
+    { name: "magenta-lime", title: "Magenta - Lime", primary: "#d946ef", secondary: "#84cc16" },
+    { name: "pink-red", title: "Pink - Red", primary: "#ec4899", secondary: "#ef4444" },
+    { name: "rose-emerald", title: "Rose - Emerald", primary: "#f43f5e", secondary: "#10b981" },
+  ];
+  // 最初に見せるスウォッチの件数（これ以降はMoreボタンで展開）。
+  // 現状は単色14色がちょうど収まる件数にしている。
+  const QN_THEMES_INITIAL_VISIBLE_COUNT = 14;
+  // rainbowは通常のCSSカスタムプロパティを持たない特殊テーマ（JSでアニメーション制御）
+  // のため、動的生成の対象外にして固定でHTML側に1つだけ残す。
+
   const mount = document.getElementById('qnMenuMount');
   if (!mount) return; // ホスト側にマウント先が無ければ何もしない
 
@@ -102,6 +173,78 @@
       }
       return h;
     }
+
+    // 明度をfactor倍だけ落とした色を返す（1に近いほど元の明るさに近い、
+    // 小さいほど暗くなる）。hover色の自動計算に使う。
+    function darken(hex, factor) {
+      hex = hex.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16) / 255;
+      const g = parseInt(hex.substr(2, 2), 16) / 255;
+      const b = parseInt(hex.substr(4, 2), 16) / 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0;
+      const l = (max + min) / 2;
+      const d = max - min;
+      if (d !== 0) {
+        s = d / (1 - Math.abs(2 * l - 1));
+        switch (max) {
+          case r: h = ((g - b) / d) % 6; break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h *= 60;
+        if (h < 0) h += 360;
+      }
+      return hslToHex(h, s * 100, Math.max(0, l * factor) * 100);
+    }
+
+    /* ---------- テーマCSS・スウォッチの動的生成 ----------
+       QN_THEMES配列から、CSSカスタムプロパティ(--accent-*)とスウォッチの
+       背景グラデーションをまとめた<style>タグを1つ生成してheadに注入し、
+       スウォッチのHTML(.qn-theme-swatch)も同じ配列から生成して
+       #qnThemeSwatches / #qnThemeSwatchesExtra に流し込む。
+       qn-menu.css/qn-menu.html側にはテーマごとの個別記述を持たせない。 */
+    function buildThemeCssAndSwatches() {
+      const cssParts = [];
+      QN_THEMES.forEach(t => {
+        const hover1 = darken(t.primary, 0.82);
+        const hover2 = darken(t.secondary, 0.78);
+        const r = parseInt(t.primary.slice(1, 3), 16);
+        const g = parseInt(t.primary.slice(3, 5), 16);
+        const b = parseInt(t.primary.slice(5, 7), 16);
+        cssParts.push(
+          `[data-qn-theme="${t.name}"]{--accent-primary:${t.primary};--accent-secondary:${t.secondary};` +
+          `--accent-glow:rgba(${r},${g},${b},0.35);--accent-hover-1:${hover1};--accent-hover-2:${hover2};}`
+        );
+        cssParts.push(
+          `.qn-swatch-${t.name}{background:linear-gradient(135deg,${t.primary},${t.secondary});}`
+        );
+      });
+      const styleTag = document.createElement('style');
+      styleTag.id = 'qnThemeGeneratedCss';
+      styleTag.textContent = cssParts.join('\n');
+      document.head.appendChild(styleTag);
+
+      const visibleContainer = document.getElementById('qnThemeSwatches');
+      const extraContainer = document.getElementById('qnThemeSwatchesExtra');
+      const rainbowSwatch = document.getElementById('qnRainbowSwatch');
+      if (!visibleContainer || !extraContainer) return;
+
+      QN_THEMES.forEach((t, i) => {
+        const swatch = document.createElement('div');
+        swatch.className = `qn-theme-swatch qn-swatch-${t.name}`;
+        swatch.setAttribute('data-qn-theme', t.name);
+        swatch.title = t.title;
+        if (i < QN_THEMES_INITIAL_VISIBLE_COUNT) {
+          visibleContainer.appendChild(swatch);
+        } else {
+          // rainbowは常に最後尾に固定したいため、rainbowの直前に挿入する
+          // （末尾にappendすると生成順によってrainbowより後ろに来てしまう）。
+          extraContainer.insertBefore(swatch, rainbowSwatch);
+        }
+      });
+    }
+    buildThemeCssAndSwatches();
 
     /* ---------- Rainbow animation ---------- */
     let rainbowAnimId = null;

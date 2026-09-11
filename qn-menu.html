@@ -45,61 +45,14 @@
     <!-- SECTION 2: Color Theme Selector & Glow Switch -->
     <div class="qn-menu-section" data-qn-section="theme">
       <span class="qn-menu-section-label">Color Theme</span>
-      <div class="qn-theme-swatches">
-        <div class="qn-theme-swatch qn-swatch-red" data-qn-theme="red" title="Red"></div>
-        <div class="qn-theme-swatch qn-swatch-orange" data-qn-theme="orange" title="Orange"></div>
-        <div class="qn-theme-swatch qn-swatch-amber" data-qn-theme="amber" title="Amber Gold"></div>
-        <div class="qn-theme-swatch qn-swatch-lime" data-qn-theme="lime" title="Lime"></div>
-        <div class="qn-theme-swatch qn-swatch-emerald" data-qn-theme="emerald" title="Emerald Green"></div>
-        <div class="qn-theme-swatch qn-swatch-teal" data-qn-theme="teal" title="Teal"></div>
-        <div class="qn-theme-swatch qn-swatch-cyan" data-qn-theme="cyan" title="Cyan"></div>
-        <div class="qn-theme-swatch qn-swatch-sky" data-qn-theme="sky" title="Sky Blue"></div>
-        <div class="qn-theme-swatch qn-swatch-blue" data-qn-theme="blue" title="Blue (Default)"></div>
-        <div class="qn-theme-swatch qn-swatch-indigo" data-qn-theme="indigo" title="Indigo"></div>
-        <div class="qn-theme-swatch qn-swatch-purple" data-qn-theme="purple" title="Electric Purple"></div>
-        <div class="qn-theme-swatch qn-swatch-violet" data-qn-theme="violet" title="Violet"></div>
-        <div class="qn-theme-swatch qn-swatch-pink" data-qn-theme="pink" title="Pink"></div>
-        <div class="qn-theme-swatch qn-swatch-rose" data-qn-theme="rose" title="Rose Red"></div>
-      </div>
+      <!-- スウォッチはqn-menu.js側のQN_THEMES配列から動的生成される。
+           テーマを追加・編集する時はqn-menu.js内のQN_THEMESだけを直せばよく、
+           このHTMLやqn-menu.css側の個別記述を編集する必要はない。
+           rainbowだけはCSSカスタムプロパティを持たない特殊テーマ（JSでアニメーション
+           制御）のため、動的生成の対象外にして固定でここに置いている。 -->
+      <div class="qn-theme-swatches" id="qnThemeSwatches"></div>
       <div class="qn-theme-swatches qn-theme-swatches-extra" id="qnThemeSwatchesExtra">
-        <div class="qn-theme-swatch qn-swatch-red-deep" data-qn-theme="red-deep" title="Red Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-orange-deep" data-qn-theme="orange-deep" title="Orange Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-amber-deep" data-qn-theme="amber-deep" title="Amber Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-lime-deep" data-qn-theme="lime-deep" title="Lime Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-emerald-deep" data-qn-theme="emerald-deep" title="Emerald Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-teal-deep" data-qn-theme="teal-deep" title="Teal Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-cyan-deep" data-qn-theme="cyan-deep" title="Cyan Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-sky-deep" data-qn-theme="sky-deep" title="Sky Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-blue-deep" data-qn-theme="blue-deep" title="Blue Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-indigo-deep" data-qn-theme="indigo-deep" title="Indigo Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-purple-deep" data-qn-theme="purple-deep" title="Purple Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-violet-deep" data-qn-theme="violet-deep" title="Violet Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-pink-deep" data-qn-theme="pink-deep" title="Pink Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-rose-deep" data-qn-theme="rose-deep" title="Rose Deep"></div>
-        <div class="qn-theme-swatch qn-swatch-crimson-cyan" data-qn-theme="crimson-cyan" title="Crimson - Cyan"></div>
-        <div class="qn-theme-swatch qn-swatch-red-blue" data-qn-theme="red-blue" title="Red - Blue"></div>
-        <div class="qn-theme-swatch qn-swatch-red-lime" data-qn-theme="red-lime" title="Red - Lime"></div>
-        <div class="qn-theme-swatch qn-swatch-orange-purple" data-qn-theme="orange-purple" title="Orange - Purple"></div>
-        <div class="qn-theme-swatch qn-swatch-orange-sky" data-qn-theme="orange-sky" title="Orange - Sky"></div>
-        <div class="qn-theme-swatch qn-swatch-amber-blue" data-qn-theme="amber-blue" title="Amber - Blue"></div>
-        <div class="qn-theme-swatch qn-swatch-gold-violet" data-qn-theme="gold-violet" title="Gold - Violet"></div>
-        <div class="qn-theme-swatch qn-swatch-yellow-green" data-qn-theme="yellow-green" title="Yellow - Green"></div>
-        <div class="qn-theme-swatch qn-swatch-lime-indigo" data-qn-theme="lime-indigo" title="Lime - Indigo"></div>
-        <div class="qn-theme-swatch qn-swatch-green-fuchsia" data-qn-theme="green-fuchsia" title="Green - Fuchsia"></div>
-        <div class="qn-theme-swatch qn-swatch-emerald-cyan" data-qn-theme="emerald-cyan" title="Emerald - Cyan"></div>
-        <div class="qn-theme-swatch qn-swatch-teal-magenta" data-qn-theme="teal-magenta" title="Teal - Magenta"></div>
-        <div class="qn-theme-swatch qn-swatch-cyan-navy" data-qn-theme="cyan-navy" title="Cyan - Navy"></div>
-        <div class="qn-theme-swatch qn-swatch-cyan-blue" data-qn-theme="cyan-blue" title="Cyan - Blue"></div>
-        <div class="qn-theme-swatch qn-swatch-blue-amber" data-qn-theme="blue-amber" title="Blue - Amber"></div>
-        <div class="qn-theme-swatch qn-swatch-indigo-orange" data-qn-theme="indigo-orange" title="Indigo - Orange"></div>
-        <div class="qn-theme-swatch qn-swatch-violet-yellow" data-qn-theme="violet-yellow" title="Violet - Yellow"></div>
-        <div class="qn-theme-swatch qn-swatch-purple-blue" data-qn-theme="purple-blue" title="Purple - Blue"></div>
-        <div class="qn-theme-swatch qn-swatch-purple-red" data-qn-theme="purple-red" title="Purple - Red"></div>
-        <div class="qn-theme-swatch qn-swatch-fuchsia-teal" data-qn-theme="fuchsia-teal" title="Fuchsia - Teal"></div>
-        <div class="qn-theme-swatch qn-swatch-magenta-lime" data-qn-theme="magenta-lime" title="Magenta - Lime"></div>
-        <div class="qn-theme-swatch qn-swatch-pink-red" data-qn-theme="pink-red" title="Pink - Red"></div>
-        <div class="qn-theme-swatch qn-swatch-rose-emerald" data-qn-theme="rose-emerald" title="Rose - Emerald"></div>
-        <div class="qn-theme-swatch qn-swatch-rainbow" data-qn-theme="rainbow" title="Rainbow (Animated)"></div>
+        <div class="qn-theme-swatch qn-swatch-rainbow" data-qn-theme="rainbow" title="Rainbow (Animated)" id="qnRainbowSwatch"></div>
       </div>
       <button type="button" class="qn-theme-more-btn" id="qnThemeMoreBtn">More colors</button>
       <div class="qn-glow-toggle-row">
