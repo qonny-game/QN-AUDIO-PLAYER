@@ -275,6 +275,24 @@
         }
       });
       qnMenuPopup.addEventListener('click', (e) => e.stopPropagation());
+
+      /* ---------- カラーテーマ一覧のMore/Less展開 ----------
+         最初の14色（単色系）だけを常時表示し、残り（濃淡・大胆な2色・rainbow）は
+         Moreボタンで展開する。展開でポップアップ自体の高さが変わるため、
+         開いている場合はpositionPopupで位置を再計算する。 */
+      const themeMoreBtn = document.getElementById('qnThemeMoreBtn');
+      const themeSwatchesExtra = document.getElementById('qnThemeSwatchesExtra');
+      if (themeMoreBtn && themeSwatchesExtra) {
+        themeMoreBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const willOpen = !themeSwatchesExtra.classList.contains('open');
+          themeSwatchesExtra.classList.toggle('open', willOpen);
+          themeMoreBtn.textContent = willOpen ? 'Less colors' : 'More colors';
+          if (qnMenuPopup.classList.contains('open')) {
+            positionPopup(qnMenuBtn, qnMenuPopup);
+          }
+        });
+      }
     }
     document.addEventListener('click', () => {
       if (qnMenuPopup) qnMenuPopup.classList.remove('open');
