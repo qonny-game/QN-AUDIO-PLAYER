@@ -211,8 +211,9 @@
         updateRainbowAnimation(themeName);
         if (glowEnabled && themeName !== 'rainbow') startGlow();
 
-        qnMenuPopup.classList.remove('open');
-        qnMenuBtn.classList.remove('active');
+        // カラーテーマ選択時はメニューを閉じない。色を連続で切り替えながら
+        // 見た目を比較したいというユースケースのため、他の操作（メニュー外click等）
+        // で閉じるのはそのまま維持し、ここだけ閉じる処理を意図的に呼ばない。
       });
     });
 

@@ -156,7 +156,15 @@ html {
 }
 
 body {
-  background: #0d0d0f;
+  /* ベースの単色(#0d0d0f)の上に、テーマカラー(--accent-primary)を使った
+     ごく薄いグローを左上・右上から重ねる。--accent-glowは元々ボタンの
+     シャドウ用で透明度0.35と濃いため、ここでは別途0.08程度に抑えて
+     背景として使っても主張しすぎないようにしている。
+     テーマ切替時、--accent-primaryが変わればグローの色も自動で追従する。 */
+  background:
+    radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--accent-primary) 12%, transparent), transparent 45%),
+    radial-gradient(circle at 100% 15%, color-mix(in srgb, var(--accent-secondary) 10%, transparent), transparent 40%),
+    #0d0d0f;
   color: #f0f0f3;
   font-family: var(--font-body, 'Instrument Sans'), -apple-system, BlinkMacSystemFont, sans-serif;
   padding: 24px;
@@ -197,7 +205,15 @@ body {
 }
 
 #appLogoQN {
-  color: var(--accent-primary);
+  /* テーマカラー(--accent-primary → --accent-secondary)を使ったグラデーション文字。
+     background-clip: textでテキストの形にグラデーションを流し込み、
+     本来のcolorはtransparentにして背景を透かして見せる。
+     Safari等webkit系ブラウザ向けに-webkit-プレフィックス版も明記する。 */
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 #appVersion {
@@ -468,7 +484,9 @@ body {
 }
 
 .mobile-tab-btn.active {
-  background: var(--accent-primary);
+  /* PLAYボタン(#playToggle)と同じグラデーションに揃える。単色のvar(--accent-primary)
+     だけだと、PLAYボタンのグラデーションと並んだ時に色味が微妙にずれて見えるため。 */
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: #fff;
 }
 
@@ -917,7 +935,10 @@ body {
   box-sizing: border-box;
   padding: 10px 18px;
   background: #1c1c24;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* テーマカラーをごく薄く滲ませた枠線にする（以前はrgba(255,255,255,0.08)の
+     無彩色グレー）。hover/active時の--accent-primaryへの変化と地続きになるよう、
+     通常時も同じ色相を薄く効かせておく。 */
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 22%, rgba(255, 255, 255, 0.08));
   border-radius: 14px;
   cursor: pointer;
   color: #f0f0f3;
@@ -1137,7 +1158,11 @@ body {
   font-size: 16px;
   font-weight: 700;
   color: #ffffff;
-  background: rgba(13, 13, 15, 0.85);
+  /* マーカー個別に色(MARKER_COLOR_PALETTE)が設定されていない場合の既定背景。
+     以前は不透明の黒(rgba(13,13,15,0.85))だったが、テーマカラーに合わせて
+     --accent-primaryを使うよう変更。個別色設定時はplayer-ui-shared.js側の
+     renderPins()がインラインstyleでこの値を上書きする。 */
+  background: var(--accent-primary);
   padding: 2px 6px;
   border-radius: 4px;
   pointer-events: auto;
@@ -1307,7 +1332,8 @@ body {
 }
 
 .auto-speed-dir-btn.active {
-  background: var(--accent-primary);
+  /* PLAYボタン・タブ選択色と同じグラデーションに統一。 */
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: #fff;
 }
 
