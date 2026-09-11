@@ -282,6 +282,109 @@
   --accent-hover-2: #c07b08;
 }
 
+/* ---------- Same-hue light-to-deep gradient themes ----------
+   既存の単色14テーマそれぞれについて、同じ色相のまま「明るめ→とても濃い（暗い）」
+   グラデーションにしたバージョン。離れた色相同士を組み合わせる上のBold系とは異なり、
+   こちらは色味の一体感を保ったまま奥行きを出したいケース向け。 */
+[data-qn-theme="red-deep"] {
+  --accent-primary: #f44848;
+  --accent-secondary: #550707;
+  --accent-glow: rgba(244, 72, 72, 0.35);
+  --accent-hover-1: #f11b1b;
+  --accent-hover-2: #440606;
+}
+[data-qn-theme="orange-deep"] {
+  --accent-primary: #ff8d3d;
+  --accent-secondary: #592602;
+  --accent-glow: rgba(255, 141, 61, 0.35);
+  --accent-hover-1: #ff710e;
+  --accent-hover-2: #471e02;
+}
+[data-qn-theme="amber-deep"] {
+  --accent-primary: #fcb640;
+  --accent-secondary: #583904;
+  --accent-glow: rgba(252, 182, 64, 0.35);
+  --accent-hover-1: #fba411;
+  --accent-hover-2: #462e03;
+}
+[data-qn-theme="lime-deep"] {
+  --accent-primary: #aff04c;
+  --accent-secondary: #365309;
+  --accent-glow: rgba(175, 240, 76, 0.35);
+  --accent-hover-1: #9bec20;
+  --accent-hover-2: #2b4207;
+}
+[data-qn-theme="emerald-deep"] {
+  --accent-primary: #49f4bb;
+  --accent-secondary: #07543b;
+  --accent-glow: rgba(73, 244, 187, 0.35);
+  --accent-hover-1: #1cf1aa;
+  --accent-hover-2: #06432f;
+}
+[data-qn-theme="teal-deep"] {
+  --accent-primary: #4cf0de;
+  --accent-secondary: #09534b;
+  --accent-glow: rgba(76, 240, 222, 0.35);
+  --accent-hover-1: #20ecd6;
+  --accent-hover-2: #07423c;
+}
+[data-qn-theme="cyan-deep"] {
+  --accent-primary: #3ee2fe;
+  --accent-secondary: #034d59;
+  --accent-glow: rgba(62, 226, 254, 0.35);
+  --accent-hover-1: #0fdbfe;
+  --accent-hover-2: #023e47;
+}
+[data-qn-theme="sky-deep"] {
+  --accent-primary: #44c0f8;
+  --accent-secondary: #053d57;
+  --accent-glow: rgba(68, 192, 248, 0.35);
+  --accent-hover-1: #16b1f6;
+  --accent-hover-2: #043146;
+}
+[data-qn-theme="blue-deep"] {
+  --accent-primary: #4188fb;
+  --accent-secondary: #042458;
+  --accent-glow: rgba(65, 136, 251, 0.35);
+  --accent-hover-1: #136bfa;
+  --accent-hover-2: #031d46;
+}
+[data-qn-theme="indigo-deep"] {
+  --accent-primary: #494df3;
+  --accent-secondary: #080954;
+  --accent-glow: rgba(73, 77, 243, 0.35);
+  --accent-hover-1: #1d22f0;
+  --accent-hover-2: #060743;
+}
+[data-qn-theme="purple-deep"] {
+  --accent-primary: #7b43f9;
+  --accent-secondary: #1e0557;
+  --accent-glow: rgba(123, 67, 249, 0.35);
+  --accent-hover-1: #5b15f8;
+  --accent-hover-2: #180446;
+}
+[data-qn-theme="violet-deep"] {
+  --accent-primary: #a042fb;
+  --accent-secondary: #2f0458;
+  --accent-glow: rgba(160, 66, 251, 0.35);
+  --accent-hover-1: #8913fa;
+  --accent-hover-2: #260346;
+}
+[data-qn-theme="pink-deep"] {
+  --accent-primary: #f14b9d;
+  --accent-secondary: #53092d;
+  --accent-glow: rgba(241, 75, 157, 0.35);
+  --accent-hover-1: #ee1f85;
+  --accent-hover-2: #420724;
+}
+[data-qn-theme="rose-deep"] {
+  --accent-primary: #f94362;
+  --accent-secondary: #570513;
+  --accent-glow: rgba(249, 67, 98, 0.35);
+  --accent-hover-1: #f8153c;
+  --accent-hover-2: #46040f;
+}
+
 /* ---------- Hamburger button & popup container ---------- */
 .qn-menu-wrapper {
   position: relative;
@@ -326,6 +429,12 @@
   top: 0;
   left: 0;
   width: 300px;
+  /* カラーテーマ等コンテンツが増えて画面の高さを超える場合に備え、
+     ビューポート基準で上限を設け、はみ出す分は内部スクロールにする。
+     上下マージン分(16px×2)を差し引いた値をJS側のpositionPopupの
+     margin(8px)の考え方に合わせて確保している。 */
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   background: #121215;
   border: 1px solid #27272a;
   border-radius: 14px;
@@ -353,6 +462,20 @@
 }
 .qn-menu-popup.open-upward.open {
   transform: translateY(0);
+}
+
+/* 中身がmax-heightを超えた時の内部スクロールバー（Webkit系）。
+   .sidebar-sectionの細いスクロールバーと同じデザインに揃える。 */
+.qn-menu-popup::-webkit-scrollbar {
+  width: 5px;
+}
+.qn-menu-popup::-webkit-scrollbar-track {
+  background: transparent;
+}
+.qn-menu-popup::-webkit-scrollbar-thumb {
+  background: var(--accent-primary, #3b82f6);
+  border-radius: 3px;
+  opacity: 0.6;
 }
 
 @media (max-width: 480px) {
@@ -485,6 +608,23 @@
 .qn-swatch-indigo-orange { background: linear-gradient(135deg, #4f46e5, #f97316); }
 .qn-swatch-green-fuchsia { background: linear-gradient(135deg, #22c55e, #e879f9); }
 .qn-swatch-blue-amber { background: linear-gradient(135deg, #2563eb, #f59e0b); }
+
+/* ---------- Same-hue light-to-deep gradient swatches ----------
+   qn-menu.css側の*-deepテーマ定義と対応するスウォッチ見た目。 */
+.qn-swatch-red-deep { background: linear-gradient(135deg, #f44848, #550707); }
+.qn-swatch-orange-deep { background: linear-gradient(135deg, #ff8d3d, #592602); }
+.qn-swatch-amber-deep { background: linear-gradient(135deg, #fcb640, #583904); }
+.qn-swatch-lime-deep { background: linear-gradient(135deg, #aff04c, #365309); }
+.qn-swatch-emerald-deep { background: linear-gradient(135deg, #49f4bb, #07543b); }
+.qn-swatch-teal-deep { background: linear-gradient(135deg, #4cf0de, #09534b); }
+.qn-swatch-cyan-deep { background: linear-gradient(135deg, #3ee2fe, #034d59); }
+.qn-swatch-sky-deep { background: linear-gradient(135deg, #44c0f8, #053d57); }
+.qn-swatch-blue-deep { background: linear-gradient(135deg, #4188fb, #042458); }
+.qn-swatch-indigo-deep { background: linear-gradient(135deg, #494df3, #080954); }
+.qn-swatch-purple-deep { background: linear-gradient(135deg, #7b43f9, #1e0557); }
+.qn-swatch-violet-deep { background: linear-gradient(135deg, #a042fb, #2f0458); }
+.qn-swatch-pink-deep { background: linear-gradient(135deg, #f14b9d, #53092d); }
+.qn-swatch-rose-deep { background: linear-gradient(135deg, #f94362, #570513); }
 
 .qn-swatch-rainbow {
   background: conic-gradient(from 0deg, #ef4444, #f97316, #f59e0b, #84cc16, #10b981, #14b8a6, #06b6d4, #0ea5e9, #3b82f6, #6366f1, #8b5cf6, #a855f7, #ec4899, #f43f5e, #ef4444);

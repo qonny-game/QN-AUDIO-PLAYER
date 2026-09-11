@@ -559,7 +559,7 @@ function loadFile(file) {
     if (window.__qnAudioCtx && window.__qnAudioCtx.state === "suspended") {
       window.__qnAudioCtx.resume().catch(() => {});
     }
-    audio.play();
+    // 読み込み完了後に自動再生はしない。ユーザーがPlayを押すまで待機状態のまま。
     updatePlayButtonState();
   };
 }
@@ -1668,18 +1668,37 @@ document.querySelectorAll(".vbar").forEach((bar, index) => {
 });
 
 const loopToggleBtn = document.getElementById("loopToggleBtn");
+
+// loopEnabled（単一マーカー区間のLoop）はブラウザを閉じても状態が残るよう
+// localStorageに保存する。曲ごとではなくアプリ全体の設定として扱う。
+const LOOP_ENABLED_STORAGE_KEY = "mp3player_loop_enabled";
+
+function applyLoopButtonUI() {
+  if (!loopToggleBtn) return;
+  loopToggleBtn.style.opacity = loopEnabled ? "1" : "0.4";
+  loopToggleBtn.style.borderColor = loopEnabled ? "var(--accent-primary)" : "rgba(255, 255, 255, 0.08)";
+}
+
 if (loopToggleBtn) {
+  try {
+    loopEnabled = localStorage.getItem(LOOP_ENABLED_STORAGE_KEY) === "1";
+  } catch (e) {}
+  applyLoopButtonUI();
+
   loopToggleBtn.onclick = () => {
     hapticTap();
     loopEnabled = !loopEnabled;
-    loopToggleBtn.style.opacity = loopEnabled ? "1" : "0.4";
-    loopToggleBtn.style.borderColor = loopEnabled ? "var(--accent-primary)" : "rgba(255, 255, 255, 0.08)";
+    try { localStorage.setItem(LOOP_ENABLED_STORAGE_KEY, loopEnabled ? "1" : "0"); } catch (e) {}
+    applyLoopButtonUI();
     renderSegments();
   };
-  loopToggleBtn.style.opacity = "0.4";
 }
 
 const allRepeatToggleBtn = document.getElementById("allRepeatToggleBtn");
+
+// repeatMode（Off/One/All）もloopEnabledと同様、ブラウザを閉じても状態が残るよう
+// localStorageに保存する。
+const REPEAT_MODE_STORAGE_KEY = "mp3player_repeat_mode";
 
 const REPEAT_ICON_OFF = '<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>';
 const REPEAT_ICON_ALL = '<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>';
@@ -1704,9 +1723,17 @@ function applyRepeatModeUI() {
 }
 
 if (allRepeatToggleBtn) {
+  try {
+    const savedRepeatMode = localStorage.getItem(REPEAT_MODE_STORAGE_KEY);
+    if (savedRepeatMode === "one" || savedRepeatMode === "all" || savedRepeatMode === "off") {
+      repeatMode = savedRepeatMode;
+    }
+  } catch (e) {}
+
   allRepeatToggleBtn.onclick = () => {
     hapticTap();
     repeatMode = repeatMode === "off" ? "one" : repeatMode === "one" ? "all" : "off";
+    try { localStorage.setItem(REPEAT_MODE_STORAGE_KEY, repeatMode); } catch (e) {}
     applyRepeatModeUI();
   };
   applyRepeatModeUI();
@@ -1754,9 +1781,11 @@ function renderPins() {
       line.classList.add("move-mode-active");
     }
     line.style.left = `${x}%`;
-    // マーカーに色が設定されていれば、ラインとラベルの背景色に反映する。
+    // マーカーに色が設定されていれば、ライン(縦線)の背景色に反映する。
     // ただし無効化中(disabled)やMOVEモード中(move-mode-active)は専用の見た目を優先し、
     // インラインスタイルで上書きしないようにする（詳細度でCSS側の状態表現が負けてしまうため）。
+    // 番号バッジ(.vbar-label)側は視認性のため、マーカー個別色やテーマカラーに関わらず
+    // 常にCSS側の黒背景固定にする（ここでインラインstyleを上書きしない）。
     const applyMarkerColor = pinObj.color && MARKER_COLOR_PALETTE[pinObj.color] && pinObj.enabled && moveModeMarkerIndex !== i;
     if (applyMarkerColor) {
       line.style.background = MARKER_COLOR_PALETTE[pinObj.color];
@@ -1767,9 +1796,6 @@ function renderPins() {
     label.textContent = `${i + 1}`;
     if (moveModeMarkerIndex === i) {
       label.classList.add("move-mode-active");
-    }
-    if (applyMarkerColor) {
-      label.style.background = MARKER_COLOR_PALETTE[pinObj.color];
     }
 
     function handleMarkerTapOrDrag(e) {
@@ -2126,7 +2152,7 @@ function startPinMemoEdit(itemDiv, infoSpan, pinObj, index) {
 // 以前あった「SP幅だけ選択中タブを#mobileTabSlotへ移動する」複雑な仕組みは不要になった。
 // 今は単純に、選択中のパネルにだけ.mobile-tab-activeを付けてCSS側で表示を切り替えるだけで済む。
 const mobileTabBtns = document.querySelectorAll(".mobile-tab-btn");
-let currentMobileTab = "markers";
+let currentMobileTab = "playlist";
 
 function applyMobileTabLayout() {
   document.querySelectorAll(".mobile-tab-panel").forEach(panel => {
@@ -2280,7 +2306,7 @@ mobileTabBtns.forEach(btn => {
   };
 });
 
-setMobileTab("markers");
+setMobileTab("playlist");
 applyEqInlineLayout();
 
 function syncAllMobileLayout() {
